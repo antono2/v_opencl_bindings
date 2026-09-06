@@ -79,6 +79,37 @@ V_KEYWORDS = {
     "unsafe",
 }
 
+CALLBACK_TYPES = {
+    "const char* errinfo": (
+        "ContextNotifyCallback",
+        "fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)",
+    ),
+    "cl_context context": (
+        "ContextDestructorCallback",
+        "fn (context Context, user_data voidptr)",
+    ),
+    "cl_mem memobj": (
+        "MemObjectDestructorCallback",
+        "fn (memobj Mem, user_data voidptr)",
+    ),
+    "cl_program program": (
+        "ProgramCallback",
+        "fn (program Program, user_data voidptr)",
+    ),
+    "cl_event event": (
+        "EventCallback",
+        "fn (event Event, event_command_status i32, user_data voidptr)",
+    ),
+    "cl_command_queue queue": (
+        "SvmFreeCallback",
+        "fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)",
+    ),
+    ")(void*)": (
+        "NativeKernelCallback",
+        "fn (args voidptr)",
+    ),
+}
+
 
 HEADER = """// Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
 module opencl
@@ -390,7 +421,16 @@ class OpenCLGenerator:
             aliases.append(
                 f"pub type {self.type_name(c_name)} = {self.resolve_type(c_name)}"
             )
-        return "\n".join(aliases) + "\n\n" + "\n\n".join(structs)
+        windows_callbacks = "\n".join(
+            f"\t@[callconv: stdcall]\n\tpub type {name} = {signature}"
+            for name, signature in CALLBACK_TYPES.values()
+        )
+        other_callbacks = "\n".join(
+            f"\tpub type {name} = {signature}"
+            for name, signature in CALLBACK_TYPES.values()
+        )
+        callbacks = f"$if windows {{\n{windows_callbacks}\n}} $else {{\n{other_callbacks}\n}}"
+        return "\n".join(aliases) + "\n\n" + callbacks + "\n\n" + "\n\n".join(structs)
 
     def command_type(self, declaration: ET.Element, *, is_return: bool = False) -> str:
         c_type = declaration.findtext("type")
@@ -398,7 +438,10 @@ class OpenCLGenerator:
         name = declaration.findtext("name") or declaration.findtext("proto/name") or ""
         if c_type is None:
             if "(*" in text or "CL_CALLBACK*" in text:
-                return "voidptr"
+                for marker, (callback_name, _) in CALLBACK_TYPES.items():
+                    if marker in text:
+                        return callback_name
+                raise RuntimeError(f"Unsupported OpenCL callback: {text}")
             raise RuntimeError(f"Unsupported command declaration: {text}")
         type_node = declaration.find("type")
         before_name = (declaration.text or "") + ((type_node.tail or "") if type_node is not None else "")

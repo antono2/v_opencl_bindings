@@ -14,6 +14,8 @@ chains to V ABI types.
 OpenCL 1.0 through 3.0 command declarations and inline V wrappers are generated
 from cumulative feature requirements, including pointer depth, opaque handles,
 callbacks, return types, and acronym-aware snake-case function names.
+The seven distinct callback ABIs used by core commands are exposed as named V
+function types rather than untyped pointers.
 The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 `Mem` field because both C union alternatives have the same handle type.
 

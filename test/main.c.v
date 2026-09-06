@@ -2,6 +2,21 @@ module main
 
 import opencl as cl
 
+$if windows {
+	@[callconv: stdcall]
+	fn event_completed(event cl.Event, event_command_status i32, user_data voidptr) {
+		_ = event
+		_ = event_command_status
+		_ = user_data
+	}
+} $else {
+	fn event_completed(event cl.Event, event_command_status i32, user_data voidptr) {
+		_ = event
+		_ = event_command_status
+		_ = user_data
+	}
+}
+
 fn main() {
 	assert sizeof(cl.ImageFormat) == 2 * sizeof(u32)
 	assert sizeof(cl.BufferRegion) == 2 * sizeof(usize)
@@ -51,6 +66,7 @@ fn main() {
 	user_event := cl.create_user_event(context, &error_code)
 	check(error_code, 'create user event')
 	mut event_status := i32(-1)
+	check(cl.set_event_callback(user_event, cl.complete, event_completed, unsafe { nil }), 'set event callback')
 	check(cl.set_user_event_status(user_event, cl.complete), 'complete user event')
 	check(cl.get_event_info(user_event, cl.event_command_execution_status, sizeof(i32), &event_status, unsafe { nil }), 'get user event status')
 	assert event_status == cl.complete

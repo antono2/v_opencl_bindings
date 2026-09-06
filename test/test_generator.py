@@ -58,12 +58,23 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("image_channel_data_type ChannelType", generated)
         self.assertIn("pub struct BufferRegion", generated)
 
+    def test_core_callback_types_are_emitted_and_used(self) -> None:
+        generated = self.generate()
+        self.assertIn("$if windows {", generated)
+        self.assertEqual(generated.count("@[callconv: stdcall]"), 7)
+        self.assertIn("pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)", generated)
+        self.assertIn("pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)", generated)
+        self.assertIn("pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)", generated)
+        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, ContextNotifyCallback", generated)
+        self.assertIn("pub fn set_event_callback(event Event, command_exec_callback_type i32, pfn_notify EventCallback", generated)
+        self.assertIn("pub fn enqueue_native_kernel(command_queue CommandQueue, user_func NativeKernelCallback", generated)
+
     def test_output_is_deterministic(self) -> None:
         self.assertEqual(self.generate(), self.generate())
 
     def test_opencl_1_0_commands_are_generated_from_xml(self) -> None:
         generated = self.generate()
-        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, voidptr", generated)
+        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, ContextNotifyCallback", generated)
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)

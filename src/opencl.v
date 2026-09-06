@@ -169,6 +169,31 @@ pub type MemProperties = u64
 
 pub type Version = u32
 
+$if windows {
+	@[callconv: stdcall]
+	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
+	@[callconv: stdcall]
+	pub type ContextDestructorCallback = fn (context Context, user_data voidptr)
+	@[callconv: stdcall]
+	pub type MemObjectDestructorCallback = fn (memobj Mem, user_data voidptr)
+	@[callconv: stdcall]
+	pub type ProgramCallback = fn (program Program, user_data voidptr)
+	@[callconv: stdcall]
+	pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)
+	@[callconv: stdcall]
+	pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)
+	@[callconv: stdcall]
+	pub type NativeKernelCallback = fn (args voidptr)
+} $else {
+	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
+	pub type ContextDestructorCallback = fn (context Context, user_data voidptr)
+	pub type MemObjectDestructorCallback = fn (memobj Mem, user_data voidptr)
+	pub type ProgramCallback = fn (program Program, user_data voidptr)
+	pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)
+	pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)
+	pub type NativeKernelCallback = fn (args voidptr)
+}
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -682,9 +707,9 @@ fn C.clGetDeviceIDs(PlatformId, u64, u32, &DeviceId, &u32) ErrorCode
 
 fn C.clGetDeviceInfo(DeviceId, u32, usize, voidptr, &usize) ErrorCode
 
-fn C.clCreateContext(&isize, u32, &DeviceId, voidptr, voidptr, &ErrorCode) Context
+fn C.clCreateContext(&isize, u32, &DeviceId, ContextNotifyCallback, voidptr, &ErrorCode) Context
 
-fn C.clCreateContextFromType(&isize, u64, voidptr, voidptr, &ErrorCode) Context
+fn C.clCreateContextFromType(&isize, u64, ContextNotifyCallback, voidptr, &ErrorCode) Context
 
 fn C.clRetainContext(Context) ErrorCode
 
@@ -724,7 +749,7 @@ fn C.clRetainProgram(Program) ErrorCode
 
 fn C.clReleaseProgram(Program) ErrorCode
 
-fn C.clBuildProgram(Program, u32, &DeviceId, &char, voidptr, voidptr) ErrorCode
+fn C.clBuildProgram(Program, u32, &DeviceId, &char, ProgramCallback, voidptr) ErrorCode
 
 fn C.clGetProgramInfo(Program, u32, usize, voidptr, &usize) ErrorCode
 
@@ -782,7 +807,7 @@ fn C.clEnqueueUnmapMemObject(CommandQueue, Mem, voidptr, u32, &Event, &Event) Er
 
 fn C.clEnqueueNDRangeKernel(CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
 
-fn C.clEnqueueNativeKernel(CommandQueue, voidptr, voidptr, usize, u32, &Mem, &voidptr, u32, &Event, &Event) ErrorCode
+fn C.clEnqueueNativeKernel(CommandQueue, NativeKernelCallback, voidptr, usize, u32, &Mem, &voidptr, u32, &Event, &Event) ErrorCode
 
 fn C.clSetCommandQueueProperty(CommandQueue, u64, u32, &u64) ErrorCode
 
@@ -808,13 +833,13 @@ fn C.clEnqueueTask(CommandQueue, Kernel, u32, &Event, &Event) ErrorCode
 
 fn C.clCreateSubBuffer(Mem, u64, u32, voidptr, &ErrorCode) Mem
 
-fn C.clSetMemObjectDestructorCallback(Mem, voidptr, voidptr) ErrorCode
+fn C.clSetMemObjectDestructorCallback(Mem, MemObjectDestructorCallback, voidptr) ErrorCode
 
 fn C.clCreateUserEvent(Context, &ErrorCode) Event
 
 fn C.clSetUserEventStatus(Event, i32) ErrorCode
 
-fn C.clSetEventCallback(Event, i32, voidptr, voidptr) ErrorCode
+fn C.clSetEventCallback(Event, i32, EventCallback, voidptr) ErrorCode
 
 fn C.clEnqueueReadBufferRect(CommandQueue, Mem, u32, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
 
@@ -832,9 +857,9 @@ fn C.clCreateImage(Context, u64, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) 
 
 fn C.clCreateProgramWithBuiltInKernels(Context, u32, &DeviceId, &char, &ErrorCode) Program
 
-fn C.clCompileProgram(Program, u32, &DeviceId, &char, u32, &Program, &&char, voidptr, voidptr) ErrorCode
+fn C.clCompileProgram(Program, u32, &DeviceId, &char, u32, &Program, &&char, ProgramCallback, voidptr) ErrorCode
 
-fn C.clLinkProgram(Context, u32, &DeviceId, &char, u32, &Program, voidptr, voidptr, &ErrorCode) Program
+fn C.clLinkProgram(Context, u32, &DeviceId, &char, u32, &Program, ProgramCallback, voidptr, &ErrorCode) Program
 
 fn C.clUnloadPlatformCompiler(PlatformId) ErrorCode
 
@@ -868,7 +893,7 @@ fn C.clSetKernelArgSVMPointer(Kernel, u32, voidptr) ErrorCode
 
 fn C.clSetKernelExecInfo(Kernel, u32, usize, voidptr) ErrorCode
 
-fn C.clEnqueueSVMFree(CommandQueue, u32, &voidptr, voidptr, voidptr, u32, &Event, &Event) ErrorCode
+fn C.clEnqueueSVMFree(CommandQueue, u32, &voidptr, SvmFreeCallback, voidptr, u32, &Event, &Event) ErrorCode
 
 fn C.clEnqueueSVMMemcpy(CommandQueue, u32, voidptr, voidptr, usize, u32, &Event, &Event) ErrorCode
 
@@ -894,9 +919,9 @@ fn C.clEnqueueSVMMigrateMem(CommandQueue, u32, &voidptr, &usize, u64, u32, &Even
 
 fn C.clSetProgramSpecializationConstant(Program, u32, usize, voidptr) ErrorCode
 
-fn C.clSetProgramReleaseCallback(Program, voidptr, voidptr) ErrorCode
+fn C.clSetProgramReleaseCallback(Program, ProgramCallback, voidptr) ErrorCode
 
-fn C.clSetContextDestructorCallback(Context, voidptr, voidptr) ErrorCode
+fn C.clSetContextDestructorCallback(Context, ContextDestructorCallback, voidptr) ErrorCode
 
 fn C.clCreateBufferWithProperties(Context, &u64, u64, usize, voidptr, &ErrorCode) Mem
 
@@ -923,12 +948,12 @@ pub fn get_device_info(device DeviceId, param_name u32, param_value_size usize, 
 }
 
 @[inline]
-pub fn create_context(properties &isize, num_devices u32, devices &DeviceId, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
+pub fn create_context(properties &isize, num_devices u32, devices &DeviceId, pfn_notify ContextNotifyCallback, user_data voidptr, errcode_ret &ErrorCode) Context {
 	return C.clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret)
 }
 
 @[inline]
-pub fn create_context_from_type(properties &isize, device_type u64, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
+pub fn create_context_from_type(properties &isize, device_type u64, pfn_notify ContextNotifyCallback, user_data voidptr, errcode_ret &ErrorCode) Context {
 	return C.clCreateContextFromType(properties, device_type, pfn_notify, user_data, errcode_ret)
 }
 
@@ -1028,7 +1053,7 @@ pub fn release_program(program Program) ErrorCode {
 }
 
 @[inline]
-pub fn build_program(program Program, num_devices u32, device_list &DeviceId, options &char, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn build_program(program Program, num_devices u32, device_list &DeviceId, options &char, pfn_notify ProgramCallback, user_data voidptr) ErrorCode {
 	return C.clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data)
 }
 
@@ -1173,7 +1198,7 @@ pub fn enqueue_nd_range_kernel(command_queue CommandQueue, kernel Kernel, work_d
 }
 
 @[inline]
-pub fn enqueue_native_kernel(command_queue CommandQueue, user_func voidptr, args voidptr, cb_args usize, num_mem_objects u32, mem_list &Mem, args_mem_loc &voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+pub fn enqueue_native_kernel(command_queue CommandQueue, user_func NativeKernelCallback, args voidptr, cb_args usize, num_mem_objects u32, mem_list &Mem, args_mem_loc &voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueNativeKernel(command_queue, user_func, args, cb_args, num_mem_objects, mem_list, args_mem_loc, num_events_in_wait_list, event_wait_list, event)
 }
 
@@ -1238,7 +1263,7 @@ pub fn create_sub_buffer(buffer Mem, flags u64, buffer_create_type u32, buffer_c
 }
 
 @[inline]
-pub fn set_mem_object_destructor_callback(memobj Mem, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn set_mem_object_destructor_callback(memobj Mem, pfn_notify MemObjectDestructorCallback, user_data voidptr) ErrorCode {
 	return C.clSetMemObjectDestructorCallback(memobj, pfn_notify, user_data)
 }
 
@@ -1253,7 +1278,7 @@ pub fn set_user_event_status(event Event, execution_status i32) ErrorCode {
 }
 
 @[inline]
-pub fn set_event_callback(event Event, command_exec_callback_type i32, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn set_event_callback(event Event, command_exec_callback_type i32, pfn_notify EventCallback, user_data voidptr) ErrorCode {
 	return C.clSetEventCallback(event, command_exec_callback_type, pfn_notify, user_data)
 }
 
@@ -1298,12 +1323,12 @@ pub fn create_program_with_built_in_kernels(context Context, num_devices u32, de
 }
 
 @[inline]
-pub fn compile_program(program Program, num_devices u32, device_list &DeviceId, options &char, num_input_headers u32, input_headers &Program, header_include_names &&char, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn compile_program(program Program, num_devices u32, device_list &DeviceId, options &char, num_input_headers u32, input_headers &Program, header_include_names &&char, pfn_notify ProgramCallback, user_data voidptr) ErrorCode {
 	return C.clCompileProgram(program, num_devices, device_list, options, num_input_headers, input_headers, header_include_names, pfn_notify, user_data)
 }
 
 @[inline]
-pub fn link_program(context Context, num_devices u32, device_list &DeviceId, options &char, num_input_programs u32, input_programs &Program, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Program {
+pub fn link_program(context Context, num_devices u32, device_list &DeviceId, options &char, num_input_programs u32, input_programs &Program, pfn_notify ProgramCallback, user_data voidptr, errcode_ret &ErrorCode) Program {
 	return C.clLinkProgram(context, num_devices, device_list, options, num_input_programs, input_programs, pfn_notify, user_data, errcode_ret)
 }
 
@@ -1388,7 +1413,7 @@ pub fn set_kernel_exec_info(kernel Kernel, param_name u32, param_value_size usiz
 }
 
 @[inline]
-pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, pfn_free_func voidptr, user_data voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, pfn_free_func SvmFreeCallback, user_data voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueSVMFree(command_queue, num_svm_pointers, svm_pointers, pfn_free_func, user_data, num_events_in_wait_list, event_wait_list, event)
 }
 
@@ -1453,12 +1478,12 @@ pub fn set_program_specialization_constant(program Program, spec_id u32, spec_si
 }
 
 @[inline]
-pub fn set_program_release_callback(program Program, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn set_program_release_callback(program Program, pfn_notify ProgramCallback, user_data voidptr) ErrorCode {
 	return C.clSetProgramReleaseCallback(program, pfn_notify, user_data)
 }
 
 @[inline]
-pub fn set_context_destructor_callback(context Context, pfn_notify voidptr, user_data voidptr) ErrorCode {
+pub fn set_context_destructor_callback(context Context, pfn_notify ContextDestructorCallback, user_data voidptr) ErrorCode {
 	return C.clSetContextDestructorCallback(context, pfn_notify, user_data)
 }
 
