@@ -189,6 +189,11 @@ pub fn finish(command_queue CommandQueue) ErrorCode {
 }
 """
 
+# Command declarations and wrappers below the type/constant preamble are
+# generated from XML. Keeping the preamble as a readable template makes the
+# emitted module easy to review while the registry remains authoritative.
+HEADER = HEADER.split("fn C.clGetPlatformIDs", 1)[0] + "// __REGISTRY_COMMANDS__\n"
+
 
 class OpenCLGenerator:
     def __init__(self, registry: Path):
@@ -312,8 +317,82 @@ class OpenCLGenerator:
             )
         return "\n".join(aliases) + "\n\n" + "\n\n".join(structs)
 
+    def command_type(self, declaration: ET.Element, *, is_return: bool = False) -> str:
+        c_type = declaration.findtext("type")
+        text = "".join(declaration.itertext())
+        name = declaration.findtext("name") or declaration.findtext("proto/name") or ""
+        if c_type is None:
+            if "(*" in text or "CL_CALLBACK*" in text:
+                return "voidptr"
+            raise RuntimeError(f"Unsupported command declaration: {text}")
+        type_node = declaration.find("type")
+        before_name = (declaration.text or "") + ((type_node.tail or "") if type_node is not None else "")
+        pointer_depth = before_name.count("*")
+        if c_type == "void":
+            if is_return and pointer_depth == 0:
+                return ""
+            return "&" * max(0, pointer_depth - 1) + "voidptr"
+        if c_type == "cl_int" and (is_return or name == "errcode_ret"):
+            base = "ErrorCode"
+        elif c_type.startswith("cl_") and self.types[c_type].attrib.get("category") == "struct":
+            base = self.type_name(c_type)
+        elif c_type == "char":
+            base = "char"
+        elif c_type.startswith("cl_") and self.resolve_type(c_type) == "voidptr":
+            base = self.type_name(c_type)
+        else:
+            base = self.resolve_type(c_type)
+        return "&" * pointer_depth + base
+
+    @staticmethod
+    def command_name(c_name: str) -> str:
+        bare = c_name.removeprefix("cl")
+        for acronym, normalized in (("IDs", "Ids"), ("NDRange", "NdRange"), ("SVM", "Svm")):
+            bare = bare.replace(acronym, normalized)
+        first = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", bare)
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", first).lower()
+
+    def render_commands(self) -> str:
+        assert self.root is not None
+        by_name = {
+            node.findtext("proto/name"): node
+            for node in self.root.findall("commands/command")
+            if node.find("proto") is not None
+        }
+        declarations = []
+        wrappers = []
+        feature = self.root.find("feature[@name='CL_VERSION_1_0']")
+        if feature is None:
+            raise RuntimeError("Registry has no CL_VERSION_1_0 feature")
+        command_names = [node.attrib["name"] for node in feature.findall(".//command")]
+        for c_name in command_names:
+            command = by_name[c_name]
+            return_type = self.command_type(command.find("proto"), is_return=True)
+            params = []
+            param_names = []
+            for param in command.findall("param"):
+                param_name = param.findtext("name")
+                if param_name is None:
+                    raise RuntimeError(f"Unnamed parameter in {c_name}")
+                params.append((param_name, self.command_type(param)))
+                param_names.append(param_name)
+            c_signature = ", ".join(v_type for _, v_type in params)
+            declarations.append(
+                f"fn C.{c_name}({c_signature})" + (f" {return_type}" if return_type else "")
+            )
+            v_params = ", ".join(f"{name} {v_type}" for name, v_type in params)
+            call = f"C.{c_name}({', '.join(param_names)})"
+            body = f"\treturn {call}" if return_type else f"\t{call}"
+            wrappers.append(
+                f"@[inline]\npub fn {self.command_name(c_name)}({v_params})"
+                + (f" {return_type}" if return_type else "")
+                + f" {{\n{body}\n}}"
+            )
+        return "\n".join(declarations) + "\n\n" + "\n\n".join(wrappers)
+
     def write(self, output: Path) -> None:
         self.validate_registry()
         generated = HEADER.replace("// __REGISTRY_TYPES__", self.render_types())
         generated = generated.replace("// __REGISTRY_CONSTANTS__", self.render_constants())
+        generated = generated.replace("// __REGISTRY_COMMANDS__", self.render_commands())
         output.write_text(generated, encoding="utf-8")

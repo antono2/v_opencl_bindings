@@ -217,133 +217,462 @@ pub const _true = u32(1)
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 
-fn C.clGetPlatformInfo(PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
+fn C.clGetPlatformInfo(PlatformId, u32, usize, voidptr, &usize) ErrorCode
 
-fn C.clGetDeviceIDs(PlatformId, DeviceType, u32, &DeviceId, &u32) ErrorCode
+fn C.clGetDeviceIDs(PlatformId, u64, u32, &DeviceId, &u32) ErrorCode
 
-fn C.clGetDeviceInfo(DeviceId, DeviceInfo, usize, voidptr, &usize) ErrorCode
+fn C.clGetDeviceInfo(DeviceId, u32, usize, voidptr, &usize) ErrorCode
 
 fn C.clCreateContext(&isize, u32, &DeviceId, voidptr, voidptr, &ErrorCode) Context
 
+fn C.clCreateContextFromType(&isize, u64, voidptr, voidptr, &ErrorCode) Context
+
+fn C.clRetainContext(Context) ErrorCode
+
 fn C.clReleaseContext(Context) ErrorCode
 
-fn C.clCreateCommandQueue(Context, DeviceId, CommandQueueProperties, &ErrorCode) CommandQueue
+fn C.clGetContextInfo(Context, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clRetainCommandQueue(CommandQueue) ErrorCode
 
 fn C.clReleaseCommandQueue(CommandQueue) ErrorCode
 
-fn C.clCreateBuffer(Context, MemFlags, usize, voidptr, &ErrorCode) Mem
+fn C.clGetCommandQueueInfo(CommandQueue, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clCreateBuffer(Context, u64, usize, voidptr, &ErrorCode) Mem
+
+fn C.clRetainMemObject(Mem) ErrorCode
 
 fn C.clReleaseMemObject(Mem) ErrorCode
 
+fn C.clGetSupportedImageFormats(Context, u64, u32, u32, &ImageFormat, &u32) ErrorCode
+
+fn C.clGetMemObjectInfo(Mem, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clGetImageInfo(Mem, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clRetainSampler(Sampler) ErrorCode
+
+fn C.clReleaseSampler(Sampler) ErrorCode
+
+fn C.clGetSamplerInfo(Sampler, u32, usize, voidptr, &usize) ErrorCode
+
 fn C.clCreateProgramWithSource(Context, u32, &&char, &usize, &ErrorCode) Program
 
-fn C.clBuildProgram(Program, u32, &DeviceId, &char, voidptr, voidptr) ErrorCode
+fn C.clCreateProgramWithBinary(Context, u32, &DeviceId, &usize, &&u8, &i32, &ErrorCode) Program
 
-fn C.clGetProgramBuildInfo(Program, DeviceId, ProgramBuildInfo, usize, voidptr, &usize) ErrorCode
+fn C.clRetainProgram(Program) ErrorCode
 
 fn C.clReleaseProgram(Program) ErrorCode
 
+fn C.clBuildProgram(Program, u32, &DeviceId, &char, voidptr, voidptr) ErrorCode
+
+fn C.clGetProgramInfo(Program, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clGetProgramBuildInfo(Program, DeviceId, u32, usize, voidptr, &usize) ErrorCode
+
 fn C.clCreateKernel(Program, &char, &ErrorCode) Kernel
 
-fn C.clSetKernelArg(Kernel, u32, usize, voidptr) ErrorCode
+fn C.clCreateKernelsInProgram(Program, u32, &Kernel, &u32) ErrorCode
+
+fn C.clRetainKernel(Kernel) ErrorCode
 
 fn C.clReleaseKernel(Kernel) ErrorCode
 
-fn C.clEnqueueNDRangeKernel(CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+fn C.clSetKernelArg(Kernel, u32, usize, voidptr) ErrorCode
 
-fn C.clEnqueueReadBuffer(CommandQueue, Mem, u32, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+fn C.clGetKernelInfo(Kernel, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clGetKernelWorkGroupInfo(Kernel, DeviceId, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clWaitForEvents(u32, &Event) ErrorCode
+
+fn C.clGetEventInfo(Event, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clRetainEvent(Event) ErrorCode
+
+fn C.clReleaseEvent(Event) ErrorCode
+
+fn C.clGetEventProfilingInfo(Event, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clFlush(CommandQueue) ErrorCode
 
 fn C.clFinish(CommandQueue) ErrorCode
 
+fn C.clEnqueueReadBuffer(CommandQueue, Mem, u32, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueWriteBuffer(CommandQueue, Mem, u32, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueCopyBuffer(CommandQueue, Mem, Mem, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueReadImage(CommandQueue, Mem, u32, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueWriteImage(CommandQueue, Mem, u32, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueCopyImage(CommandQueue, Mem, Mem, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueCopyImageToBuffer(CommandQueue, Mem, Mem, &usize, &usize, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueCopyBufferToImage(CommandQueue, Mem, Mem, usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueMapBuffer(CommandQueue, Mem, u32, u64, usize, usize, u32, &Event, &Event, &ErrorCode) voidptr
+
+fn C.clEnqueueMapImage(CommandQueue, Mem, u32, u64, &usize, &usize, &usize, &usize, u32, &Event, &Event, &ErrorCode) voidptr
+
+fn C.clEnqueueUnmapMemObject(CommandQueue, Mem, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueNDRangeKernel(CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueNativeKernel(CommandQueue, voidptr, voidptr, usize, u32, &Mem, &voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clSetCommandQueueProperty(CommandQueue, u64, u32, &u64) ErrorCode
+
+fn C.clCreateImage2D(Context, u64, &ImageFormat, usize, usize, usize, voidptr, &ErrorCode) Mem
+
+fn C.clCreateImage3D(Context, u64, &ImageFormat, usize, usize, usize, usize, usize, voidptr, &ErrorCode) Mem
+
+fn C.clEnqueueMarker(CommandQueue, &Event) ErrorCode
+
+fn C.clEnqueueWaitForEvents(CommandQueue, u32, &Event) ErrorCode
+
+fn C.clEnqueueBarrier(CommandQueue) ErrorCode
+
+fn C.clUnloadCompiler() ErrorCode
+
+fn C.clGetExtensionFunctionAddress(&char) voidptr
+
+fn C.clCreateCommandQueue(Context, DeviceId, u64, &ErrorCode) CommandQueue
+
+fn C.clCreateSampler(Context, u32, u32, u32, &ErrorCode) Sampler
+
+fn C.clEnqueueTask(CommandQueue, Kernel, u32, &Event, &Event) ErrorCode
+
+@[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
 	return C.clGetPlatformIDs(num_entries, platforms, num_platforms)
 }
 
-pub fn get_platform_info(platform PlatformId, param_name PlatformInfo, param_value_size usize,
-	param_value voidptr, param_value_size_ret &usize) ErrorCode {
+@[inline]
+pub fn get_platform_info(platform PlatformId, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
 	return C.clGetPlatformInfo(platform, param_name, param_value_size, param_value, param_value_size_ret)
 }
 
-pub fn get_device_ids(platform PlatformId, device_type DeviceType, num_entries u32,
-	devices &DeviceId, num_devices &u32) ErrorCode {
+@[inline]
+pub fn get_device_ids(platform PlatformId, device_type u64, num_entries u32, devices &DeviceId, num_devices &u32) ErrorCode {
 	return C.clGetDeviceIDs(platform, device_type, num_entries, devices, num_devices)
 }
 
-pub fn get_device_info(device DeviceId, param_name DeviceInfo, param_value_size usize,
-	param_value voidptr, param_value_size_ret &usize) ErrorCode {
+@[inline]
+pub fn get_device_info(device DeviceId, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
 	return C.clGetDeviceInfo(device, param_name, param_value_size, param_value, param_value_size_ret)
 }
 
-pub fn create_context(properties &isize, num_devices u32, devices &DeviceId,
-	pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
+@[inline]
+pub fn create_context(properties &isize, num_devices u32, devices &DeviceId, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
 	return C.clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret)
 }
 
+@[inline]
+pub fn create_context_from_type(properties &isize, device_type u64, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
+	return C.clCreateContextFromType(properties, device_type, pfn_notify, user_data, errcode_ret)
+}
+
+@[inline]
+pub fn retain_context(context Context) ErrorCode {
+	return C.clRetainContext(context)
+}
+
+@[inline]
 pub fn release_context(context Context) ErrorCode {
 	return C.clReleaseContext(context)
 }
 
-pub fn create_command_queue(context Context, device DeviceId,
-	properties CommandQueueProperties, errcode_ret &ErrorCode) CommandQueue {
-	return C.clCreateCommandQueue(context, device, properties, errcode_ret)
+@[inline]
+pub fn get_context_info(context Context, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetContextInfo(context, param_name, param_value_size, param_value, param_value_size_ret)
 }
 
+@[inline]
+pub fn retain_command_queue(command_queue CommandQueue) ErrorCode {
+	return C.clRetainCommandQueue(command_queue)
+}
+
+@[inline]
 pub fn release_command_queue(command_queue CommandQueue) ErrorCode {
 	return C.clReleaseCommandQueue(command_queue)
 }
 
-pub fn create_buffer(context Context, flags MemFlags, size usize, host_ptr voidptr,
-	errcode_ret &ErrorCode) Mem {
+@[inline]
+pub fn get_command_queue_info(command_queue CommandQueue, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetCommandQueueInfo(command_queue, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn create_buffer(context Context, flags u64, size usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
 	return C.clCreateBuffer(context, flags, size, host_ptr, errcode_ret)
 }
 
+@[inline]
+pub fn retain_mem_object(memobj Mem) ErrorCode {
+	return C.clRetainMemObject(memobj)
+}
+
+@[inline]
 pub fn release_mem_object(memobj Mem) ErrorCode {
 	return C.clReleaseMemObject(memobj)
 }
 
-pub fn create_program_with_source(context Context, count u32, strings &&char,
-	lengths &usize, errcode_ret &ErrorCode) Program {
+@[inline]
+pub fn get_supported_image_formats(context Context, flags u64, image_type u32, num_entries u32, image_formats &ImageFormat, num_image_formats &u32) ErrorCode {
+	return C.clGetSupportedImageFormats(context, flags, image_type, num_entries, image_formats, num_image_formats)
+}
+
+@[inline]
+pub fn get_mem_object_info(memobj Mem, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetMemObjectInfo(memobj, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn get_image_info(image Mem, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetImageInfo(image, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn retain_sampler(sampler Sampler) ErrorCode {
+	return C.clRetainSampler(sampler)
+}
+
+@[inline]
+pub fn release_sampler(sampler Sampler) ErrorCode {
+	return C.clReleaseSampler(sampler)
+}
+
+@[inline]
+pub fn get_sampler_info(sampler Sampler, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetSamplerInfo(sampler, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn create_program_with_source(context Context, count u32, strings &&char, lengths &usize, errcode_ret &ErrorCode) Program {
 	return C.clCreateProgramWithSource(context, count, strings, lengths, errcode_ret)
 }
 
-pub fn build_program(program Program, num_devices u32, device_list &DeviceId,
-	options &char, pfn_notify voidptr, user_data voidptr) ErrorCode {
-	return C.clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data)
+@[inline]
+pub fn create_program_with_binary(context Context, num_devices u32, device_list &DeviceId, lengths &usize, binaries &&u8, binary_status &i32, errcode_ret &ErrorCode) Program {
+	return C.clCreateProgramWithBinary(context, num_devices, device_list, lengths, binaries, binary_status, errcode_ret)
 }
 
-pub fn get_program_build_info(program Program, device DeviceId, param_name ProgramBuildInfo,
-	param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetProgramBuildInfo(program, device, param_name, param_value_size, param_value, param_value_size_ret)
+@[inline]
+pub fn retain_program(program Program) ErrorCode {
+	return C.clRetainProgram(program)
 }
 
+@[inline]
 pub fn release_program(program Program) ErrorCode {
 	return C.clReleaseProgram(program)
 }
 
+@[inline]
+pub fn build_program(program Program, num_devices u32, device_list &DeviceId, options &char, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn get_program_info(program Program, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetProgramInfo(program, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn get_program_build_info(program Program, device DeviceId, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetProgramBuildInfo(program, device, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
 pub fn create_kernel(program Program, kernel_name &char, errcode_ret &ErrorCode) Kernel {
 	return C.clCreateKernel(program, kernel_name, errcode_ret)
 }
 
-pub fn set_kernel_arg(kernel Kernel, arg_index u32, arg_size usize, arg_value voidptr) ErrorCode {
-	return C.clSetKernelArg(kernel, arg_index, arg_size, arg_value)
+@[inline]
+pub fn create_kernels_in_program(program Program, num_kernels u32, kernels &Kernel, num_kernels_ret &u32) ErrorCode {
+	return C.clCreateKernelsInProgram(program, num_kernels, kernels, num_kernels_ret)
 }
 
+@[inline]
+pub fn retain_kernel(kernel Kernel) ErrorCode {
+	return C.clRetainKernel(kernel)
+}
+
+@[inline]
 pub fn release_kernel(kernel Kernel) ErrorCode {
 	return C.clReleaseKernel(kernel)
 }
 
-pub fn enqueue_nd_range_kernel(command_queue CommandQueue, kernel Kernel, work_dim u32,
-	global_work_offset &usize, global_work_size &usize, local_work_size &usize,
-	num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueNDRangeKernel(command_queue, kernel, work_dim, global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event)
+@[inline]
+pub fn set_kernel_arg(kernel Kernel, arg_index u32, arg_size usize, arg_value voidptr) ErrorCode {
+	return C.clSetKernelArg(kernel, arg_index, arg_size, arg_value)
 }
 
-pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read u32,
-	offset usize, size usize, ptr voidptr, num_events_in_wait_list u32,
-	event_wait_list &Event, event &Event) ErrorCode {
+@[inline]
+pub fn get_kernel_info(kernel Kernel, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetKernelInfo(kernel, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn get_kernel_work_group_info(kernel Kernel, device DeviceId, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetKernelWorkGroupInfo(kernel, device, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn wait_for_events(num_events u32, event_list &Event) ErrorCode {
+	return C.clWaitForEvents(num_events, event_list)
+}
+
+@[inline]
+pub fn get_event_info(event Event, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetEventInfo(event, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn retain_event(event Event) ErrorCode {
+	return C.clRetainEvent(event)
+}
+
+@[inline]
+pub fn release_event(event Event) ErrorCode {
+	return C.clReleaseEvent(event)
+}
+
+@[inline]
+pub fn get_event_profiling_info(event Event, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetEventProfilingInfo(event, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn flush(command_queue CommandQueue) ErrorCode {
+	return C.clFlush(command_queue)
+}
+
+@[inline]
+pub fn finish(command_queue CommandQueue) ErrorCode {
+	return C.clFinish(command_queue)
+}
+
+@[inline]
+pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read u32, offset usize, size usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueReadBuffer(command_queue, buffer, blocking_read, offset, size, ptr, num_events_in_wait_list, event_wait_list, event)
 }
 
-pub fn finish(command_queue CommandQueue) ErrorCode {
-	return C.clFinish(command_queue)
+@[inline]
+pub fn enqueue_write_buffer(command_queue CommandQueue, buffer Mem, blocking_write u32, offset usize, size usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueWriteBuffer(command_queue, buffer, blocking_write, offset, size, ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_copy_buffer(command_queue CommandQueue, src_buffer Mem, dst_buffer Mem, src_offset usize, dst_offset usize, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueCopyBuffer(command_queue, src_buffer, dst_buffer, src_offset, dst_offset, size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_read_image(command_queue CommandQueue, image Mem, blocking_read u32, origin &usize, region &usize, row_pitch usize, slice_pitch usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueReadImage(command_queue, image, blocking_read, origin, region, row_pitch, slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_write_image(command_queue CommandQueue, image Mem, blocking_write u32, origin &usize, region &usize, input_row_pitch usize, input_slice_pitch usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueWriteImage(command_queue, image, blocking_write, origin, region, input_row_pitch, input_slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_copy_image(command_queue CommandQueue, src_image Mem, dst_image Mem, src_origin &usize, dst_origin &usize, region &usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueCopyImage(command_queue, src_image, dst_image, src_origin, dst_origin, region, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_copy_image_to_buffer(command_queue CommandQueue, src_image Mem, dst_buffer Mem, src_origin &usize, region &usize, dst_offset usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueCopyImageToBuffer(command_queue, src_image, dst_buffer, src_origin, region, dst_offset, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_copy_buffer_to_image(command_queue CommandQueue, src_buffer Mem, dst_image Mem, src_offset usize, dst_origin &usize, region &usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueCopyBufferToImage(command_queue, src_buffer, dst_image, src_offset, dst_origin, region, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_map_buffer(command_queue CommandQueue, buffer Mem, blocking_map u32, map_flags u64, offset usize, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event, errcode_ret &ErrorCode) voidptr {
+	return C.clEnqueueMapBuffer(command_queue, buffer, blocking_map, map_flags, offset, size, num_events_in_wait_list, event_wait_list, event, errcode_ret)
+}
+
+@[inline]
+pub fn enqueue_map_image(command_queue CommandQueue, image Mem, blocking_map u32, map_flags u64, origin &usize, region &usize, image_row_pitch &usize, image_slice_pitch &usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event, errcode_ret &ErrorCode) voidptr {
+	return C.clEnqueueMapImage(command_queue, image, blocking_map, map_flags, origin, region, image_row_pitch, image_slice_pitch, num_events_in_wait_list, event_wait_list, event, errcode_ret)
+}
+
+@[inline]
+pub fn enqueue_unmap_mem_object(command_queue CommandQueue, memobj Mem, mapped_ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueUnmapMemObject(command_queue, memobj, mapped_ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_nd_range_kernel(command_queue CommandQueue, kernel Kernel, work_dim u32, global_work_offset &usize, global_work_size &usize, local_work_size &usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueNDRangeKernel(command_queue, kernel, work_dim, global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_native_kernel(command_queue CommandQueue, user_func voidptr, args voidptr, cb_args usize, num_mem_objects u32, mem_list &Mem, args_mem_loc &voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueNativeKernel(command_queue, user_func, args, cb_args, num_mem_objects, mem_list, args_mem_loc, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn set_command_queue_property(command_queue CommandQueue, properties u64, enable u32, old_properties &u64) ErrorCode {
+	return C.clSetCommandQueueProperty(command_queue, properties, enable, old_properties)
+}
+
+@[inline]
+pub fn create_image2_d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_row_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateImage2D(context, flags, image_format, image_width, image_height, image_row_pitch, host_ptr, errcode_ret)
+}
+
+@[inline]
+pub fn create_image3_d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_depth usize, image_row_pitch usize, image_slice_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateImage3D(context, flags, image_format, image_width, image_height, image_depth, image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
+}
+
+@[inline]
+pub fn enqueue_marker(command_queue CommandQueue, event &Event) ErrorCode {
+	return C.clEnqueueMarker(command_queue, event)
+}
+
+@[inline]
+pub fn enqueue_wait_for_events(command_queue CommandQueue, num_events u32, event_list &Event) ErrorCode {
+	return C.clEnqueueWaitForEvents(command_queue, num_events, event_list)
+}
+
+@[inline]
+pub fn enqueue_barrier(command_queue CommandQueue) ErrorCode {
+	return C.clEnqueueBarrier(command_queue)
+}
+
+@[inline]
+pub fn unload_compiler() ErrorCode {
+	return C.clUnloadCompiler()
+}
+
+@[inline]
+pub fn get_extension_function_address(func_name &char) voidptr {
+	return C.clGetExtensionFunctionAddress(func_name)
+}
+
+@[inline]
+pub fn create_command_queue(context Context, device DeviceId, properties u64, errcode_ret &ErrorCode) CommandQueue {
+	return C.clCreateCommandQueue(context, device, properties, errcode_ret)
+}
+
+@[inline]
+pub fn create_sampler(context Context, normalized_coords u32, addressing_mode u32, filter_mode u32, errcode_ret &ErrorCode) Sampler {
+	return C.clCreateSampler(context, normalized_coords, addressing_mode, filter_mode, errcode_ret)
+}
+
+@[inline]
+pub fn enqueue_task(command_queue CommandQueue, kernel Kernel, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueTask(command_queue, kernel, num_events_in_wait_list, event_wait_list, event)
 }

@@ -49,6 +49,14 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_output_is_deterministic(self) -> None:
         self.assertEqual(self.generate(), self.generate())
 
+    def test_opencl_1_0_commands_are_generated_from_xml(self) -> None:
+        generated = self.generate()
+        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, voidptr", generated)
+        self.assertIn("pub fn get_platform_ids(", generated)
+        self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
+        self.assertIn("pub fn get_supported_image_formats(", generated)
+        self.assertEqual(generated.count("\npub fn "), 66)
+
 
 if __name__ == "__main__":
     unittest.main()
