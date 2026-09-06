@@ -4,6 +4,9 @@ Generates V bindings for OpenCL from the canonical Khronos
 [`cl.xml`](https://github.com/KhronosGroup/OpenCL-Docs/blob/main/xml/cl.xml)
 registry.
 
+Constants, including bitfields and the complete core error-code range, are
+read directly from the registry rather than maintained as duplicated values.
+
 ## Generate
 
 ```sh

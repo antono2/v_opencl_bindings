@@ -25,7 +25,9 @@ jobs:
       - name: Install OpenCL ICD development files and CPU implementation
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate bindings
-        run: python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+        run: |
+          python3 test/test_generator.py
+          python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
       - name: Assemble module and run smoke test
         run: |
           install -d "$HOME/.vmodules/opencl"

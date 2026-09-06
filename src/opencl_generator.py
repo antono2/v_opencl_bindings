@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-"""Small, deterministic OpenCL XML to V generator.
-
-The initial surface intentionally covers discovery and information queries.
-The registry checks make stale or renamed Khronos entries fail generation
-instead of silently producing an incomplete module.
-"""
+"""Deterministic OpenCL XML to V generator."""
 
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
 
 
@@ -35,31 +31,22 @@ REQUIRED_COMMANDS = (
     "clFinish",
 )
 
-REQUIRED_ENUMS = (
-    "CL_SUCCESS",
-    "CL_DEVICE_NOT_FOUND",
-    "CL_PLATFORM_NOT_FOUND_KHR",
-    "CL_PLATFORM_PROFILE",
-    "CL_PLATFORM_VERSION",
-    "CL_PLATFORM_NAME",
-    "CL_PLATFORM_VENDOR",
-    "CL_PLATFORM_EXTENSIONS",
-    "CL_DEVICE_TYPE_DEFAULT",
-    "CL_DEVICE_TYPE_CPU",
-    "CL_DEVICE_TYPE_GPU",
-    "CL_DEVICE_TYPE_ACCELERATOR",
-    "CL_DEVICE_TYPE_CUSTOM",
-    "CL_DEVICE_TYPE_ALL",
-    "CL_DEVICE_NAME",
-    "CL_DEVICE_VENDOR",
-    "CL_DEVICE_VERSION",
-    "CL_DRIVER_VERSION",
-    "CL_MEM_READ_ONLY",
-    "CL_MEM_WRITE_ONLY",
-    "CL_MEM_COPY_HOST_PTR",
-    "CL_PROGRAM_BUILD_LOG",
-    "CL_TRUE",
-)
+TYPED_CONSTANTS = {
+    "PlatformInfo": (
+        "CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME",
+        "CL_PLATFORM_VENDOR", "CL_PLATFORM_EXTENSIONS",
+    ),
+    "DeviceType": (
+        "CL_DEVICE_TYPE_DEFAULT", "CL_DEVICE_TYPE_CPU", "CL_DEVICE_TYPE_GPU",
+        "CL_DEVICE_TYPE_ACCELERATOR", "CL_DEVICE_TYPE_CUSTOM", "CL_DEVICE_TYPE_ALL",
+    ),
+    "DeviceInfo": (
+        "CL_DEVICE_NAME", "CL_DEVICE_VENDOR", "CL_DRIVER_VERSION", "CL_DEVICE_VERSION",
+    ),
+    "MemFlags": ("CL_MEM_READ_ONLY", "CL_MEM_WRITE_ONLY", "CL_MEM_COPY_HOST_PTR"),
+    "ProgramBuildInfo": ("CL_PROGRAM_BUILD_LOG",),
+    "u32": ("CL_FALSE", "CL_TRUE"),
+}
 
 
 HEADER = """// Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
@@ -85,33 +72,7 @@ pub type MemFlags = u64
 pub type CommandQueueProperties = u64
 pub type ProgramBuildInfo = u32
 
-pub const success = ErrorCode(0)
-pub const device_not_found = ErrorCode(-1)
-pub const platform_not_found_khr = ErrorCode(-1001)
-
-pub const platform_profile = PlatformInfo(0x0900)
-pub const platform_version = PlatformInfo(0x0901)
-pub const platform_name = PlatformInfo(0x0902)
-pub const platform_vendor = PlatformInfo(0x0903)
-pub const platform_extensions = PlatformInfo(0x0904)
-
-pub const device_type_default = DeviceType(1 << 0)
-pub const device_type_cpu = DeviceType(1 << 1)
-pub const device_type_gpu = DeviceType(1 << 2)
-pub const device_type_accelerator = DeviceType(1 << 3)
-pub const device_type_custom = DeviceType(1 << 4)
-pub const device_type_all = DeviceType(0xffff_ffff)
-
-pub const device_name = DeviceInfo(0x102b)
-pub const device_vendor = DeviceInfo(0x102c)
-pub const driver_version = DeviceInfo(0x102d)
-pub const device_version = DeviceInfo(0x102f)
-
-pub const mem_read_only = MemFlags(1 << 2)
-pub const mem_write_only = MemFlags(1 << 1)
-pub const mem_copy_host_ptr = MemFlags(1 << 5)
-pub const program_build_log = ProgramBuildInfo(0x1183)
-pub const _true = u32(1)
+// __REGISTRY_CONSTANTS__
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 fn C.clGetPlatformInfo(PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
@@ -237,20 +198,63 @@ pub fn finish(command_queue CommandQueue) ErrorCode {
 class OpenCLGenerator:
     def __init__(self, registry: Path):
         self.registry = registry
+        self.root: ET.Element | None = None
+        self.enums: dict[str, ET.Element] = {}
 
     def validate_registry(self) -> None:
         if not self.registry.is_file():
             raise FileNotFoundError(f"OpenCL registry not found: {self.registry}")
-        root = ET.parse(self.registry).getroot()
-        commands = {node.get("name") or node.findtext("proto/name") for node in root.findall("commands/command")}
-        enums = {node.get("name") for node in root.findall(".//enum")}
+        self.root = ET.parse(self.registry).getroot()
+        commands = {node.get("name") or node.findtext("proto/name") for node in self.root.findall("commands/command")}
+        self.enums = {
+            node.get("name"): node
+            for node in self.root.findall("enums/enum")
+            if node.get("name")
+            and (node.get("value") is not None or node.get("bitpos") is not None)
+        }
         missing_commands = sorted(set(REQUIRED_COMMANDS) - commands)
-        missing_enums = sorted(set(REQUIRED_ENUMS) - enums)
+        required_enums = {name for names in TYPED_CONSTANTS.values() for name in names}
+        required_enums.add("CL_PLATFORM_NOT_FOUND_KHR")
+        missing_enums = sorted(required_enums - self.enums.keys())
         if missing_commands or missing_enums:
             raise RuntimeError(
                 f"Registry is missing commands={missing_commands}, enums={missing_enums}"
             )
 
+    @staticmethod
+    def v_name(c_name: str) -> str:
+        name = c_name.removeprefix("CL_").lower()
+        return f"_{name}" if name in {"false", "true"} else name
+
+    @staticmethod
+    def v_value(value: str) -> str:
+        value = re.sub(r"(?i)(ull|llu|ul|lu|u|l)$", "", value.strip())
+        if value.startswith("(") and value.endswith(")"):
+            value = value[1:-1].strip()
+        return value
+
+    def constant(self, c_name: str, v_type: str) -> str:
+        node = self.enums[c_name]
+        value = (f"1 << {node.attrib['bitpos']}" if "bitpos" in node.attrib
+                 else self.v_value(node.attrib["value"]))
+        return f"pub const {self.v_name(c_name)} = {v_type}({value})"
+
+    def render_constants(self) -> str:
+        assert self.root is not None
+        error_names = [
+            node.attrib["name"]
+            for group in self.root.findall("enums")
+            if group.attrib.get("name") == "ErrorCodes.0"
+            for node in group.findall("enum")
+            if node.get("value") is not None
+        ]
+        error_names.append("CL_PLATFORM_NOT_FOUND_KHR")
+        sections = ["\n".join(self.constant(name, "ErrorCode") for name in error_names)]
+        for v_type, names in TYPED_CONSTANTS.items():
+            sections.append("\n".join(self.constant(name, v_type) for name in names))
+        return "\n\n".join(sections)
+
     def write(self, output: Path) -> None:
         self.validate_registry()
-        output.write_text(HEADER, encoding="utf-8")
+        generated = HEADER.replace("// __REGISTRY_CONSTANTS__", self.render_constants())
+        output.write_text(generated, encoding="utf-8")
