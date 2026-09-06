@@ -31,6 +31,8 @@ REQUIRED_COMMANDS = (
     "clFinish",
 )
 
+CORE_FEATURES = ("CL_VERSION_1_0", "CL_VERSION_1_1")
+
 TYPED_CONSTANTS = {
     "PlatformInfo": (
         "CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME",
@@ -45,6 +47,8 @@ TYPED_CONSTANTS = {
     ),
     "MemFlags": ("CL_MEM_READ_ONLY", "CL_MEM_WRITE_ONLY", "CL_MEM_COPY_HOST_PTR"),
     "ProgramBuildInfo": ("CL_PROGRAM_BUILD_LOG",),
+    "EventInfo": ("CL_EVENT_COMMAND_EXECUTION_STATUS",),
+    "i32": ("CL_COMPLETE", "CL_RUNNING", "CL_SUBMITTED", "CL_QUEUED"),
     "u32": ("CL_FALSE", "CL_TRUE"),
 }
 
@@ -287,10 +291,14 @@ class OpenCLGenerator:
 
     def render_types(self) -> str:
         assert self.root is not None
-        feature = self.root.find("feature[@name='CL_VERSION_1_0']")
-        if feature is None:
-            raise RuntimeError("Registry has no CL_VERSION_1_0 feature")
-        required = [node.attrib["name"] for node in feature.findall(".//type")]
+        features = [self.root.find(f"feature[@name='{name}']") for name in CORE_FEATURES]
+        if any(feature is None for feature in features):
+            raise RuntimeError(f"Registry is missing a core feature in {CORE_FEATURES}")
+        required = list(dict.fromkeys(
+            node.attrib["name"]
+            for feature in features
+            for node in feature.findall(".//type")
+        ))
         aliases = []
         structs = []
         for c_name in required:
@@ -350,7 +358,8 @@ class OpenCLGenerator:
         for acronym, normalized in (("IDs", "Ids"), ("NDRange", "NdRange"), ("SVM", "Svm")):
             bare = bare.replace(acronym, normalized)
         first = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", bare)
-        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", first).lower()
+        snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", first).lower()
+        return re.sub(r"(?<=\d)_([a-z])", r"\1", snake)
 
     def render_commands(self) -> str:
         assert self.root is not None
@@ -361,10 +370,14 @@ class OpenCLGenerator:
         }
         declarations = []
         wrappers = []
-        feature = self.root.find("feature[@name='CL_VERSION_1_0']")
-        if feature is None:
-            raise RuntimeError("Registry has no CL_VERSION_1_0 feature")
-        command_names = [node.attrib["name"] for node in feature.findall(".//command")]
+        features = [self.root.find(f"feature[@name='{name}']") for name in CORE_FEATURES]
+        if any(feature is None for feature in features):
+            raise RuntimeError(f"Registry is missing a core feature in {CORE_FEATURES}")
+        command_names = list(dict.fromkeys(
+            node.attrib["name"]
+            for feature in features
+            for node in feature.findall(".//command")
+        ))
         for c_name in command_names:
             command = by_name[c_name]
             return_type = self.command_type(command.find("proto"), is_return=True)

@@ -55,7 +55,14 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
-        self.assertEqual(generated.count("\npub fn "), 66)
+        self.assertEqual(generated.count("\npub fn "), 74)
+
+    def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type BufferCreateType = u32", generated)
+        self.assertIn("pub const complete = i32(0x0)", generated)
+        self.assertIn("pub fn create_user_event(", generated)
+        self.assertIn("pub fn enqueue_copy_buffer_rect(", generated)
 
 
 if __name__ == "__main__":

@@ -109,6 +109,8 @@ pub type CommandType = u32
 
 pub type ProfilingInfo = u32
 
+pub type BufferCreateType = u32
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -211,6 +213,13 @@ pub const mem_write_only = MemFlags(1 << 1)
 pub const mem_copy_host_ptr = MemFlags(1 << 5)
 
 pub const program_build_log = ProgramBuildInfo(0x1183)
+
+pub const event_command_execution_status = EventInfo(0x11D3)
+
+pub const complete = i32(0x0)
+pub const running = i32(0x1)
+pub const submitted = i32(0x2)
+pub const queued = i32(0x3)
 
 pub const _false = u32(0)
 pub const _true = u32(1)
@@ -346,6 +355,22 @@ fn C.clCreateCommandQueue(Context, DeviceId, u64, &ErrorCode) CommandQueue
 fn C.clCreateSampler(Context, u32, u32, u32, &ErrorCode) Sampler
 
 fn C.clEnqueueTask(CommandQueue, Kernel, u32, &Event, &Event) ErrorCode
+
+fn C.clCreateSubBuffer(Mem, u64, u32, voidptr, &ErrorCode) Mem
+
+fn C.clSetMemObjectDestructorCallback(Mem, voidptr, voidptr) ErrorCode
+
+fn C.clCreateUserEvent(Context, &ErrorCode) Event
+
+fn C.clSetUserEventStatus(Event, i32) ErrorCode
+
+fn C.clSetEventCallback(Event, i32, voidptr, voidptr) ErrorCode
+
+fn C.clEnqueueReadBufferRect(CommandQueue, Mem, u32, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueWriteBufferRect(CommandQueue, Mem, u32, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueCopyBufferRect(CommandQueue, Mem, Mem, &usize, &usize, &usize, usize, usize, usize, usize, u32, &Event, &Event) ErrorCode
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -628,12 +653,12 @@ pub fn set_command_queue_property(command_queue CommandQueue, properties u64, en
 }
 
 @[inline]
-pub fn create_image2_d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_row_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+pub fn create_image2d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_row_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
 	return C.clCreateImage2D(context, flags, image_format, image_width, image_height, image_row_pitch, host_ptr, errcode_ret)
 }
 
 @[inline]
-pub fn create_image3_d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_depth usize, image_row_pitch usize, image_slice_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+pub fn create_image3d(context Context, flags u64, image_format &ImageFormat, image_width usize, image_height usize, image_depth usize, image_row_pitch usize, image_slice_pitch usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
 	return C.clCreateImage3D(context, flags, image_format, image_width, image_height, image_depth, image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
 }
 
@@ -675,4 +700,44 @@ pub fn create_sampler(context Context, normalized_coords u32, addressing_mode u3
 @[inline]
 pub fn enqueue_task(command_queue CommandQueue, kernel Kernel, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueTask(command_queue, kernel, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn create_sub_buffer(buffer Mem, flags u64, buffer_create_type u32, buffer_create_info voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateSubBuffer(buffer, flags, buffer_create_type, buffer_create_info, errcode_ret)
+}
+
+@[inline]
+pub fn set_mem_object_destructor_callback(memobj Mem, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clSetMemObjectDestructorCallback(memobj, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn create_user_event(context Context, errcode_ret &ErrorCode) Event {
+	return C.clCreateUserEvent(context, errcode_ret)
+}
+
+@[inline]
+pub fn set_user_event_status(event Event, execution_status i32) ErrorCode {
+	return C.clSetUserEventStatus(event, execution_status)
+}
+
+@[inline]
+pub fn set_event_callback(event Event, command_exec_callback_type i32, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clSetEventCallback(event, command_exec_callback_type, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn enqueue_read_buffer_rect(command_queue CommandQueue, buffer Mem, blocking_read u32, buffer_origin &usize, host_origin &usize, region &usize, buffer_row_pitch usize, buffer_slice_pitch usize, host_row_pitch usize, host_slice_pitch usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueReadBufferRect(command_queue, buffer, blocking_read, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_write_buffer_rect(command_queue CommandQueue, buffer Mem, blocking_write u32, buffer_origin &usize, host_origin &usize, region &usize, buffer_row_pitch usize, buffer_slice_pitch usize, host_row_pitch usize, host_slice_pitch usize, ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueWriteBufferRect(command_queue, buffer, blocking_write, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_copy_buffer_rect(command_queue CommandQueue, src_buffer Mem, dst_buffer Mem, src_origin &usize, dst_origin &usize, region &usize, src_row_pitch usize, src_slice_pitch usize, dst_row_pitch usize, dst_slice_pitch usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueCopyBufferRect(command_queue, src_buffer, dst_buffer, src_origin, dst_origin, region, src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch, num_events_in_wait_list, event_wait_list, event)
 }
