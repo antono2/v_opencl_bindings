@@ -141,6 +141,8 @@ pub type SamplerProperties = u64
 
 pub type KernelExecInfo = u32
 
+pub type KernelSubGroupInfo = u32
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -239,6 +241,7 @@ pub const platform_version = PlatformInfo(0x0901)
 pub const platform_name = PlatformInfo(0x0902)
 pub const platform_vendor = PlatformInfo(0x0903)
 pub const platform_extensions = PlatformInfo(0x0904)
+pub const platform_host_timer_resolution = PlatformInfo(0x0905)
 
 pub const device_type_default = DeviceType(1 << 0)
 pub const device_type_cpu = DeviceType(1 << 1)
@@ -251,6 +254,9 @@ pub const device_name = DeviceInfo(0x102B)
 pub const device_vendor = DeviceInfo(0x102C)
 pub const driver_version = DeviceInfo(0x102D)
 pub const device_version = DeviceInfo(0x102F)
+pub const device_il_version = DeviceInfo(0x105B)
+pub const device_max_num_sub_groups = DeviceInfo(0x105C)
+pub const device_sub_group_independent_forward_progress = DeviceInfo(0x105D)
 
 pub const mem_read_only = MemFlags(1 << 2)
 pub const mem_write_only = MemFlags(1 << 1)
@@ -471,6 +477,20 @@ fn C.clEnqueueSVMMemFill(CommandQueue, voidptr, voidptr, usize, usize, u32, &Eve
 fn C.clEnqueueSVMMap(CommandQueue, u32, u64, voidptr, usize, u32, &Event, &Event) ErrorCode
 
 fn C.clEnqueueSVMUnmap(CommandQueue, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clSetDefaultDeviceCommandQueue(Context, DeviceId, CommandQueue) ErrorCode
+
+fn C.clGetDeviceAndHostTimer(DeviceId, &u64, &u64) ErrorCode
+
+fn C.clGetHostTimer(DeviceId, &u64) ErrorCode
+
+fn C.clCreateProgramWithIL(Context, voidptr, usize, &ErrorCode) Program
+
+fn C.clCloneKernel(Kernel, &ErrorCode) Kernel
+
+fn C.clGetKernelSubGroupInfo(Kernel, DeviceId, u32, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
+fn C.clEnqueueSVMMigrateMem(CommandQueue, u32, &voidptr, &usize, u64, u32, &Event, &Event) ErrorCode
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -980,4 +1000,39 @@ pub fn enqueue_svm_map(command_queue CommandQueue, blocking_map u32, flags u64, 
 @[inline]
 pub fn enqueue_svm_unmap(command_queue CommandQueue, svm_ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn set_default_device_command_queue(context Context, device DeviceId, command_queue CommandQueue) ErrorCode {
+	return C.clSetDefaultDeviceCommandQueue(context, device, command_queue)
+}
+
+@[inline]
+pub fn get_device_and_host_timer(device DeviceId, device_timestamp &u64, host_timestamp &u64) ErrorCode {
+	return C.clGetDeviceAndHostTimer(device, device_timestamp, host_timestamp)
+}
+
+@[inline]
+pub fn get_host_timer(device DeviceId, host_timestamp &u64) ErrorCode {
+	return C.clGetHostTimer(device, host_timestamp)
+}
+
+@[inline]
+pub fn create_program_with_il(context Context, il voidptr, length usize, errcode_ret &ErrorCode) Program {
+	return C.clCreateProgramWithIL(context, il, length, errcode_ret)
+}
+
+@[inline]
+pub fn clone_kernel(source_kernel Kernel, errcode_ret &ErrorCode) Kernel {
+	return C.clCloneKernel(source_kernel, errcode_ret)
+}
+
+@[inline]
+pub fn get_kernel_sub_group_info(kernel Kernel, device DeviceId, param_name u32, input_value_size usize, input_value voidptr, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetKernelSubGroupInfo(kernel, device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn enqueue_svm_migrate_mem(command_queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, sizes &usize, flags u64, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers, svm_pointers, sizes, flags, num_events_in_wait_list, event_wait_list, event)
 }

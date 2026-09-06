@@ -33,12 +33,14 @@ REQUIRED_COMMANDS = (
 
 CORE_FEATURES = (
     "CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2", "CL_VERSION_2_0",
+    "CL_VERSION_2_1",
 )
 
 TYPED_CONSTANTS = {
     "PlatformInfo": (
         "CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME",
         "CL_PLATFORM_VENDOR", "CL_PLATFORM_EXTENSIONS",
+        "CL_PLATFORM_HOST_TIMER_RESOLUTION",
     ),
     "DeviceType": (
         "CL_DEVICE_TYPE_DEFAULT", "CL_DEVICE_TYPE_CPU", "CL_DEVICE_TYPE_GPU",
@@ -46,6 +48,8 @@ TYPED_CONSTANTS = {
     ),
     "DeviceInfo": (
         "CL_DEVICE_NAME", "CL_DEVICE_VENDOR", "CL_DRIVER_VERSION", "CL_DEVICE_VERSION",
+        "CL_DEVICE_IL_VERSION", "CL_DEVICE_MAX_NUM_SUB_GROUPS",
+        "CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS",
     ),
     "MemFlags": ("CL_MEM_READ_ONLY", "CL_MEM_WRITE_ONLY", "CL_MEM_COPY_HOST_PTR"),
     "ProgramBuildInfo": ("CL_PROGRAM_BUILD_LOG",),
@@ -363,7 +367,9 @@ class OpenCLGenerator:
     @staticmethod
     def command_name(c_name: str) -> str:
         bare = c_name.removeprefix("cl")
-        for acronym, normalized in (("IDs", "Ids"), ("NDRange", "NdRange"), ("SVM", "Svm")):
+        for acronym, normalized in (
+            ("IDs", "Ids"), ("NDRange", "NdRange"), ("SVM", "Svm"), ("IL", "Il"),
+        ):
             bare = bare.replace(acronym, normalized)
         first = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", bare)
         snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", first).lower()

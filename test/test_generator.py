@@ -55,7 +55,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
-        self.assertEqual(generated.count("\npub fn "), 102)
+        self.assertEqual(generated.count("\npub fn "), 109)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()
@@ -81,6 +81,14 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn svm_alloc(", generated)
         self.assertIn("pub fn enqueue_svm_memcpy(", generated)
         self.assertIn("svm_pointers &voidptr", generated)
+
+    def test_opencl_2_1_types_constants_and_commands_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type KernelSubGroupInfo = u32", generated)
+        self.assertIn("pub const platform_host_timer_resolution = PlatformInfo(0x0905)", generated)
+        self.assertIn("pub fn get_device_and_host_timer(", generated)
+        self.assertIn("pub fn create_program_with_il(", generated)
+        self.assertIn("pub fn enqueue_svm_migrate_mem(", generated)
 
 
 if __name__ == "__main__":

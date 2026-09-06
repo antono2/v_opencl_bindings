@@ -18,6 +18,11 @@ fn main() {
 	assert device_count > 0
 	mut device := cl.DeviceId(unsafe { nil })
 	check(cl.get_device_ids(platform, cl.device_type_all, 1, &device, unsafe { nil }), 'get device')
+	mut device_timestamp := u64(0)
+	mut host_timestamp := u64(0)
+	check(cl.get_device_and_host_timer(device, &device_timestamp, &host_timestamp), 'get device and host timer')
+	assert device_timestamp > 0
+	assert host_timestamp > 0
 
 	mut error_code := cl.success
 	context := cl.create_context(unsafe { nil }, 1, &device, unsafe { nil }, unsafe { nil }, &error_code)
