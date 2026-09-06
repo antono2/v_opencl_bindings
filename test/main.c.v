@@ -121,6 +121,11 @@ fn main() {
 	check(cl.set_kernel_arg(kernel, 0, sizeof(cl.Mem), &input_buffer), 'set input argument')
 	check(cl.set_kernel_arg(kernel, 1, sizeof(cl.Mem), &output_buffer), 'set output argument')
 	global_size := usize(input.len)
+	if device_info_string(device, cl.device_extensions).contains('cl_khr_subgroups') {
+		mut max_sub_group_size := usize(0)
+		check(cl.get_kernel_sub_group_info_khr(kernel, device, cl.kernel_max_sub_group_size_for_ndrange_khr, sizeof(usize), &global_size, sizeof(usize), &max_sub_group_size, unsafe { nil }), 'query KHR subgroup size')
+		assert max_sub_group_size > 0
+	}
 	check(cl.enqueue_nd_range_kernel(queue, kernel, 1, unsafe { nil }, &global_size, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'enqueue kernel')
 	check(cl.enqueue_read_buffer(queue, output_buffer, cl._true, 0, byte_size, output.data, 0, unsafe { nil }, unsafe { nil }), 'read output')
 	check(cl.finish(queue), 'finish queue')
@@ -146,9 +151,13 @@ fn program_build_log(program cl.Program, device cl.DeviceId) string {
 }
 
 fn device_name(device cl.DeviceId) string {
+	return device_info_string(device, cl.device_name)
+}
+
+fn device_info_string(device cl.DeviceId, parameter cl.DeviceInfo) string {
 	mut size := usize(0)
-	check(cl.get_device_info(device, cl.device_name, 0, unsafe { nil }, &size), 'get device name size')
+	check(cl.get_device_info(device, parameter, 0, unsafe { nil }, &size), 'get device string size')
 	mut bytes := []u8{len: int(size)}
-	check(cl.get_device_info(device, cl.device_name, size, bytes.data, unsafe { nil }), 'get device name')
+	check(cl.get_device_info(device, parameter, size, bytes.data, unsafe { nil }), 'get device string')
 	return unsafe { cstring_to_vstring(&char(bytes.data)) }
 }

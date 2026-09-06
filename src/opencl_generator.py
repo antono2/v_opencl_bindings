@@ -36,6 +36,13 @@ CORE_FEATURES = (
     "CL_VERSION_2_1", "CL_VERSION_2_2", "CL_VERSION_3_0",
 )
 
+PORTABLE_EXTENSIONS = (
+    "cl_khr_il_program",
+    "cl_khr_create_command_queue",
+    "cl_khr_subgroups",
+    "cl_khr_suggested_local_work_size",
+)
+
 TYPED_CONSTANTS = {
     "PlatformInfo": (
         "CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME",
@@ -297,6 +304,18 @@ class OpenCLGenerator:
                 f"Registry is missing commands={missing_commands}, enums={missing_enums}"
             )
 
+    def registry_sections(self) -> list[ET.Element]:
+        assert self.root is not None
+        names = CORE_FEATURES + PORTABLE_EXTENSIONS
+        sections = []
+        for name in names:
+            path = f"feature[@name='{name}']" if name.startswith("CL_VERSION_") else f"extensions/extension[@name='{name}']"
+            section = self.root.find(path)
+            if section is None:
+                raise RuntimeError(f"Registry is missing API section {name}")
+            sections.append(section)
+        return sections
+
     @staticmethod
     def v_name(c_name: str) -> str:
         name = c_name.removeprefix("CL_").lower()
@@ -332,10 +351,8 @@ class OpenCLGenerator:
             sections.append("\n".join(self.constant(name, v_type) for name in names))
             emitted.update(names)
         core_constants = []
-        for feature_name in CORE_FEATURES:
-            feature = self.root.find(f"feature[@name='{feature_name}']")
-            assert feature is not None
-            for requirement in feature.findall("require"):
+        for section in self.registry_sections():
+            for requirement in section.findall("require"):
                 comment = requirement.attrib.get("comment", "")
                 match = re.search(r"\b(cl_[a-z0-9_]+)\b", comment)
                 if match is None or comment == "Constants" or comment == "Error codes":
@@ -380,13 +397,10 @@ class OpenCLGenerator:
 
     def render_types(self) -> str:
         assert self.root is not None
-        features = [self.root.find(f"feature[@name='{name}']") for name in CORE_FEATURES]
-        if any(feature is None for feature in features):
-            raise RuntimeError(f"Registry is missing a core feature in {CORE_FEATURES}")
         required = list(dict.fromkeys(
             node.attrib["name"]
-            for feature in features
-            for node in feature.findall(".//type")
+            for section in self.registry_sections()
+            for node in section.findall(".//type")
         ))
         aliases = []
         structs = []
@@ -485,13 +499,10 @@ class OpenCLGenerator:
         }
         declarations = []
         wrappers = []
-        features = [self.root.find(f"feature[@name='{name}']") for name in CORE_FEATURES]
-        if any(feature is None for feature in features):
-            raise RuntimeError(f"Registry is missing a core feature in {CORE_FEATURES}")
         command_names = list(dict.fromkeys(
             node.attrib["name"]
-            for feature in features
-            for node in feature.findall(".//command")
+            for section in self.registry_sections()
+            for node in section.findall(".//command")
         ))
         for c_name in command_names:
             command = by_name[c_name]

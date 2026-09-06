@@ -169,6 +169,8 @@ pub type MemProperties = u64
 
 pub type Version = u32
 
+pub type QueuePropertiesKhr = u64
+
 $if windows {
 	@[callconv: stdcall]
 	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
@@ -698,6 +700,10 @@ pub const sampler_properties = SamplerInfo(0x1158)
 pub const queue_properties_array = CommandQueueInfo(0x1098)
 pub const mem_properties = MemInfo(0x110A)
 pub const command_svm_migrate_mem = CommandType(0x120E)
+pub const device_il_version_khr = DeviceInfo(0x105B)
+pub const program_il_khr = ProgramInfo(0x1169)
+pub const kernel_max_sub_group_size_for_ndrange_khr = KernelSubGroupInfo(0x2033)
+pub const kernel_sub_group_count_for_ndrange_khr = KernelSubGroupInfo(0x2034)
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 
@@ -926,6 +932,14 @@ fn C.clSetContextDestructorCallback(Context, ContextDestructorCallback, voidptr)
 fn C.clCreateBufferWithProperties(Context, &u64, u64, usize, voidptr, &ErrorCode) Mem
 
 fn C.clCreateImageWithProperties(Context, &u64, u64, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
+fn C.clCreateProgramWithILKHR(Context, voidptr, usize, &ErrorCode) Program
+
+fn C.clCreateCommandQueueWithPropertiesKHR(Context, DeviceId, &u64, &ErrorCode) CommandQueue
+
+fn C.clGetKernelSubGroupInfoKHR(Kernel, DeviceId, u32, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
+fn C.clGetKernelSuggestedLocalWorkSizeKHR(CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -1495,4 +1509,24 @@ pub fn create_buffer_with_properties(context Context, properties &u64, flags u64
 @[inline]
 pub fn create_image_with_properties(context Context, properties &u64, flags u64, image_format &ImageFormat, image_desc &ImageDesc, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
 	return C.clCreateImageWithProperties(context, properties, flags, image_format, image_desc, host_ptr, errcode_ret)
+}
+
+@[inline]
+pub fn create_program_with_il_khr(context Context, il voidptr, length usize, errcode_ret &ErrorCode) Program {
+	return C.clCreateProgramWithILKHR(context, il, length, errcode_ret)
+}
+
+@[inline]
+pub fn create_command_queue_with_properties_khr(context Context, device DeviceId, properties &u64, errcode_ret &ErrorCode) CommandQueue {
+	return C.clCreateCommandQueueWithPropertiesKHR(context, device, properties, errcode_ret)
+}
+
+@[inline]
+pub fn get_kernel_sub_group_info_khr(in_kernel Kernel, in_device DeviceId, param_name u32, input_value_size usize, input_value voidptr, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetKernelSubGroupInfoKHR(in_kernel, in_device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn get_kernel_suggested_local_work_size_khr(command_queue CommandQueue, kernel Kernel, work_dim u32, global_work_offset &usize, global_work_size &usize, suggested_local_work_size &usize) ErrorCode {
+	return C.clGetKernelSuggestedLocalWorkSizeKHR(command_queue, kernel, work_dim, global_work_offset, global_work_size, suggested_local_work_size)
 }

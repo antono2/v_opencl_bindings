@@ -47,7 +47,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const non_blocking = Bool(_false)", generated)
         self.assertIn("pub const _global = DeviceLocalMemType(0x2)", generated)
         self.assertIn("pub const _none = DeviceMemCacheType(0x0)", generated)
-        self.assertEqual(generated.count("pub const "), 461)
+        self.assertEqual(generated.count("pub const "), 465)
 
     def test_opencl_1_0_types_and_structs_are_emitted(self) -> None:
         generated = self.generate()
@@ -78,7 +78,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
-        self.assertEqual(generated.count("@[inline]\npub fn "), 114)
+        self.assertEqual(generated.count("@[inline]\npub fn "), 118)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()
@@ -126,6 +126,16 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const platform_numeric_version = PlatformInfo(0x0906)", generated)
         self.assertIn("pub fn set_context_destructor_callback(", generated)
         self.assertIn("pub fn create_buffer_with_properties(", generated)
+
+    def test_portable_khr_extension_entry_points_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type QueuePropertiesKhr = u64", generated)
+        self.assertIn("pub const device_il_version_khr = DeviceInfo(0x105B)", generated)
+        self.assertIn("pub const kernel_max_sub_group_size_for_ndrange_khr = KernelSubGroupInfo(0x2033)", generated)
+        self.assertIn("pub fn create_program_with_il_khr(", generated)
+        self.assertIn("pub fn create_command_queue_with_properties_khr(", generated)
+        self.assertIn("pub fn get_kernel_sub_group_info_khr(", generated)
+        self.assertIn("pub fn get_kernel_suggested_local_work_size_khr(", generated)
 
 
 if __name__ == "__main__":
