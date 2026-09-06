@@ -751,6 +751,13 @@ pub const command_acquire_external_mem_objects_khr = CommandType(0x2047)
 pub const command_release_external_mem_objects_khr = CommandType(0x2048)
 pub const external_memory_handle_dma_buf_khr = ExternalMemoryHandleTypeKhr(0x2067)
 pub const external_memory_handle_opaque_fd_khr = ExternalMemoryHandleTypeKhr(0x2060)
+pub const uuid_size_khr = u32(16)
+pub const luid_size_khr = u32(8)
+pub const device_uuid_khr = DeviceInfo(0x106A)
+pub const driver_uuid_khr = DeviceInfo(0x106B)
+pub const device_luid_valid_khr = DeviceInfo(0x106C)
+pub const device_luid_khr = DeviceInfo(0x106D)
+pub const device_node_mask_khr = DeviceInfo(0x106E)
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 

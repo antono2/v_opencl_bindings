@@ -48,6 +48,7 @@ PORTABLE_EXTENSIONS = (
     "cl_khr_external_memory",
     "cl_khr_external_memory_dma_buf",
     "cl_khr_external_memory_opaque_fd",
+    "cl_khr_device_uuid",
 )
 
 TYPED_CONSTANTS = {
@@ -367,6 +368,14 @@ class OpenCLGenerator:
                         if name in emitted or name not in self.enums:
                             continue
                         core_constants.append(self.constant(name, "ErrorCode"))
+                        emitted.add(name)
+                    continue
+                if comment == "Size Constants":
+                    for reference in requirement.findall("enum"):
+                        name = reference.attrib["name"]
+                        if name in emitted or name not in self.enums:
+                            continue
+                        core_constants.append(self.constant(name, "u32"))
                         emitted.add(name)
                     continue
                 match = re.search(r"\b(cl_[a-z0-9_]+)\b", comment)

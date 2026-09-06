@@ -47,7 +47,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const non_blocking = Bool(_false)", generated)
         self.assertIn("pub const _global = DeviceLocalMemType(0x2)", generated)
         self.assertIn("pub const _none = DeviceMemCacheType(0x0)", generated)
-        self.assertEqual(generated.count("pub const "), 496)
+        self.assertEqual(generated.count("pub const "), 503)
 
     def test_opencl_1_0_types_and_structs_are_emitted(self) -> None:
         generated = self.generate()
@@ -152,6 +152,16 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn re_import_semaphore_sync_fd_khr(", generated)
         self.assertIn("pub fn enqueue_acquire_external_mem_objects_khr(", generated)
         self.assertIn("pub fn enqueue_release_external_mem_objects_khr(", generated)
+
+    def test_device_uuid_extension_is_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub const uuid_size_khr = u32(16)", generated)
+        self.assertIn("pub const luid_size_khr = u32(8)", generated)
+        self.assertIn("pub const device_uuid_khr = DeviceInfo(0x106A)", generated)
+        self.assertIn("pub const driver_uuid_khr = DeviceInfo(0x106B)", generated)
+        self.assertIn("pub const device_luid_valid_khr = DeviceInfo(0x106C)", generated)
+        self.assertIn("pub const device_luid_khr = DeviceInfo(0x106D)", generated)
+        self.assertIn("pub const device_node_mask_khr = DeviceInfo(0x106E)", generated)
 
 
 if __name__ == "__main__":

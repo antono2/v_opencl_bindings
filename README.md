@@ -37,7 +37,8 @@ core command, type, and constant API. It also includes the portable
 interop includes `cl_khr_semaphore`, `cl_khr_external_semaphore`,
 `cl_khr_external_memory`, their opaque-FD variants, Linux DMA-BUF memory, and
 sync-file semaphore reimport. Further extensions will be added incrementally
-while keeping generated output runtime-tested.
+while keeping generated output runtime-tested. `cl_khr_device_uuid` exposes
+stable device and driver identity queries for interop device matching.
 
 ## Test
 
