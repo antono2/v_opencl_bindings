@@ -111,6 +111,22 @@ pub type ProfilingInfo = u32
 
 pub type BufferCreateType = u32
 
+pub type DevicePartitionProperty = isize
+
+pub type DeviceAffinityDomain = u64
+
+pub type MemMigrationFlags = u64
+
+pub type ProgramBinaryType = u32
+
+pub type KernelArgInfo = u32
+
+pub type KernelArgAddressQualifier = u32
+
+pub type KernelArgAccessQualifier = u32
+
+pub type KernelArgTypeQualifier = u64
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -121,6 +137,20 @@ pub struct BufferRegion {
 pub mut:
 	origin usize
 	size   usize
+}
+
+pub struct ImageDesc {
+pub mut:
+	image_type        MemObjectType
+	image_width       usize
+	image_height      usize
+	image_depth       usize
+	image_array_size  usize
+	image_row_pitch   usize
+	image_slice_pitch usize
+	num_mip_levels    Uint
+	num_samples       Uint
+	buffer            Mem
 }
 
 pub type ErrorCode = i32
@@ -371,6 +401,36 @@ fn C.clEnqueueReadBufferRect(CommandQueue, Mem, u32, &usize, &usize, &usize, usi
 fn C.clEnqueueWriteBufferRect(CommandQueue, Mem, u32, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
 
 fn C.clEnqueueCopyBufferRect(CommandQueue, Mem, Mem, &usize, &usize, &usize, usize, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clCreateSubDevices(DeviceId, &isize, u32, &DeviceId, &u32) ErrorCode
+
+fn C.clRetainDevice(DeviceId) ErrorCode
+
+fn C.clReleaseDevice(DeviceId) ErrorCode
+
+fn C.clCreateImage(Context, u64, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
+fn C.clCreateProgramWithBuiltInKernels(Context, u32, &DeviceId, &char, &ErrorCode) Program
+
+fn C.clCompileProgram(Program, u32, &DeviceId, &char, u32, &Program, &&char, voidptr, voidptr) ErrorCode
+
+fn C.clLinkProgram(Context, u32, &DeviceId, &char, u32, &Program, voidptr, voidptr, &ErrorCode) Program
+
+fn C.clUnloadPlatformCompiler(PlatformId) ErrorCode
+
+fn C.clGetKernelArgInfo(Kernel, u32, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clEnqueueFillBuffer(CommandQueue, Mem, voidptr, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueFillImage(CommandQueue, Mem, voidptr, &usize, &usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueMigrateMemObjects(CommandQueue, u32, &Mem, u64, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueMarkerWithWaitList(CommandQueue, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueBarrierWithWaitList(CommandQueue, u32, &Event, &Event) ErrorCode
+
+fn C.clGetExtensionFunctionAddressForPlatform(PlatformId, &char) voidptr
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -740,4 +800,79 @@ pub fn enqueue_write_buffer_rect(command_queue CommandQueue, buffer Mem, blockin
 @[inline]
 pub fn enqueue_copy_buffer_rect(command_queue CommandQueue, src_buffer Mem, dst_buffer Mem, src_origin &usize, dst_origin &usize, region &usize, src_row_pitch usize, src_slice_pitch usize, dst_row_pitch usize, dst_slice_pitch usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueCopyBufferRect(command_queue, src_buffer, dst_buffer, src_origin, dst_origin, region, src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn create_sub_devices(in_device DeviceId, properties &isize, num_devices u32, out_devices &DeviceId, num_devices_ret &u32) ErrorCode {
+	return C.clCreateSubDevices(in_device, properties, num_devices, out_devices, num_devices_ret)
+}
+
+@[inline]
+pub fn retain_device(device DeviceId) ErrorCode {
+	return C.clRetainDevice(device)
+}
+
+@[inline]
+pub fn release_device(device DeviceId) ErrorCode {
+	return C.clReleaseDevice(device)
+}
+
+@[inline]
+pub fn create_image(context Context, flags u64, image_format &ImageFormat, image_desc &ImageDesc, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateImage(context, flags, image_format, image_desc, host_ptr, errcode_ret)
+}
+
+@[inline]
+pub fn create_program_with_built_in_kernels(context Context, num_devices u32, device_list &DeviceId, kernel_names &char, errcode_ret &ErrorCode) Program {
+	return C.clCreateProgramWithBuiltInKernels(context, num_devices, device_list, kernel_names, errcode_ret)
+}
+
+@[inline]
+pub fn compile_program(program Program, num_devices u32, device_list &DeviceId, options &char, num_input_headers u32, input_headers &Program, header_include_names &&char, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clCompileProgram(program, num_devices, device_list, options, num_input_headers, input_headers, header_include_names, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn link_program(context Context, num_devices u32, device_list &DeviceId, options &char, num_input_programs u32, input_programs &Program, pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Program {
+	return C.clLinkProgram(context, num_devices, device_list, options, num_input_programs, input_programs, pfn_notify, user_data, errcode_ret)
+}
+
+@[inline]
+pub fn unload_platform_compiler(platform PlatformId) ErrorCode {
+	return C.clUnloadPlatformCompiler(platform)
+}
+
+@[inline]
+pub fn get_kernel_arg_info(kernel Kernel, arg_index u32, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetKernelArgInfo(kernel, arg_index, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn enqueue_fill_buffer(command_queue CommandQueue, buffer Mem, pattern voidptr, pattern_size usize, offset usize, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueFillBuffer(command_queue, buffer, pattern, pattern_size, offset, size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_fill_image(command_queue CommandQueue, image Mem, fill_color voidptr, origin &usize, region &usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueFillImage(command_queue, image, fill_color, origin, region, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_migrate_mem_objects(command_queue CommandQueue, num_mem_objects u32, mem_objects &Mem, flags u64, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueMigrateMemObjects(command_queue, num_mem_objects, mem_objects, flags, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_marker_with_wait_list(command_queue CommandQueue, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueMarkerWithWaitList(command_queue, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_barrier_with_wait_list(command_queue CommandQueue, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueBarrierWithWaitList(command_queue, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn get_extension_function_address_for_platform(platform PlatformId, func_name &char) voidptr {
+	return C.clGetExtensionFunctionAddressForPlatform(platform, func_name)
 }

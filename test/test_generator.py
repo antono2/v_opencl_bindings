@@ -55,7 +55,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
-        self.assertEqual(generated.count("\npub fn "), 74)
+        self.assertEqual(generated.count("\npub fn "), 89)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()
@@ -63,6 +63,15 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const complete = i32(0x0)", generated)
         self.assertIn("pub fn create_user_event(", generated)
         self.assertIn("pub fn enqueue_copy_buffer_rect(", generated)
+
+    def test_opencl_1_2_types_structs_and_commands_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type DevicePartitionProperty = isize", generated)
+        self.assertIn("pub type MemMigrationFlags = u64", generated)
+        self.assertIn("pub struct ImageDesc", generated)
+        self.assertIn("buffer Mem", generated)
+        self.assertIn("pub fn create_sub_devices(", generated)
+        self.assertIn("pub fn enqueue_marker_with_wait_list(", generated)
 
 
 if __name__ == "__main__":

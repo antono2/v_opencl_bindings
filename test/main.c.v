@@ -5,6 +5,7 @@ import opencl as cl
 fn main() {
 	assert sizeof(cl.ImageFormat) == 2 * sizeof(u32)
 	assert sizeof(cl.BufferRegion) == 2 * sizeof(usize)
+	assert sizeof(cl.ImageDesc) == 8 * sizeof(usize) + 2 * sizeof(u32)
 	mut count := u32(0)
 	check(cl.get_platform_ids(0, unsafe { nil }, &count), 'count platforms')
 	assert count > 0
@@ -37,6 +38,14 @@ fn main() {
 	defer {
 		check(cl.release_command_queue(queue), 'release command queue')
 	}
+	dependency := cl.create_user_event(context, &error_code)
+	check(error_code, 'create marker dependency')
+	check(cl.set_user_event_status(dependency, cl.complete), 'complete marker dependency')
+	mut marker := cl.Event(unsafe { nil })
+	check(cl.enqueue_marker_with_wait_list(queue, 1, &dependency, &marker), 'enqueue marker with wait list')
+	check(cl.wait_for_events(1, &marker), 'wait for marker')
+	check(cl.release_event(marker), 'release marker')
+	check(cl.release_event(dependency), 'release marker dependency')
 
 	input := [f32(1), 2, 3, 4]
 	mut output := []f32{len: input.len}

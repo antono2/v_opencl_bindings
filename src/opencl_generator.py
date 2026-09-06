@@ -31,7 +31,7 @@ REQUIRED_COMMANDS = (
     "clFinish",
 )
 
-CORE_FEATURES = ("CL_VERSION_1_0", "CL_VERSION_1_1")
+CORE_FEATURES = ("CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2")
 
 TYPED_CONSTANTS = {
     "PlatformInfo": (
@@ -311,6 +311,9 @@ class OpenCLGenerator:
                     member_type = member.findtext("type")
                     member_name = member.findtext("name")
                     if member_type is None or member_name is None:
+                        if c_name == "cl_image_desc" and "union" in "".join(member.itertext()):
+                            fields.append("\tbuffer Mem")
+                            continue
                         raise RuntimeError(f"Unsupported member in {c_name}")
                     fields.append(
                         f"\t{member_name} {self.type_name(member_type) if member_type.startswith('cl_') else self.resolve_type(member_type)}"
