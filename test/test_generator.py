@@ -37,6 +37,18 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const max_size_restriction_exceeded = ErrorCode(-72)", generated)
         self.assertIn("pub const platform_not_found_khr = ErrorCode(-1001)", generated)
 
+    def test_complete_core_api_constants_are_emitted(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub const device_max_compute_units = DeviceInfo(0x1002)", generated)
+        self.assertIn("pub const mem_read_write = MemFlags(1 << 0)", generated)
+        self.assertIn("pub const rgba = ChannelOrder(0x10B5)", generated)
+        self.assertIn("pub const command_svm_migrate_mem = CommandType(0x120E)", generated)
+        self.assertIn("pub const blocking = Bool(_true)", generated)
+        self.assertIn("pub const non_blocking = Bool(_false)", generated)
+        self.assertIn("pub const _global = DeviceLocalMemType(0x2)", generated)
+        self.assertIn("pub const _none = DeviceMemCacheType(0x0)", generated)
+        self.assertEqual(generated.count("pub const "), 461)
+
     def test_opencl_1_0_types_and_structs_are_emitted(self) -> None:
         generated = self.generate()
         self.assertIn("pub type PlatformId = voidptr", generated)

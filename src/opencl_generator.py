@@ -71,6 +71,14 @@ PRIMITIVE_TYPES = {
     "uint16_t": "u16", "uint32_t": "u32", "uint64_t": "u64",
 }
 
+V_KEYWORDS = {
+    "as", "atomic", "break", "const", "continue", "defer", "else", "enum",
+    "false", "fn", "for", "global", "go", "if", "import", "in", "interface",
+    "is", "lock", "map", "match", "module", "mut", "none", "or", "pub",
+    "return", "rlock", "select", "shared", "spawn", "struct", "true", "union",
+    "unsafe",
+}
+
 
 HEADER = """// Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
 module opencl
@@ -261,13 +269,14 @@ class OpenCLGenerator:
     @staticmethod
     def v_name(c_name: str) -> str:
         name = c_name.removeprefix("CL_").lower()
-        return f"_{name}" if name in {"false", "true"} else name
+        return f"_{name}" if name in V_KEYWORDS else name
 
-    @staticmethod
-    def v_value(value: str) -> str:
+    @classmethod
+    def v_value(cls, value: str) -> str:
         value = re.sub(r"(?i)(ull|llu|ul|lu|u|l)$", "", value.strip())
         if value.startswith("(") and value.endswith(")"):
             value = value[1:-1].strip()
+        value = re.sub(r"\bCL_[A-Z0-9_]+\b", lambda match: cls.v_name(match.group()), value)
         return value
 
     def constant(self, c_name: str, v_type: str) -> str:
@@ -286,9 +295,31 @@ class OpenCLGenerator:
             if node.get("value") is not None
         ]
         error_names.append("CL_PLATFORM_NOT_FOUND_KHR")
+        emitted = set(error_names)
         sections = ["\n".join(self.constant(name, "ErrorCode") for name in error_names)]
         for v_type, names in TYPED_CONSTANTS.items():
             sections.append("\n".join(self.constant(name, v_type) for name in names))
+            emitted.update(names)
+        core_constants = []
+        for feature_name in CORE_FEATURES:
+            feature = self.root.find(f"feature[@name='{feature_name}']")
+            assert feature is not None
+            for requirement in feature.findall("require"):
+                comment = requirement.attrib.get("comment", "")
+                match = re.search(r"\b(cl_[a-z0-9_]+)\b", comment)
+                if match is None or comment == "Constants" or comment == "Error codes":
+                    continue
+                c_type = match.group(1)
+                if c_type not in self.types:
+                    continue
+                v_type = self.type_name(c_type)
+                for reference in requirement.findall("enum"):
+                    name = reference.attrib["name"]
+                    if name in emitted or name not in self.enums:
+                        continue
+                    core_constants.append(self.constant(name, v_type))
+                    emitted.add(name)
+        sections.append("\n".join(core_constants))
         return "\n\n".join(sections)
 
     @staticmethod
