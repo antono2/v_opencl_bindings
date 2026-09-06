@@ -3,6 +3,8 @@ module main
 import opencl as cl
 
 fn main() {
+	assert sizeof(cl.ImageFormat) == 2 * sizeof(u32)
+	assert sizeof(cl.BufferRegion) == 2 * sizeof(usize)
 	mut count := u32(0)
 	check(cl.get_platform_ids(0, unsafe { nil }, &count), 'count platforms')
 	assert count > 0

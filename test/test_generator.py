@@ -37,10 +37,18 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const max_size_restriction_exceeded = ErrorCode(-72)", generated)
         self.assertIn("pub const platform_not_found_khr = ErrorCode(-1001)", generated)
 
+    def test_opencl_1_0_types_and_structs_are_emitted(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type PlatformId = voidptr", generated)
+        self.assertIn("pub type ContextProperties = isize", generated)
+        self.assertIn("pub type DeviceType = u64", generated)
+        self.assertIn("pub struct ImageFormat", generated)
+        self.assertIn("image_channel_data_type ChannelType", generated)
+        self.assertIn("pub struct BufferRegion", generated)
+
     def test_output_is_deterministic(self) -> None:
         self.assertEqual(self.generate(), self.generate())
 
 
 if __name__ == "__main__":
     unittest.main()
-

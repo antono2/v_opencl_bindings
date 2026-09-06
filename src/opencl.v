@@ -7,6 +7,26 @@ module opencl
 
 #include <CL/opencl.h>
 
+pub type Char = i8
+
+pub type Uchar = u8
+
+pub type Short = i16
+
+pub type Ushort = u16
+
+pub type Int = i32
+
+pub type Uint = u32
+
+pub type Long = i64
+
+pub type Ulong = u64
+
+pub type Float = f32
+
+pub type Double = f64
+
 pub type PlatformId = voidptr
 
 pub type DeviceId = voidptr
@@ -23,19 +43,85 @@ pub type Kernel = voidptr
 
 pub type Event = voidptr
 
-pub type ErrorCode = i32
+pub type Sampler = voidptr
+
+pub type Bool = u32
+
+pub type Bitfield = u64
+
+pub type Properties = u64
+
+pub type DeviceType = u64
 
 pub type PlatformInfo = u32
 
 pub type DeviceInfo = u32
 
-pub type DeviceType = u64
+pub type DeviceFpConfig = u64
 
-pub type MemFlags = u64
+pub type DeviceMemCacheType = u32
+
+pub type DeviceLocalMemType = u32
+
+pub type DeviceExecCapabilities = u64
 
 pub type CommandQueueProperties = u64
 
+pub type ContextProperties = isize
+
+pub type ContextInfo = u32
+
+pub type CommandQueueInfo = u32
+
+pub type ChannelOrder = u32
+
+pub type ChannelType = u32
+
+pub type MemFlags = u64
+
+pub type MemObjectType = u32
+
+pub type MemInfo = u32
+
+pub type ImageInfo = u32
+
+pub type AddressingMode = u32
+
+pub type FilterMode = u32
+
+pub type SamplerInfo = u32
+
+pub type MapFlags = u64
+
+pub type ProgramInfo = u32
+
 pub type ProgramBuildInfo = u32
+
+pub type BuildStatus = i32
+
+pub type KernelInfo = u32
+
+pub type KernelWorkGroupInfo = u32
+
+pub type EventInfo = u32
+
+pub type CommandType = u32
+
+pub type ProfilingInfo = u32
+
+pub struct ImageFormat {
+pub mut:
+	image_channel_order     ChannelOrder
+	image_channel_data_type ChannelType
+}
+
+pub struct BufferRegion {
+pub mut:
+	origin usize
+	size   usize
+}
+
+pub type ErrorCode = i32
 
 pub const success = ErrorCode(0)
 pub const device_not_found = ErrorCode(-1)

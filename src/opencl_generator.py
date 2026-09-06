@@ -48,6 +48,14 @@ TYPED_CONSTANTS = {
     "u32": ("CL_FALSE", "CL_TRUE"),
 }
 
+PRIMITIVE_TYPES = {
+    "char": "i8", "int": "int", "unsigned char": "u8",
+    "unsigned int": "u32", "intptr_t": "isize", "size_t": "usize",
+    "float": "f32", "double": "f64", "int8_t": "i8", "int16_t": "i16",
+    "int32_t": "i32", "int64_t": "i64", "uint8_t": "u8",
+    "uint16_t": "u16", "uint32_t": "u32", "uint64_t": "u64",
+}
+
 
 HEADER = """// Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
 module opencl
@@ -56,21 +64,8 @@ module opencl
 #flag windows -lOpenCL
 #include <CL/opencl.h>
 
-pub type PlatformId = voidptr
-pub type DeviceId = voidptr
-pub type Context = voidptr
-pub type CommandQueue = voidptr
-pub type Mem = voidptr
-pub type Program = voidptr
-pub type Kernel = voidptr
-pub type Event = voidptr
+// __REGISTRY_TYPES__
 pub type ErrorCode = i32
-pub type PlatformInfo = u32
-pub type DeviceInfo = u32
-pub type DeviceType = u64
-pub type MemFlags = u64
-pub type CommandQueueProperties = u64
-pub type ProgramBuildInfo = u32
 
 // __REGISTRY_CONSTANTS__
 
@@ -200,6 +195,7 @@ class OpenCLGenerator:
         self.registry = registry
         self.root: ET.Element | None = None
         self.enums: dict[str, ET.Element] = {}
+        self.types: dict[str, ET.Element] = {}
 
     def validate_registry(self) -> None:
         if not self.registry.is_file():
@@ -211,6 +207,11 @@ class OpenCLGenerator:
             for node in self.root.findall("enums/enum")
             if node.get("name")
             and (node.get("value") is not None or node.get("bitpos") is not None)
+        }
+        self.types = {
+            node.get("name") or node.findtext("name"): node
+            for node in self.root.findall("types/type")
+            if node.get("name") or node.findtext("name")
         }
         missing_commands = sorted(set(REQUIRED_COMMANDS) - commands)
         required_enums = {name for names in TYPED_CONSTANTS.values() for name in names}
@@ -254,7 +255,65 @@ class OpenCLGenerator:
             sections.append("\n".join(self.constant(name, v_type) for name in names))
         return "\n\n".join(sections)
 
+    @staticmethod
+    def type_name(c_name: str) -> str:
+        name = c_name.removeprefix("cl_")
+        return "".join(part[:1].upper() + part[1:] for part in name.split("_"))
+
+    def resolve_type(self, c_name: str, seen: set[str] | None = None) -> str:
+        if c_name in PRIMITIVE_TYPES:
+            return PRIMITIVE_TYPES[c_name]
+        seen = set() if seen is None else seen
+        if c_name in seen:
+            raise RuntimeError(f"Cyclic OpenCL type alias: {c_name}")
+        seen.add(c_name)
+        node = self.types.get(c_name)
+        if node is None:
+            raise RuntimeError(f"Unknown OpenCL type: {c_name}")
+        declaration = "".join(node.itertext())
+        if "struct " in declaration and "*" in declaration:
+            return "voidptr"
+        base = node.findtext("type")
+        if base is None:
+            raise RuntimeError(f"Unsupported OpenCL typedef: {c_name}: {declaration}")
+        if base == "void" and "*" in declaration:
+            return "voidptr"
+        return self.resolve_type(base, seen)
+
+    def render_types(self) -> str:
+        assert self.root is not None
+        feature = self.root.find("feature[@name='CL_VERSION_1_0']")
+        if feature is None:
+            raise RuntimeError("Registry has no CL_VERSION_1_0 feature")
+        required = [node.attrib["name"] for node in feature.findall(".//type")]
+        aliases = []
+        structs = []
+        for c_name in required:
+            node = self.types.get(c_name)
+            if node is None or node.attrib.get("category") == "include":
+                continue
+            if node.attrib.get("category") == "struct":
+                fields = []
+                for member in node.findall("member"):
+                    member_type = member.findtext("type")
+                    member_name = member.findtext("name")
+                    if member_type is None or member_name is None:
+                        raise RuntimeError(f"Unsupported member in {c_name}")
+                    fields.append(
+                        f"\t{member_name} {self.type_name(member_type) if member_type.startswith('cl_') else self.resolve_type(member_type)}"
+                    )
+                structs.append(
+                    f"pub struct {self.type_name(c_name)} {{\npub mut:\n"
+                    + "\n".join(fields) + "\n}"
+                )
+                continue
+            aliases.append(
+                f"pub type {self.type_name(c_name)} = {self.resolve_type(c_name)}"
+            )
+        return "\n".join(aliases) + "\n\n" + "\n\n".join(structs)
+
     def write(self, output: Path) -> None:
         self.validate_registry()
-        generated = HEADER.replace("// __REGISTRY_CONSTANTS__", self.render_constants())
+        generated = HEADER.replace("// __REGISTRY_TYPES__", self.render_types())
+        generated = generated.replace("// __REGISTRY_CONSTANTS__", self.render_constants())
         output.write_text(generated, encoding="utf-8")
