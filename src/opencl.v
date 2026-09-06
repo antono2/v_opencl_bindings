@@ -127,6 +127,20 @@ pub type KernelArgAccessQualifier = u32
 
 pub type KernelArgTypeQualifier = u64
 
+pub type DeviceSvmCapabilities = u64
+
+pub type QueueProperties = u64
+
+pub type SvmMemFlags = u64
+
+pub type PipeProperties = isize
+
+pub type PipeInfo = u32
+
+pub type SamplerProperties = u64
+
+pub type KernelExecInfo = u32
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -431,6 +445,32 @@ fn C.clEnqueueMarkerWithWaitList(CommandQueue, u32, &Event, &Event) ErrorCode
 fn C.clEnqueueBarrierWithWaitList(CommandQueue, u32, &Event, &Event) ErrorCode
 
 fn C.clGetExtensionFunctionAddressForPlatform(PlatformId, &char) voidptr
+
+fn C.clCreateCommandQueueWithProperties(Context, DeviceId, &u64, &ErrorCode) CommandQueue
+
+fn C.clCreatePipe(Context, u64, u32, u32, &isize, &ErrorCode) Mem
+
+fn C.clGetPipeInfo(Mem, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clSVMAlloc(Context, u64, usize, u32) voidptr
+
+fn C.clSVMFree(Context, voidptr)
+
+fn C.clCreateSamplerWithProperties(Context, &u64, &ErrorCode) Sampler
+
+fn C.clSetKernelArgSVMPointer(Kernel, u32, voidptr) ErrorCode
+
+fn C.clSetKernelExecInfo(Kernel, u32, usize, voidptr) ErrorCode
+
+fn C.clEnqueueSVMFree(CommandQueue, u32, &voidptr, voidptr, voidptr, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueSVMMemcpy(CommandQueue, u32, voidptr, voidptr, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueSVMMemFill(CommandQueue, voidptr, voidptr, usize, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueSVMMap(CommandQueue, u32, u64, voidptr, usize, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueSVMUnmap(CommandQueue, voidptr, u32, &Event, &Event) ErrorCode
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -875,4 +915,69 @@ pub fn enqueue_barrier_with_wait_list(command_queue CommandQueue, num_events_in_
 @[inline]
 pub fn get_extension_function_address_for_platform(platform PlatformId, func_name &char) voidptr {
 	return C.clGetExtensionFunctionAddressForPlatform(platform, func_name)
+}
+
+@[inline]
+pub fn create_command_queue_with_properties(context Context, device DeviceId, properties &u64, errcode_ret &ErrorCode) CommandQueue {
+	return C.clCreateCommandQueueWithProperties(context, device, properties, errcode_ret)
+}
+
+@[inline]
+pub fn create_pipe(context Context, flags u64, pipe_packet_size u32, pipe_max_packets u32, properties &isize, errcode_ret &ErrorCode) Mem {
+	return C.clCreatePipe(context, flags, pipe_packet_size, pipe_max_packets, properties, errcode_ret)
+}
+
+@[inline]
+pub fn get_pipe_info(pipe Mem, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetPipeInfo(pipe, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn svm_alloc(context Context, flags u64, size usize, alignment u32) voidptr {
+	return C.clSVMAlloc(context, flags, size, alignment)
+}
+
+@[inline]
+pub fn svm_free(context Context, svm_pointer voidptr) {
+	C.clSVMFree(context, svm_pointer)
+}
+
+@[inline]
+pub fn create_sampler_with_properties(context Context, sampler_properties &u64, errcode_ret &ErrorCode) Sampler {
+	return C.clCreateSamplerWithProperties(context, sampler_properties, errcode_ret)
+}
+
+@[inline]
+pub fn set_kernel_arg_svm_pointer(kernel Kernel, arg_index u32, arg_value voidptr) ErrorCode {
+	return C.clSetKernelArgSVMPointer(kernel, arg_index, arg_value)
+}
+
+@[inline]
+pub fn set_kernel_exec_info(kernel Kernel, param_name u32, param_value_size usize, param_value voidptr) ErrorCode {
+	return C.clSetKernelExecInfo(kernel, param_name, param_value_size, param_value)
+}
+
+@[inline]
+pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, pfn_free_func voidptr, user_data voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMFree(command_queue, num_svm_pointers, svm_pointers, pfn_free_func, user_data, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_svm_memcpy(command_queue CommandQueue, blocking_copy u32, dst_ptr voidptr, src_ptr voidptr, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMMemcpy(command_queue, blocking_copy, dst_ptr, src_ptr, size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_svm_mem_fill(command_queue CommandQueue, svm_ptr voidptr, pattern voidptr, pattern_size usize, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMMemFill(command_queue, svm_ptr, pattern, pattern_size, size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_svm_map(command_queue CommandQueue, blocking_map u32, flags u64, svm_ptr voidptr, size usize, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMMap(command_queue, blocking_map, flags, svm_ptr, size, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_svm_unmap(command_queue CommandQueue, svm_ptr voidptr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list, event_wait_list, event)
 }

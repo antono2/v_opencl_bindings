@@ -25,6 +25,12 @@ fn main() {
 	defer {
 		check(cl.release_context(context), 'release context')
 	}
+	queue_with_properties := cl.create_command_queue_with_properties(context, device, unsafe { nil }, &error_code)
+	check(error_code, 'create command queue with properties')
+	check(cl.release_command_queue(queue_with_properties), 'release command queue with properties')
+	svm_memory := cl.svm_alloc(context, 0, 64, 0)
+	assert !isnil(svm_memory)
+	cl.svm_free(context, svm_memory)
 	user_event := cl.create_user_event(context, &error_code)
 	check(error_code, 'create user event')
 	mut event_status := i32(-1)

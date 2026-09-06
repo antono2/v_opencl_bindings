@@ -31,7 +31,9 @@ REQUIRED_COMMANDS = (
     "clFinish",
 )
 
-CORE_FEATURES = ("CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2")
+CORE_FEATURES = (
+    "CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2", "CL_VERSION_2_0",
+)
 
 TYPED_CONSTANTS = {
     "PlatformInfo": (
@@ -339,6 +341,9 @@ class OpenCLGenerator:
         type_node = declaration.find("type")
         before_name = (declaration.text or "") + ((type_node.tail or "") if type_node is not None else "")
         pointer_depth = before_name.count("*")
+        name_node = declaration.find("name")
+        if name_node is not None and "[" in (name_node.tail or ""):
+            pointer_depth += 1
         if c_type == "void":
             if is_return and pointer_depth == 0:
                 return ""
