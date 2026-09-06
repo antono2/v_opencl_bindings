@@ -22,8 +22,8 @@ jobs:
           repository: KhronosGroup/OpenCL-Headers
           path: openclheaders
       - uses: prantlf/setup-v-action@v4
-      - name: Install OpenCL ICD development files
-        run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev
+      - name: Install OpenCL ICD development files and CPU implementation
+        run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate and check committed output
         run: |
           python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v

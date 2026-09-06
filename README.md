@@ -15,9 +15,11 @@ v fmt -w src/opencl.v
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module.
 
-The initial generated surface covers platform and device discovery plus their
-information-query functions. Additional core API versions and extensions will
-be added incrementally while keeping generated output ABI-tested.
+The generated surface currently covers platform and device discovery plus a
+complete basic compute path: contexts, command queues, buffers, source-program
+builds, kernels, dispatch, reads, synchronization, build logs, and object
+release. Additional core APIs and extensions will be added incrementally while
+keeping generated output runtime-tested.
 
 ## Test
 
@@ -28,5 +30,9 @@ git clone --depth 1 https://github.com/KhronosGroup/OpenCL-Headers.git openclhea
 OPENCL_HEADERS=$PWD/openclheaders v -cc gcc run test
 ```
 
-An installed OpenCL implementation is optional. A machine with only an ICD
-loader may correctly report that no platform is available.
+The smoke test builds and executes a small kernel, so an OpenCL implementation
+is required. On Debian or Ubuntu, PoCL provides a suitable CPU implementation:
+
+```sh
+sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
+```
