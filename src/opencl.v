@@ -7,6 +7,22 @@ module opencl
 
 #include <CL/opencl.h>
 
+pub fn make_version(major u32, minor u32, patch u32) u32 {
+	return (major << 22) | (minor << 12) | patch
+}
+
+pub fn version_major(version u32) u32 {
+	return version >> 22
+}
+
+pub fn version_minor(version u32) u32 {
+	return (version >> 12) & 0x3ff
+}
+
+pub fn version_patch(version u32) u32 {
+	return version & 0xfff
+}
+
 pub type Char = i8
 
 pub type Uchar = u8
@@ -143,6 +159,16 @@ pub type KernelExecInfo = u32
 
 pub type KernelSubGroupInfo = u32
 
+pub type DeviceAtomicCapabilities = u64
+
+pub type DeviceDeviceEnqueueCapabilities = u64
+
+pub type KhronosVendorId = u32
+
+pub type MemProperties = u64
+
+pub type Version = u32
+
 pub struct ImageFormat {
 pub mut:
 	image_channel_order     ChannelOrder
@@ -167,6 +193,12 @@ pub mut:
 	num_mip_levels    Uint
 	num_samples       Uint
 	buffer            Mem
+}
+
+pub struct NameVersion {
+pub mut:
+	version Version
+	name    [name_version_max_name_size]i8
 }
 
 pub type ErrorCode = i32
@@ -242,6 +274,8 @@ pub const platform_name = PlatformInfo(0x0902)
 pub const platform_vendor = PlatformInfo(0x0903)
 pub const platform_extensions = PlatformInfo(0x0904)
 pub const platform_host_timer_resolution = PlatformInfo(0x0905)
+pub const platform_numeric_version = PlatformInfo(0x0906)
+pub const platform_extensions_with_version = PlatformInfo(0x0907)
 
 pub const device_type_default = DeviceType(1 << 0)
 pub const device_type_cpu = DeviceType(1 << 1)
@@ -257,6 +291,8 @@ pub const device_version = DeviceInfo(0x102F)
 pub const device_il_version = DeviceInfo(0x105B)
 pub const device_max_num_sub_groups = DeviceInfo(0x105C)
 pub const device_sub_group_independent_forward_progress = DeviceInfo(0x105D)
+pub const device_numeric_version = DeviceInfo(0x105E)
+pub const device_extensions_with_version = DeviceInfo(0x1060)
 
 pub const mem_read_only = MemFlags(1 << 2)
 pub const mem_write_only = MemFlags(1 << 1)
@@ -273,6 +309,10 @@ pub const queued = i32(0x3)
 
 pub const _false = u32(0)
 pub const _true = u32(1)
+pub const version_major_bits = u32(10)
+pub const version_minor_bits = u32(10)
+pub const version_patch_bits = u32(12)
+pub const name_version_max_name_size = u32(64)
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 
@@ -495,6 +535,12 @@ fn C.clEnqueueSVMMigrateMem(CommandQueue, u32, &voidptr, &usize, u64, u32, &Even
 fn C.clSetProgramSpecializationConstant(Program, u32, usize, voidptr) ErrorCode
 
 fn C.clSetProgramReleaseCallback(Program, voidptr, voidptr) ErrorCode
+
+fn C.clSetContextDestructorCallback(Context, voidptr, voidptr) ErrorCode
+
+fn C.clCreateBufferWithProperties(Context, &u64, u64, usize, voidptr, &ErrorCode) Mem
+
+fn C.clCreateImageWithProperties(Context, &u64, u64, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -1049,4 +1095,19 @@ pub fn set_program_specialization_constant(program Program, spec_id u32, spec_si
 @[inline]
 pub fn set_program_release_callback(program Program, pfn_notify voidptr, user_data voidptr) ErrorCode {
 	return C.clSetProgramReleaseCallback(program, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn set_context_destructor_callback(context Context, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clSetContextDestructorCallback(context, pfn_notify, user_data)
+}
+
+@[inline]
+pub fn create_buffer_with_properties(context Context, properties &u64, flags u64, size usize, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateBufferWithProperties(context, properties, flags, size, host_ptr, errcode_ret)
+}
+
+@[inline]
+pub fn create_image_with_properties(context Context, properties &u64, flags u64, image_format &ImageFormat, image_desc &ImageDesc, host_ptr voidptr, errcode_ret &ErrorCode) Mem {
+	return C.clCreateImageWithProperties(context, properties, flags, image_format, image_desc, host_ptr, errcode_ret)
 }

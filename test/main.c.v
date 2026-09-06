@@ -6,12 +6,16 @@ fn main() {
 	assert sizeof(cl.ImageFormat) == 2 * sizeof(u32)
 	assert sizeof(cl.BufferRegion) == 2 * sizeof(usize)
 	assert sizeof(cl.ImageDesc) == 8 * sizeof(usize) + 2 * sizeof(u32)
+	assert sizeof(cl.NameVersion) == sizeof(u32) + cl.name_version_max_name_size
 	mut count := u32(0)
 	check(cl.get_platform_ids(0, unsafe { nil }, &count), 'count platforms')
 	assert count > 0
 
 	mut platform := cl.PlatformId(unsafe { nil })
 	check(cl.get_platform_ids(1, &platform, unsafe { nil }), 'get platform ID')
+	mut numeric_version := u32(0)
+	check(cl.get_platform_info(platform, cl.platform_numeric_version, sizeof(u32), &numeric_version, unsafe { nil }), 'get platform numeric version')
+	assert cl.version_major(numeric_version) >= 3
 
 	mut device_count := u32(0)
 	check(cl.get_device_ids(platform, cl.device_type_all, 0, unsafe { nil }, &device_count), 'count devices')
@@ -35,6 +39,9 @@ fn main() {
 	defer {
 		check(cl.release_context(context), 'release context')
 	}
+	property_buffer := cl.create_buffer_with_properties(context, unsafe { nil }, cl.mem_read_only, 16, unsafe { nil }, &error_code)
+	check(error_code, 'create buffer with properties')
+	check(cl.release_mem_object(property_buffer), 'release buffer with properties')
 	queue_with_properties := cl.create_command_queue_with_properties(context, device, unsafe { nil }, &error_code)
 	check(error_code, 'create command queue with properties')
 	check(cl.release_command_queue(queue_with_properties), 'release command queue with properties')

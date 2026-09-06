@@ -33,7 +33,7 @@ REQUIRED_COMMANDS = (
 
 CORE_FEATURES = (
     "CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2", "CL_VERSION_2_0",
-    "CL_VERSION_2_1", "CL_VERSION_2_2",
+    "CL_VERSION_2_1", "CL_VERSION_2_2", "CL_VERSION_3_0",
 )
 
 TYPED_CONSTANTS = {
@@ -41,6 +41,7 @@ TYPED_CONSTANTS = {
         "CL_PLATFORM_PROFILE", "CL_PLATFORM_VERSION", "CL_PLATFORM_NAME",
         "CL_PLATFORM_VENDOR", "CL_PLATFORM_EXTENSIONS",
         "CL_PLATFORM_HOST_TIMER_RESOLUTION",
+        "CL_PLATFORM_NUMERIC_VERSION", "CL_PLATFORM_EXTENSIONS_WITH_VERSION",
     ),
     "DeviceType": (
         "CL_DEVICE_TYPE_DEFAULT", "CL_DEVICE_TYPE_CPU", "CL_DEVICE_TYPE_GPU",
@@ -50,12 +51,16 @@ TYPED_CONSTANTS = {
         "CL_DEVICE_NAME", "CL_DEVICE_VENDOR", "CL_DRIVER_VERSION", "CL_DEVICE_VERSION",
         "CL_DEVICE_IL_VERSION", "CL_DEVICE_MAX_NUM_SUB_GROUPS",
         "CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS",
+        "CL_DEVICE_NUMERIC_VERSION", "CL_DEVICE_EXTENSIONS_WITH_VERSION",
     ),
     "MemFlags": ("CL_MEM_READ_ONLY", "CL_MEM_WRITE_ONLY", "CL_MEM_COPY_HOST_PTR"),
     "ProgramBuildInfo": ("CL_PROGRAM_BUILD_LOG",),
     "EventInfo": ("CL_EVENT_COMMAND_EXECUTION_STATUS",),
     "i32": ("CL_COMPLETE", "CL_RUNNING", "CL_SUBMITTED", "CL_QUEUED"),
-    "u32": ("CL_FALSE", "CL_TRUE"),
+    "u32": (
+        "CL_FALSE", "CL_TRUE", "CL_VERSION_MAJOR_BITS", "CL_VERSION_MINOR_BITS",
+        "CL_VERSION_PATCH_BITS", "CL_NAME_VERSION_MAX_NAME_SIZE",
+    ),
 }
 
 PRIMITIVE_TYPES = {
@@ -73,6 +78,22 @@ module opencl
 #flag linux -lOpenCL
 #flag windows -lOpenCL
 #include <CL/opencl.h>
+
+pub fn make_version(major u32, minor u32, patch u32) u32 {
+	return (major << 22) | (minor << 12) | patch
+}
+
+pub fn version_major(version u32) u32 {
+	return version >> 22
+}
+
+pub fn version_minor(version u32) u32 {
+	return (version >> 12) & 0x3ff
+}
+
+pub fn version_patch(version u32) u32 {
+	return version & 0xfff
+}
 
 // __REGISTRY_TYPES__
 pub type ErrorCode = i32
@@ -321,13 +342,19 @@ class OpenCLGenerator:
                             fields.append("\tbuffer Mem")
                             continue
                         raise RuntimeError(f"Unsupported member in {c_name}")
-                    fields.append(
-                        f"\t{member_name} {self.type_name(member_type) if member_type.startswith('cl_') else self.resolve_type(member_type)}"
-                    )
+                    field_type = (self.type_name(member_type)
+                                  if member_type.startswith("cl_")
+                                  else self.resolve_type(member_type))
+                    array_size = member.findtext("enum")
+                    if array_size is not None:
+                        field_type = f"[{self.v_name(array_size)}]{field_type}"
+                    fields.append(f"\t{member_name} {field_type}")
                 structs.append(
                     f"pub struct {self.type_name(c_name)} {{\npub mut:\n"
                     + "\n".join(fields) + "\n}"
                 )
+                continue
+            if "".join(node.itertext()).lstrip().startswith("#define"):
                 continue
             aliases.append(
                 f"pub type {self.type_name(c_name)} = {self.resolve_type(c_name)}"
