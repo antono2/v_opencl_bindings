@@ -1,0 +1,5 @@
+opencldocs/
+openclheaders/
+__pycache__/
+*.tmp
+
