@@ -33,9 +33,11 @@ V module.
 The generated surface covers the complete cumulative OpenCL 1.0 through 3.0
 core command, type, and constant API. It also includes the portable
 `cl_khr_il_program`, `cl_khr_create_command_queue`, `cl_khr_subgroups`, and
-`cl_khr_suggested_local_work_size` compatibility entry points. Further
-extensions will be added incrementally while keeping generated output
-runtime-tested.
+`cl_khr_suggested_local_work_size` compatibility entry points. External-memory
+interop includes `cl_khr_semaphore`, `cl_khr_external_semaphore`,
+`cl_khr_external_memory`, their opaque-FD variants, Linux DMA-BUF memory, and
+sync-file semaphore reimport. Further extensions will be added incrementally
+while keeping generated output runtime-tested.
 
 ## Test
 

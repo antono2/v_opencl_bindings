@@ -47,7 +47,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const non_blocking = Bool(_false)", generated)
         self.assertIn("pub const _global = DeviceLocalMemType(0x2)", generated)
         self.assertIn("pub const _none = DeviceMemCacheType(0x0)", generated)
-        self.assertEqual(generated.count("pub const "), 465)
+        self.assertEqual(generated.count("pub const "), 496)
 
     def test_opencl_1_0_types_and_structs_are_emitted(self) -> None:
         generated = self.generate()
@@ -78,7 +78,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
-        self.assertEqual(generated.count("@[inline]\npub fn "), 118)
+        self.assertEqual(generated.count("@[inline]\npub fn "), 128)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()
@@ -136,6 +136,22 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn create_command_queue_with_properties_khr(", generated)
         self.assertIn("pub fn get_kernel_sub_group_info_khr(", generated)
         self.assertIn("pub fn get_kernel_suggested_local_work_size_khr(", generated)
+
+    def test_external_memory_and_semaphore_extensions_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type SemaphoreKhr = voidptr", generated)
+        self.assertIn("pub type ExternalSemaphoreHandleTypeKhr = u32", generated)
+        self.assertIn("pub type ExternalMemoryHandleTypeKhr = u32", generated)
+        self.assertIn("pub const invalid_semaphore_khr = ErrorCode(-1142)", generated)
+        self.assertIn("pub const semaphore_handle_opaque_fd_khr = ExternalSemaphoreHandleTypeKhr(0x2055)", generated)
+        self.assertIn("pub const semaphore_handle_sync_fd_khr = ExternalSemaphoreHandleTypeKhr(0x2058)", generated)
+        self.assertIn("pub const external_memory_handle_dma_buf_khr = ExternalMemoryHandleTypeKhr(0x2067)", generated)
+        self.assertIn("pub const external_memory_handle_opaque_fd_khr = ExternalMemoryHandleTypeKhr(0x2060)", generated)
+        self.assertIn("pub fn create_semaphore_with_properties_khr(", generated)
+        self.assertIn("pub fn get_semaphore_handle_for_type_khr(", generated)
+        self.assertIn("pub fn re_import_semaphore_sync_fd_khr(", generated)
+        self.assertIn("pub fn enqueue_acquire_external_mem_objects_khr(", generated)
+        self.assertIn("pub fn enqueue_release_external_mem_objects_khr(", generated)
 
 
 if __name__ == "__main__":

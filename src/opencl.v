@@ -171,6 +171,22 @@ pub type Version = u32
 
 pub type QueuePropertiesKhr = u64
 
+pub type SemaphoreKhr = voidptr
+
+pub type SemaphorePropertiesKhr = u64
+
+pub type SemaphoreInfoKhr = u32
+
+pub type SemaphoreTypeKhr = u32
+
+pub type SemaphorePayloadKhr = u64
+
+pub type ExternalSemaphoreHandleTypeKhr = u32
+
+pub type SemaphoreReimportPropertiesKhr = u64
+
+pub type ExternalMemoryHandleTypeKhr = u32
+
 $if windows {
 	@[callconv: stdcall]
 	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
@@ -704,6 +720,37 @@ pub const device_il_version_khr = DeviceInfo(0x105B)
 pub const program_il_khr = ProgramInfo(0x1169)
 pub const kernel_max_sub_group_size_for_ndrange_khr = KernelSubGroupInfo(0x2033)
 pub const kernel_sub_group_count_for_ndrange_khr = KernelSubGroupInfo(0x2034)
+pub const semaphore_type_binary_khr = SemaphoreTypeKhr(1)
+pub const platform_semaphore_types_khr = PlatformInfo(0x2036)
+pub const device_semaphore_types_khr = DeviceInfo(0x204C)
+pub const semaphore_context_khr = SemaphoreInfoKhr(0x2039)
+pub const semaphore_reference_count_khr = SemaphoreInfoKhr(0x203A)
+pub const semaphore_properties_khr = SemaphoreInfoKhr(0x203B)
+pub const semaphore_payload_khr = SemaphoreInfoKhr(0x203C)
+pub const semaphore_type_khr = SemaphoreInfoKhr(0x203D)
+pub const semaphore_device_handle_list_khr = SemaphoreInfoKhr(0x2053)
+pub const semaphore_device_handle_list_end_khr = SemaphoreInfoKhr(0)
+pub const command_semaphore_wait_khr = CommandType(0x2042)
+pub const command_semaphore_signal_khr = CommandType(0x2043)
+pub const invalid_semaphore_khr = ErrorCode(-1142)
+pub const platform_semaphore_import_handle_types_khr = PlatformInfo(0x2037)
+pub const platform_semaphore_export_handle_types_khr = PlatformInfo(0x2038)
+pub const device_semaphore_import_handle_types_khr = DeviceInfo(0x204D)
+pub const device_semaphore_export_handle_types_khr = DeviceInfo(0x204E)
+pub const semaphore_export_handle_types_khr = SemaphorePropertiesKhr(0x203F)
+pub const semaphore_export_handle_types_list_end_khr = SemaphorePropertiesKhr(0)
+pub const semaphore_exportable_khr = SemaphoreInfoKhr(0x2054)
+pub const semaphore_handle_opaque_fd_khr = ExternalSemaphoreHandleTypeKhr(0x2055)
+pub const semaphore_handle_sync_fd_khr = ExternalSemaphoreHandleTypeKhr(0x2058)
+pub const platform_external_memory_import_handle_types_khr = PlatformInfo(0x2044)
+pub const device_external_memory_import_handle_types_khr = DeviceInfo(0x204F)
+pub const device_external_memory_import_assume_linear_images_handle_types_khr = DeviceInfo(0x2052)
+pub const mem_device_handle_list_khr = MemProperties(0x2051)
+pub const mem_device_handle_list_end_khr = MemProperties(0)
+pub const command_acquire_external_mem_objects_khr = CommandType(0x2047)
+pub const command_release_external_mem_objects_khr = CommandType(0x2048)
+pub const external_memory_handle_dma_buf_khr = ExternalMemoryHandleTypeKhr(0x2067)
+pub const external_memory_handle_opaque_fd_khr = ExternalMemoryHandleTypeKhr(0x2060)
 
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 
@@ -940,6 +987,26 @@ fn C.clCreateCommandQueueWithPropertiesKHR(Context, DeviceId, &u64, &ErrorCode) 
 fn C.clGetKernelSubGroupInfoKHR(Kernel, DeviceId, u32, usize, voidptr, usize, voidptr, &usize) ErrorCode
 
 fn C.clGetKernelSuggestedLocalWorkSizeKHR(CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
+
+fn C.clCreateSemaphoreWithPropertiesKHR(Context, &u64, &ErrorCode) SemaphoreKhr
+
+fn C.clEnqueueWaitSemaphoresKHR(CommandQueue, u32, &SemaphoreKhr, &u64, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueSignalSemaphoresKHR(CommandQueue, u32, &SemaphoreKhr, &u64, u32, &Event, &Event) ErrorCode
+
+fn C.clGetSemaphoreInfoKHR(SemaphoreKhr, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clReleaseSemaphoreKHR(SemaphoreKhr) ErrorCode
+
+fn C.clRetainSemaphoreKHR(SemaphoreKhr) ErrorCode
+
+fn C.clGetSemaphoreHandleForTypeKHR(SemaphoreKhr, DeviceId, u32, usize, voidptr, &usize) ErrorCode
+
+fn C.clReImportSemaphoreSyncFdKHR(SemaphoreKhr, &u64, int) ErrorCode
+
+fn C.clEnqueueAcquireExternalMemObjectsKHR(CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+
+fn C.clEnqueueReleaseExternalMemObjectsKHR(CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -1529,4 +1596,54 @@ pub fn get_kernel_sub_group_info_khr(in_kernel Kernel, in_device DeviceId, param
 @[inline]
 pub fn get_kernel_suggested_local_work_size_khr(command_queue CommandQueue, kernel Kernel, work_dim u32, global_work_offset &usize, global_work_size &usize, suggested_local_work_size &usize) ErrorCode {
 	return C.clGetKernelSuggestedLocalWorkSizeKHR(command_queue, kernel, work_dim, global_work_offset, global_work_size, suggested_local_work_size)
+}
+
+@[inline]
+pub fn create_semaphore_with_properties_khr(context Context, sema_props &u64, errcode_ret &ErrorCode) SemaphoreKhr {
+	return C.clCreateSemaphoreWithPropertiesKHR(context, sema_props, errcode_ret)
+}
+
+@[inline]
+pub fn enqueue_wait_semaphores_khr(command_queue CommandQueue, num_sema_objects u32, sema_objects &SemaphoreKhr, sema_payload_list &u64, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueWaitSemaphoresKHR(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_signal_semaphores_khr(command_queue CommandQueue, num_sema_objects u32, sema_objects &SemaphoreKhr, sema_payload_list &u64, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueSignalSemaphoresKHR(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn get_semaphore_info_khr(sema_object SemaphoreKhr, param_name u32, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
+	return C.clGetSemaphoreInfoKHR(sema_object, param_name, param_value_size, param_value, param_value_size_ret)
+}
+
+@[inline]
+pub fn release_semaphore_khr(sema_object SemaphoreKhr) ErrorCode {
+	return C.clReleaseSemaphoreKHR(sema_object)
+}
+
+@[inline]
+pub fn retain_semaphore_khr(sema_object SemaphoreKhr) ErrorCode {
+	return C.clRetainSemaphoreKHR(sema_object)
+}
+
+@[inline]
+pub fn get_semaphore_handle_for_type_khr(sema_object SemaphoreKhr, device DeviceId, handle_type u32, handle_size usize, handle_ptr voidptr, handle_size_ret &usize) ErrorCode {
+	return C.clGetSemaphoreHandleForTypeKHR(sema_object, device, handle_type, handle_size, handle_ptr, handle_size_ret)
+}
+
+@[inline]
+pub fn re_import_semaphore_sync_fd_khr(sema_object SemaphoreKhr, reimport_props &u64, fd int) ErrorCode {
+	return C.clReImportSemaphoreSyncFdKHR(sema_object, reimport_props, fd)
+}
+
+@[inline]
+pub fn enqueue_acquire_external_mem_objects_khr(command_queue CommandQueue, num_mem_objects u32, mem_objects &Mem, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueAcquireExternalMemObjectsKHR(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn enqueue_release_external_mem_objects_khr(command_queue CommandQueue, num_mem_objects u32, mem_objects &Mem, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
+	return C.clEnqueueReleaseExternalMemObjectsKHR(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
 }

@@ -41,6 +41,13 @@ PORTABLE_EXTENSIONS = (
     "cl_khr_create_command_queue",
     "cl_khr_subgroups",
     "cl_khr_suggested_local_work_size",
+    "cl_khr_semaphore",
+    "cl_khr_external_semaphore",
+    "cl_khr_external_semaphore_opaque_fd",
+    "cl_khr_external_semaphore_sync_fd",
+    "cl_khr_external_memory",
+    "cl_khr_external_memory_dma_buf",
+    "cl_khr_external_memory_opaque_fd",
 )
 
 TYPED_CONSTANTS = {
@@ -354,10 +361,20 @@ class OpenCLGenerator:
         for section in self.registry_sections():
             for requirement in section.findall("require"):
                 comment = requirement.attrib.get("comment", "")
+                if comment == "Error codes":
+                    for reference in requirement.findall("enum"):
+                        name = reference.attrib["name"]
+                        if name in emitted or name not in self.enums:
+                            continue
+                        core_constants.append(self.constant(name, "ErrorCode"))
+                        emitted.add(name)
+                    continue
                 match = re.search(r"\b(cl_[a-z0-9_]+)\b", comment)
-                if match is None or comment == "Constants" or comment == "Error codes":
+                if match is None or comment == "Constants":
                     continue
                 c_type = match.group(1)
+                if c_type not in self.types and f"{c_type}_khr" in self.types:
+                    c_type = f"{c_type}_khr"
                 if c_type not in self.types:
                     continue
                 v_type = self.type_name(c_type)
