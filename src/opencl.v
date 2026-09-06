@@ -492,6 +492,10 @@ fn C.clGetKernelSubGroupInfo(Kernel, DeviceId, u32, usize, voidptr, usize, voidp
 
 fn C.clEnqueueSVMMigrateMem(CommandQueue, u32, &voidptr, &usize, u64, u32, &Event, &Event) ErrorCode
 
+fn C.clSetProgramSpecializationConstant(Program, u32, usize, voidptr) ErrorCode
+
+fn C.clSetProgramReleaseCallback(Program, voidptr, voidptr) ErrorCode
+
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
 	return C.clGetPlatformIDs(num_entries, platforms, num_platforms)
@@ -1035,4 +1039,14 @@ pub fn get_kernel_sub_group_info(kernel Kernel, device DeviceId, param_name u32,
 @[inline]
 pub fn enqueue_svm_migrate_mem(command_queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, sizes &usize, flags u64, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
 	return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers, svm_pointers, sizes, flags, num_events_in_wait_list, event_wait_list, event)
+}
+
+@[inline]
+pub fn set_program_specialization_constant(program Program, spec_id u32, spec_size usize, spec_value voidptr) ErrorCode {
+	return C.clSetProgramSpecializationConstant(program, spec_id, spec_size, spec_value)
+}
+
+@[inline]
+pub fn set_program_release_callback(program Program, pfn_notify voidptr, user_data voidptr) ErrorCode {
+	return C.clSetProgramReleaseCallback(program, pfn_notify, user_data)
 }
