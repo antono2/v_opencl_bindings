@@ -100,31 +100,37 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	mut pipeline := create_particle_pipeline(device, frames.render_pass, swapchain.extent)!
 	defer { pipeline.destroy(device) }
 	mut particles := []f32{len: int(particle_count * 8)}
-	particle_buffer := if use_zero_copy {
-		create_zero_copy_particle_buffer(compute, physical, device)!
+	memory_interop := if use_zero_copy {
+		cl.load_external_memory_interop(compute.platform, cl_capabilities)!
+	} else {
+		cl.ExternalMemoryInterop{}
+	}
+	semaphore_interop := if use_zero_copy {
+		cl.load_external_semaphore_interop(compute.platform, cl_capabilities)!
+	} else {
+		cl.ExternalSemaphoreInterop{}
+	}
+	mut particle_buffer := if use_zero_copy {
+		create_zero_copy_particle_buffer(compute, memory_interop, physical, device)!
 	} else {
 		compute.read_particles(mut particles)!
 		create_staged_particle_buffer(physical, device, particles)!
 	}
 	defer { particle_buffer.destroy(device) }
-	acquire := if particle_buffer.zero_copy {
-		load_external_memory_command(compute.platform, c'clEnqueueAcquireExternalMemObjectsKHR')!
-	} else {
-		ExternalMemoryCommand(unsafe { nil })
-	}
-	release := if particle_buffer.zero_copy {
-		load_external_memory_command(compute.platform, c'clEnqueueReleaseExternalMemObjectsKHR')!
-	} else {
-		ExternalMemoryCommand(unsafe { nil })
-	}
 	if particle_buffer.zero_copy {
-		cl_check(acquire(compute.queue.handle, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire live particle buffer for reset')!
-		compute.reset_buffer(particle_buffer.cl_buffer, 1)!
-		cl_check(release(compute.queue.handle, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'release live particle buffer after reset')!
+		mut acquire_event := memory_interop.acquire(&compute.queue, [
+			particle_buffer.cl_buffer.handle,
+		], [])!
+		compute.reset_buffer(particle_buffer.cl_buffer.handle, 1)!
+		mut release_event := memory_interop.release(&compute.queue, [
+			particle_buffer.cl_buffer.handle,
+		], [])!
+		release_event.close()!
+		acquire_event.close()!
 		cl_check(cl.finish(compute.queue.handle), 'finish live particle reset')!
 	}
-	interop_sync := if particle_buffer.zero_copy {
-		create_live_interop_sync(compute, device, queue)!
+	mut interop_sync := if particle_buffer.zero_copy {
+		create_live_interop_sync(compute, memory_interop, semaphore_interop, device, queue)!
 	} else {
 		LiveInteropSync{}
 	}
@@ -174,13 +180,13 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		pointer_x := f32(cursor_x / f64(swapchain.extent.width) * 2.0 - 1.0)
 		pointer_y := f32(1.0 - cursor_y / f64(swapchain.extent.height) * 2.0)
 		if particle_buffer.zero_copy {
-			interop_sync.begin_compute(compute, particle_buffer.cl_buffer, acquire)!
+			interop_sync.begin_compute(compute, particle_buffer.cl_buffer.handle)!
 			if reset_requested {
-				compute.reset_buffer(particle_buffer.cl_buffer, u32(frame_number + 1))!
+				compute.reset_buffer(particle_buffer.cl_buffer.handle, u32(frame_number + 1))!
 			} else if !paused {
-				compute.update_buffer(particle_buffer.cl_buffer, dt, elapsed, pointer_x, pointer_y, 0.11)!
+				compute.update_buffer(particle_buffer.cl_buffer.handle, dt, elapsed, pointer_x, pointer_y, 0.11)!
 			}
-			interop_sync.end_compute(compute, particle_buffer.cl_buffer, release)!
+			interop_sync.end_compute(compute, particle_buffer.cl_buffer.handle)!
 		} else {
 			if reset_requested {
 				compute.reset_particles(u32(frame_number + 1))!

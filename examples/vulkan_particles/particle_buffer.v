@@ -7,8 +7,9 @@ struct ParticleBuffer {
 	handle    vk.Buffer
 	memory    vk.DeviceMemory
 	size      usize
-	cl_buffer cl.Mem
 	zero_copy bool
+mut:
+	cl_buffer cl.Buffer[f32]
 }
 
 fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, particles []f32) !ParticleBuffer {
@@ -35,7 +36,8 @@ fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, p
 	}
 }
 
-fn create_zero_copy_particle_buffer(compute &Compute, physical vk.PhysicalDevice, device vk.Device) !ParticleBuffer {
+fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.ExternalMemoryInterop,
+	physical vk.PhysicalDevice, device vk.Device) !ParticleBuffer {
 	size := compute.count * particle_stride
 	external_info := vk.ExternalMemoryBufferCreateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
@@ -82,11 +84,7 @@ fn create_zero_copy_particle_buffer(compute &Compute, physical vk.PhysicalDevice
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	properties := [cl.MemProperties(cl.external_memory_handle_opaque_fd_khr), cl.MemProperties(fd),
-		cl.MemProperties(0)]
-	mut code := cl.success
-	cl_buffer := cl.create_buffer_with_properties(compute.context.handle, properties.data, cl.mem_read_write, size, unsafe { nil }, &code)
-	cl_check(code, 'import live particle buffer into OpenCL') or {
+	cl_buffer := memory_interop.import_opaque_fd_buffer[f32](&compute.context, fd, int(compute.count * 8), cl.mem_read_write) or {
 		vk.free_memory(device, memory, unsafe { nil })
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
@@ -122,9 +120,9 @@ fn find_memory_type_with_flags(device vk.PhysicalDevice, allowed u32, wanted u32
 	return error('no host-visible coherent Vulkan memory type')
 }
 
-fn (buffer &ParticleBuffer) destroy(device vk.Device) {
+fn (mut buffer ParticleBuffer) destroy(device vk.Device) {
 	if buffer.zero_copy {
-		cl.release_mem_object(buffer.cl_buffer)
+		buffer.cl_buffer.close() or {}
 	}
 	vk.destroy_buffer(device, buffer.handle, unsafe { nil })
 	vk.free_memory(device, buffer.memory, unsafe { nil })

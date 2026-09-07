@@ -3,18 +3,12 @@ module main
 import antono2.opencl as cl
 import antono2.vulkan as vk
 
-type ExternalMemoryCommand = fn (cl.CommandQueue, u32, &cl.Mem, u32, &cl.Event, &cl.Event) cl.ErrorCode
-
-type CreateSemaphoreCommand = fn (cl.Context, &u64, &cl.ErrorCode) cl.SemaphoreKhr
-
-type EnqueueSemaphoreCommand = fn (cl.CommandQueue, u32, &cl.SemaphoreKhr, &u64, u32, &cl.Event, &cl.Event) cl.ErrorCode
-
-type ReleaseSemaphoreCommand = fn (cl.SemaphoreKhr) cl.ErrorCode
-
 // Exercises the external allocation before the window and render loop are involved.
 // This function is intentionally hardware-gated by probe_interop.
 fn zero_copy_memory_smoke(compute &Compute) ! {
 	cl_capabilities := cl.device_capabilities(compute.device)!
+	memory_interop := cl.load_external_memory_interop(compute.platform, cl_capabilities)!
+	semaphore_interop := cl.load_external_semaphore_interop(compute.platform, cl_capabilities)!
 	cl_uuid, has_uuid := opencl_uuid(cl_capabilities)
 	if !has_uuid {
 		return error('OpenCL UUID unavailable')
@@ -89,28 +83,29 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut fd := -1
 	vk_check(vk.get_memory_fd_khr(device, &fd_info, &fd), 'export memory FD')!
 
-	properties := [cl.MemProperties(cl.external_memory_handle_opaque_fd_khr), cl.MemProperties(fd),
-		cl.MemProperties(0)]
-	mut code := cl.success
-	imported_buffer := cl.create_buffer_with_properties(compute.context.handle, properties.data, cl.mem_read_write, compute.count * particle_stride, unsafe { nil }, &code)
-	cl_check(code, 'import Vulkan memory into OpenCL')!
-	defer { cl.release_mem_object(imported_buffer) }
-	acquire := load_external_memory_command(compute.platform, c'clEnqueueAcquireExternalMemObjectsKHR')!
-	release := load_external_memory_command(compute.platform, c'clEnqueueReleaseExternalMemObjectsKHR')!
-	cl_check(acquire(compute.queue.handle, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire external particle buffer')!
+	mut imported_buffer := memory_interop.import_opaque_fd_buffer[f32](&compute.context, fd, int(compute.count * 8), cl.mem_read_write)!
+	defer { imported_buffer.close() or {} }
+	mut acquire_event := memory_interop.acquire(&compute.queue, [
+		imported_buffer.handle,
+	], [])!
 	seed := u32(7)
-	compute.reset.set_buffer_arg(0, imported_buffer)!
+	compute.reset.set_buffer_arg(0, imported_buffer.handle)!
 	compute.reset.set_arg(1, &seed)!
 	compute.reset.enqueue_1d(&compute.queue, compute.count, 0)!
 	mut sample := []f32{len: 8}
-	cl_check(cl.enqueue_read_buffer(compute.queue.handle, imported_buffer, cl._true, 0, particle_stride, sample.data, 0, unsafe { nil }, unsafe { nil }), 'verify shared particle buffer')!
-	cl_check(release(compute.queue.handle, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'release external particle buffer')!
+	cl_check(cl.enqueue_read_buffer(compute.queue.handle, imported_buffer.handle, cl._true, 0, particle_stride, sample.data, 0, unsafe { nil }, unsafe { nil }), 'verify shared particle buffer')!
+	mut release_event := memory_interop.release(&compute.queue, [
+		imported_buffer.handle,
+	], [])!
+	release_event.close()!
+	acquire_event.close()!
 	cl_check(cl.finish(compute.queue.handle), 'finish zero-copy smoke')!
 	println('Zero-copy memory smoke: first particle = (${sample[0]:.3f}, ${sample[1]:.3f})')
-	zero_copy_semaphore_smoke(compute, device, queue)!
+	zero_copy_semaphore_smoke(compute, semaphore_interop, device, queue)!
 }
 
-fn zero_copy_semaphore_smoke(compute &Compute, device vk.Device, queue vk.Queue) ! {
+fn zero_copy_semaphore_smoke(compute &Compute, interop cl.ExternalSemaphoreInterop,
+	device vk.Device, queue vk.Queue) ! {
 	export_info := vk.ExportSemaphoreCreateInfo{
 		handleTypes: u32(vk.ExternalSemaphoreHandleTypeFlagBits.opaque_fd)
 	}
@@ -135,29 +130,20 @@ fn zero_copy_semaphore_smoke(compute &Compute, device vk.Device, queue vk.Queue)
 	vk_check(vk.get_semaphore_fd_khr(device, &vk_to_cl_fd_info, &vk_to_cl_fd), 'export Vulkan-to-OpenCL semaphore FD')!
 	vk_check(vk.get_semaphore_fd_khr(device, &cl_to_vk_fd_info, &cl_to_vk_fd), 'export OpenCL-to-Vulkan semaphore FD')!
 
-	create := load_create_semaphore_command(compute.platform)!
-	wait := load_enqueue_semaphore_command(compute.platform, c'clEnqueueWaitSemaphoresKHR')!
-	signal := load_enqueue_semaphore_command(compute.platform, c'clEnqueueSignalSemaphoresKHR')!
-	release := load_release_semaphore_command(compute.platform)!
-	vk_to_cl_properties := [u64(cl.semaphore_type_khr), u64(cl.semaphore_type_binary_khr),
-		u64(cl.semaphore_handle_opaque_fd_khr), u64(vk_to_cl_fd), u64(0)]
-	cl_to_vk_properties := [u64(cl.semaphore_type_khr), u64(cl.semaphore_type_binary_khr),
-		u64(cl.semaphore_handle_opaque_fd_khr), u64(cl_to_vk_fd), u64(0)]
-	mut code := cl.success
-	cl_wait := create(compute.context.handle, vk_to_cl_properties.data, &code)
-	cl_check(code, 'import Vulkan-to-OpenCL semaphore')!
-	defer { release(cl_wait) }
-	cl_signal := create(compute.context.handle, cl_to_vk_properties.data, &code)
-	cl_check(code, 'import OpenCL-to-Vulkan semaphore')!
-	defer { release(cl_signal) }
+	mut cl_wait := interop.import_opaque_fd(&compute.context, vk_to_cl_fd)!
+	defer { cl_wait.close() or {} }
+	mut cl_signal := interop.import_opaque_fd(&compute.context, cl_to_vk_fd)!
+	defer { cl_signal.close() or {} }
 
 	vk_signal_submit := vk.SubmitInfo{
 		signalSemaphoreCount: 1
 		pSignalSemaphores: &vk_to_cl
 	}
 	vk_check(vk.queue_submit(queue, 1, &vk_signal_submit, unsafe { nil }), 'signal Vulkan-to-OpenCL semaphore')!
-	cl_check(wait(compute.queue.handle, 1, &cl_wait, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'wait for Vulkan in OpenCL')!
-	cl_check(signal(compute.queue.handle, 1, &cl_signal, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'signal OpenCL-to-Vulkan semaphore')!
+	mut wait_event := cl_wait.wait(&compute.queue, [])!
+	mut signal_event := cl_signal.signal(&compute.queue, [wait_event.handle])!
+	signal_event.close()!
+	wait_event.close()!
 
 	stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.all_commands)
 	vk_wait_submit := vk.SubmitInfo{
@@ -172,38 +158,6 @@ fn zero_copy_semaphore_smoke(compute &Compute, device vk.Device, queue vk.Queue)
 	vk_check(vk.queue_submit(queue, 1, &vk_wait_submit, fence), 'wait for OpenCL in Vulkan')!
 	vk_check(vk.wait_for_fences(device, 1, &fence, vk._true, max_u64), 'finish external semaphore handshake')!
 	println('Zero-copy semaphore smoke: Vulkan -> OpenCL -> Vulkan handshake passed')
-}
-
-fn load_external_memory_command(platform cl.PlatformId, name &char) !ExternalMemoryCommand {
-	address := cl.get_extension_function_address_for_platform(platform, name)
-	if isnil(address) {
-		return error('OpenCL extension command ${unsafe { name.vstring() }} is unavailable')
-	}
-	return ExternalMemoryCommand(address)
-}
-
-fn load_create_semaphore_command(platform cl.PlatformId) !CreateSemaphoreCommand {
-	address := cl.get_extension_function_address_for_platform(platform, c'clCreateSemaphoreWithPropertiesKHR')
-	if isnil(address) {
-		return error('clCreateSemaphoreWithPropertiesKHR is unavailable')
-	}
-	return CreateSemaphoreCommand(address)
-}
-
-fn load_enqueue_semaphore_command(platform cl.PlatformId, name &char) !EnqueueSemaphoreCommand {
-	address := cl.get_extension_function_address_for_platform(platform, name)
-	if isnil(address) {
-		return error('${unsafe { name.vstring() }} is unavailable')
-	}
-	return EnqueueSemaphoreCommand(address)
-}
-
-fn load_release_semaphore_command(platform cl.PlatformId) !ReleaseSemaphoreCommand {
-	address := cl.get_extension_function_address_for_platform(platform, c'clReleaseSemaphoreKHR')
-	if isnil(address) {
-		return error('clReleaseSemaphoreKHR is unavailable')
-	}
-	return ReleaseSemaphoreCommand(address)
 }
 
 fn find_vulkan_device_by_uuid(instance vk.Instance, wanted [16]u8) !vk.PhysicalDevice {
