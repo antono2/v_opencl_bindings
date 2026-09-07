@@ -109,15 +109,15 @@ pub fn (kernel &OwnedKernel) set_arg[T](index u32, value &T) ! {
 	check(set_kernel_arg(kernel.handle, index, sizeof(T), value), 'set OpenCL kernel argument')!
 }
 
-// set_buffer_arg binds the native memory handle owned by a typed buffer.
-pub fn (kernel &OwnedKernel) set_buffer_arg[T](index u32, buffer &Buffer[T]) ! {
-	if isnil(buffer.handle) {
+// set_buffer_arg binds an OpenCL memory object, such as Buffer.handle.
+pub fn (kernel &OwnedKernel) set_buffer_arg(index u32, buffer Mem) ! {
+	if isnil(buffer) {
 		return OpenCLError{
 			operation: 'bind closed OpenCL buffer to kernel'
 			status: invalid_mem_object
 		}
 	}
-	kernel.set_arg(index, &buffer.handle)!
+	kernel.set_arg(index, &buffer)!
 }
 
 // enqueue_1d submits a one-dimensional kernel. A local size of zero lets the runtime choose.

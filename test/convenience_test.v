@@ -74,7 +74,7 @@ fn test_program_kernel_and_typed_argument() ! {
 	mut buffer := cl.new_buffer[u32](&context, cl.mem_read_write, 4)!
 	mut program := cl.build_source_program(&context, device, '__kernel void add(__global uint *values, uint amount) { values[get_global_id(0)] += amount; }', '')!
 	mut kernel := program.kernel('add')!
-	kernel.set_buffer_arg(0, &buffer)!
+	kernel.set_buffer_arg(0, buffer.handle)!
 	amount := u32(7)
 	kernel.set_arg(1, &amount)!
 	buffer.write(&queue, 0, [u32(1), 2, 3, 4])!
