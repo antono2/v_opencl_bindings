@@ -25,4 +25,5 @@ model rather than pretending to be reference-counted like OpenCL.
 3. Typed buffers and bounds-checked blocking transfer helpers. (Implemented.)
 4. Program compilation with build logs and kernel argument helpers. (Implemented.)
 5. Owned events, wait lists, profiling, markers, barriers, and asynchronous 1D/2D/3D buffer/kernel operations. (Implemented.)
-6. Optional extension capability objects and interoperability helpers.
+6. Optional extension capability objects and device UUID helpers. (Implemented.)
+7. Higher-level external-memory and external-semaphore import helpers.

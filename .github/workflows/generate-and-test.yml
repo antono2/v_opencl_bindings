@@ -36,6 +36,7 @@ jobs:
           install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
           install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
+          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           v -cc gcc run test
           v test test/convenience_test.v
@@ -51,6 +52,7 @@ jobs:
           install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
           install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
+          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -88,6 +90,7 @@ jobs:
           install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
           install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
+          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -105,7 +108,7 @@ jobs:
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'
           New-Item -ItemType Directory -Force $module | Out-Null
-          Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, v.mod -Destination $module
+          Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, src/capabilities.v, v.mod -Destination $module
           $include = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/include'
           $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/lib'
           v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v

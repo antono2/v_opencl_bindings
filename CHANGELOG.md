@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Add parsed runtime capability and device/driver UUID helpers.
+
 ## 0.2.0
 
 - Generate the complete cumulative OpenCL 1.0 through 3.0 API.
