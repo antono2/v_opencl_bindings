@@ -31,13 +31,16 @@ The source imports the published modules through their VPM names, so no manual
 move or symlink inside `.vmodules` is needed.
 
 ```sh
-v run examples/vulkan_particles
-v run examples/vulkan_particles --particles=4096
-v run examples/vulkan_particles --window
-v run examples/vulkan_particles --frames=120
-v run examples/vulkan_particles --staged
-v run examples/vulkan_particles --zero-copy --frames=120
+v -cc gcc run examples/vulkan_particles
+v -cc gcc run examples/vulkan_particles --particles=4096
+v -cc gcc run examples/vulkan_particles --window
+v -cc gcc run examples/vulkan_particles --frames=120
+v -cc gcc run examples/vulkan_particles --staged
+v -cc gcc run examples/vulkan_particles --zero-copy --frames=120
 ```
+
+GCC or Clang is required because TinyCC cannot safely link Volk's global Vulkan
+dispatch symbols alongside some vendor OpenCL drivers.
 
 Run with `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
 `PARTICLES_WINDOW`, `PARTICLES_FRAMES`, `PARTICLES_FORCE_STAGED`, and

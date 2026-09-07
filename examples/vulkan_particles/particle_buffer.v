@@ -82,10 +82,10 @@ fn create_zero_copy_particle_buffer(compute &Compute, physical vk.PhysicalDevice
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	properties := [u64(cl.external_memory_handle_opaque_fd_khr), u64(fd), u64(0)]
+	properties := [cl.MemProperties(cl.external_memory_handle_opaque_fd_khr), cl.MemProperties(fd),
+		cl.MemProperties(0)]
 	mut code := cl.success
-	create_buffer := load_create_buffer_with_properties_command(compute.platform)!
-	cl_buffer := create_buffer(compute.context, properties.data, cl.mem_read_write, size, unsafe { nil }, &code)
+	cl_buffer := cl.create_buffer_with_properties(compute.context, properties.data, cl.mem_read_write, size, unsafe { nil }, &code)
 	cl_check(code, 'import live particle buffer into OpenCL') or {
 		vk.free_memory(device, memory, unsafe { nil })
 		vk.destroy_buffer(device, buffer, unsafe { nil })

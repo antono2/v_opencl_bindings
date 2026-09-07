@@ -5,8 +5,6 @@ import antono2.vulkan as vk
 
 type ExternalMemoryCommand = fn (cl.CommandQueue, u32, &cl.Mem, u32, &cl.Event, &cl.Event) cl.ErrorCode
 
-type CreateBufferWithPropertiesCommand = fn (cl.Context, &u64, u64, usize, voidptr, &cl.ErrorCode) cl.Mem
-
 type CreateSemaphoreCommand = fn (cl.Context, &u64, &cl.ErrorCode) cl.SemaphoreKhr
 
 type EnqueueSemaphoreCommand = fn (cl.CommandQueue, u32, &cl.SemaphoreKhr, &u64, u32, &cl.Event, &cl.Event) cl.ErrorCode
@@ -91,10 +89,10 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut fd := -1
 	vk_check(vk.get_memory_fd_khr(device, &fd_info, &fd), 'export memory FD')!
 
-	properties := [u64(cl.external_memory_handle_opaque_fd_khr), u64(fd), u64(0)]
+	properties := [cl.MemProperties(cl.external_memory_handle_opaque_fd_khr), cl.MemProperties(fd),
+		cl.MemProperties(0)]
 	mut code := cl.success
-	create_buffer := load_create_buffer_with_properties_command(compute.platform)!
-	imported_buffer := create_buffer(compute.context, properties.data, cl.mem_read_write, compute.count * particle_stride, unsafe { nil }, &code)
+	imported_buffer := cl.create_buffer_with_properties(compute.context, properties.data, cl.mem_read_write, compute.count * particle_stride, unsafe { nil }, &code)
 	cl_check(code, 'import Vulkan memory into OpenCL')!
 	defer { cl.release_mem_object(imported_buffer) }
 	acquire := load_external_memory_command(compute.platform, c'clEnqueueAcquireExternalMemObjectsKHR')!
@@ -182,14 +180,6 @@ fn load_external_memory_command(platform cl.PlatformId, name &char) !ExternalMem
 		return error('OpenCL extension command ${unsafe { name.vstring() }} is unavailable')
 	}
 	return ExternalMemoryCommand(address)
-}
-
-fn load_create_buffer_with_properties_command(platform cl.PlatformId) !CreateBufferWithPropertiesCommand {
-	address := cl.get_extension_function_address_for_platform(platform, c'clCreateBufferWithProperties')
-	if isnil(address) {
-		return error('clCreateBufferWithProperties is unavailable')
-	}
-	return CreateBufferWithPropertiesCommand(address)
 }
 
 fn load_create_semaphore_command(platform cl.PlatformId) !CreateSemaphoreCommand {
