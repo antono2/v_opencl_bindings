@@ -2,7 +2,6 @@ module main
 
 import antono2.glfw
 import antono2.opencl as cl
-import os
 import time
 import vulkan as vk
 
@@ -13,7 +12,8 @@ fn C.glfwSetWindowTitle(window &glfw.Window, title &char)
 const key_r = 82
 const key_t = 84
 
-fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool) ! {
+fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool,
+	frame_limit int) ! {
 	cl_device := compute.device
 	if !glfw.initialize() {
 		return error('GLFW initialization failed')
@@ -136,8 +136,6 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 			interop_sync.destroy(device)
 		}
 	}
-	frame_limit_text := os.getenv_opt('PARTICLES_FRAMES') or { '0' }
-	frame_limit := frame_limit_text.int()
 	started := time.now()
 	mut previous := started
 	mut frame_number := 0

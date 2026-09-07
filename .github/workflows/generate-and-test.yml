@@ -12,12 +12,12 @@ jobs:
   generate-and-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-Docs
           path: opencldocs
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-Headers
           path: openclheaders
@@ -50,6 +50,7 @@ jobs:
         run: |
           v -cc gcc -o /tmp/vulkan-particles examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
-          xvfb-run -a env PARTICLES_WINDOW=1 PARTICLES_FORCE_STAGED=1 PARTICLES_FRAMES=8 PARTICLE_COUNT=1024 /tmp/vulkan-particles
+          xvfb-run -a /tmp/vulkan-particles --staged --frames=8 --particles=1024
+          v test examples/vulkan_particles/options_test.v
           v test examples/vulkan_particles/shader_test.v
           v test examples/vulkan_particles/interop_probe_test.v

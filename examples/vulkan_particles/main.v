@@ -5,8 +5,13 @@ import antono2.opencl as cl
 import time
 
 fn main() {
-	count_text := os.getenv_opt('PARTICLE_COUNT') or { '32768' }
-	count := usize(count_text.parse_uint(10, 32) or { panic('invalid PARTICLE_COUNT: ${err}') })
+	base_options := options_from_environment() or { panic(err) }
+	options := parse_options(base_options, os.args[1..]) or { panic('${err}\n\n${usage()}') }
+	if options.help {
+		println(usage())
+		return
+	}
+	count := options.particle_count
 	mut compute := new_compute(count) or { panic(err) }
 	defer {
 		compute.close()
@@ -19,14 +24,11 @@ fn main() {
 	if interop.zero_copy_available {
 		zero_copy_memory_smoke(&compute) or { panic(err) }
 	}
-	if os.getenv('PARTICLES_WINDOW') == '1' {
-		force_staged := os.getenv('PARTICLES_FORCE_STAGED') == '1'
-		if force_staged {
+	if options.window {
+		if options.force_staged {
 			println('Renderer override: staged transfer path')
 		}
-		window_device_loop(&compute, count, interop.zero_copy_available && !force_staged) or {
-			panic(err)
-		}
+		window_device_loop(&compute, count, interop.zero_copy_available && !options.force_staged, options.frame_limit) or { panic(err) }
 	}
 
 	// Until the Vulkan presentation loop is connected, exercise the exact simulation buffer

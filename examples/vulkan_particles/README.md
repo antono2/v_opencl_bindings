@@ -29,23 +29,27 @@ sudo apt install ocl-icd-opencl-dev libvulkan-dev libglfw3-dev
 
 ```sh
 v run examples/vulkan_particles
-PARTICLE_COUNT=4096 v run examples/vulkan_particles
-PARTICLES_WINDOW=1 v run examples/vulkan_particles
-PARTICLES_WINDOW=1 PARTICLES_FRAMES=120 v run examples/vulkan_particles
-PARTICLES_WINDOW=1 PARTICLES_FORCE_STAGED=1 v run examples/vulkan_particles
+v run examples/vulkan_particles --particles=4096
+v run examples/vulkan_particles --window
+v run examples/vulkan_particles --frames=120
+v run examples/vulkan_particles --staged
 ```
+
+Run with `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
+`PARTICLES_WINDOW`, `PARTICLES_FRAMES`, and `PARTICLES_FORCE_STAGED` environment variables remain
+supported for scripts and compatibility.
 
 Startup reports the selected OpenCL and Vulkan devices and either `zero-copy` or a precise reason
 for selecting `staged fallback`. Device UUIDs must match before external memory is considered.
-`PARTICLES_WINDOW=1` additionally verifies GLFW surface creation, graphics/presentation queue
+`--window` additionally verifies GLFW surface creation, graphics/presentation queue
 selection, swapchain negotiation, image enumeration, image-view creation, and the live particle
 loop. The final console line includes `(zero-copy)` or `(staged)`, confirming the path actually used
-by the renderer. `PARTICLES_FRAMES` limits the loop for automated smoke tests; zero means run until
+by the renderer. `--frames` limits the loop for automated smoke tests; zero means run until
 the window is closed. Swapchain resources are rebuilt when a resize makes them suboptimal or
 out-of-date; even a skipped zero-copy frame completes its external-semaphore ownership cycle.
 
 Each particle also gets a velocity-colored motion streak rendered from the shared particle data.
 Move the mouse to steer the third attractor, press Space to pause/resume, R to reset, T to toggle
 the streaks, and Escape to exit. The title reports particle count, average FPS, transfer backend,
-trail state, and pause state. The live zero-copy loop uses reusable opaque-FD binary semaphores for the
-Vulkan-to-OpenCL and OpenCL-to-Vulkan ownership handoffs, without per-frame host waits.
+trail state, and pause state. The live zero-copy loop uses reusable opaque-FD binary semaphores
+for the Vulkan-to-OpenCL and OpenCL-to-Vulkan ownership handoffs, without per-frame host waits.
