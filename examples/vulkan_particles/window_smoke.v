@@ -1,6 +1,6 @@
 module main
 
-import glfw
+import antono2.glfw
 import antono2.opencl as cl
 import os
 import time

@@ -227,7 +227,7 @@ fn find_vulkan_device_by_uuid(instance vk.Instance, wanted [16]u8) !vk.PhysicalD
 		mut id := vk.PhysicalDeviceIDProperties{}
 		mut properties := vk.PhysicalDeviceProperties2{ pNext: &id }
 		vk.get_physical_device_properties2(device, mut properties)
-		if uuid_equal(wanted, &id.deviceUUID[0]) {
+		if uuid_equal(wanted, unsafe { &u8(&id.deviceUUID) }) {
 			return device
 		}
 	}

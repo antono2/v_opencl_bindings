@@ -1,6 +1,6 @@
 module main
 
-import glfw
+import antono2.glfw
 import vulkan as vk
 
 struct SwapchainBundle {

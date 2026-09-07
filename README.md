@@ -7,6 +7,10 @@ registry.
 The generated module is published as
 [`antono2.opencl` on VPM](https://vpm.vlang.io/packages/antono2.opencl).
 
+```sh
+v install antono2.opencl
+```
+
 The complete OpenCL 1.0 through 3.0 core constant surface, including bitfields
 and error codes, is read directly from the registry rather than maintained as
 duplicated values. Constants retain the corresponding OpenCL typedef as their
@@ -42,6 +46,9 @@ interop includes `cl_khr_semaphore`, `cl_khr_external_semaphore`,
 sync-file semaphore reimport. Further extensions will be added incrementally
 while keeping generated output runtime-tested. `cl_khr_device_uuid` exposes
 stable device and driver identity queries for interop device matching.
+Optional extension commands are resolved through the ICD at runtime instead of
+being required linker symbols, allowing the same module to build against older
+OpenCL loaders when those extensions are not used.
 
 ## Test
 

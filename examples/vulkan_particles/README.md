@@ -21,6 +21,7 @@ checked-in SPIR-V after editing GLSL with `./compile_shaders.sh`.
 Install the example-only V modules and Linux development packages before building from source:
 
 ```sh
+v install antono2.opencl
 v install https://github.com/antono2/vulkan
 v install https://github.com/antono2/glfw
 sudo apt install ocl-icd-opencl-dev libvulkan-dev libglfw3-dev

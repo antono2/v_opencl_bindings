@@ -113,11 +113,11 @@ fn probe_interop(cl_device cl.DeviceId) InteropReport {
 			pNext: &id
 		}
 		vk.get_physical_device_properties2(device, mut properties)
-		name := unsafe { cstring_to_vstring(&properties.properties.deviceName[0]) }
+		name := unsafe { cstring_to_vstring(&char(&properties.properties.deviceName)) }
 		if fallback.vulkan_device == 'unknown' {
 			fallback.vulkan_device = name
 		}
-		matched := cl_has_uuid && uuid_equal(cl_uuid, &id.deviceUUID[0])
+		matched := cl_has_uuid && uuid_equal(cl_uuid, unsafe { &u8(&id.deviceUUID) })
 		if !matched {
 			continue
 		}
