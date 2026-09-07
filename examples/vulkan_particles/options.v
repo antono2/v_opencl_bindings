@@ -4,11 +4,12 @@ import os
 
 struct AppOptions {
 mut:
-	particle_count usize = 32768
-	window         bool
-	force_staged   bool
-	frame_limit    int
-	help           bool
+	particle_count    usize = 32768
+	window            bool
+	force_staged      bool
+	require_zero_copy bool
+	frame_limit       int
+	help              bool
 }
 
 fn options_from_environment() !AppOptions {
@@ -26,6 +27,7 @@ fn options_from_environment() !AppOptions {
 		particle_count: usize(count)
 		window: os.getenv('PARTICLES_WINDOW') == '1'
 		force_staged: os.getenv('PARTICLES_FORCE_STAGED') == '1'
+		require_zero_copy: os.getenv('PARTICLES_REQUIRE_ZERO_COPY') == '1'
 		frame_limit: frames
 	}
 }
@@ -40,6 +42,9 @@ fn parse_options(base AppOptions, arguments []string) !AppOptions {
 		} else if argument == '--staged' {
 			options.window = true
 			options.force_staged = true
+		} else if argument == '--zero-copy' {
+			options.window = true
+			options.require_zero_copy = true
 		} else if argument == '--help' || argument == '-h' {
 			options.help = true
 		} else if argument.starts_with('--particles=') {
@@ -61,9 +66,12 @@ fn parse_options(base AppOptions, arguments []string) !AppOptions {
 			return error('unknown option: ${argument}')
 		}
 	}
+	if options.force_staged && options.require_zero_copy {
+		return error('--staged and --zero-copy cannot be used together')
+	}
 	return options
 }
 
 fn usage() string {
-	return 'Usage: vulkan-particles [options]\n\n' + '  --window           open the interactive Vulkan renderer\n' + '  --staged           open the renderer and force host-staged transfers\n' + '  --particles=N      simulate N particles (default: 32768)\n' + '  --frames=N         render N frames, or 0 until closed\n' + '  -h, --help         show this help\n'
+	return 'Usage: vulkan-particles [options]\n\n' + '  --window           open the interactive Vulkan renderer\n' + '  --staged           open the renderer and force host-staged transfers\n' + '  --zero-copy        require the external-memory renderer path\n' + '  --particles=N      simulate N particles (default: 32768)\n' + '  --frames=N         render N frames, or 0 until closed\n' + '  -h, --help         show this help\n'
 }

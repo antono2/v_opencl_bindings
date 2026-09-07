@@ -11,6 +11,15 @@ fn test_command_line_options_override_defaults() {
 	assert options.frame_limit == 12
 }
 
+fn test_zero_copy_requires_window_and_conflicts_with_staging() {
+	options := parse_options(AppOptions{}, ['--zero-copy', '--frames=4'])!
+	assert options.window
+	assert options.require_zero_copy
+	if _ := parse_options(AppOptions{}, ['--zero-copy', '--staged']) {
+		assert false
+	}
+}
+
 fn test_invalid_command_line_options_are_rejected() {
 	if _ := parse_options(AppOptions{}, ['--particles=0']) {
 		assert false

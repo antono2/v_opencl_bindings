@@ -33,11 +33,12 @@ v run examples/vulkan_particles --particles=4096
 v run examples/vulkan_particles --window
 v run examples/vulkan_particles --frames=120
 v run examples/vulkan_particles --staged
+v run examples/vulkan_particles --zero-copy --frames=120
 ```
 
 Run with `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
-`PARTICLES_WINDOW`, `PARTICLES_FRAMES`, and `PARTICLES_FORCE_STAGED` environment variables remain
-supported for scripts and compatibility.
+`PARTICLES_WINDOW`, `PARTICLES_FRAMES`, `PARTICLES_FORCE_STAGED`, and
+`PARTICLES_REQUIRE_ZERO_COPY` environment variables remain supported for scripts and compatibility.
 
 Startup reports the selected OpenCL and Vulkan devices and either `zero-copy` or a precise reason
 for selecting `staged fallback`. Device UUIDs must match before external memory is considered.
@@ -47,6 +48,8 @@ loop. The final console line includes `(zero-copy)` or `(staged)`, confirming th
 by the renderer. `--frames` limits the loop for automated smoke tests; zero means run until
 the window is closed. Swapchain resources are rebuilt when a resize makes them suboptimal or
 out-of-date; even a skipped zero-copy frame completes its external-semaphore ownership cycle.
+`--zero-copy` makes capability or UUID mismatches fatal, so it is suitable for validating the
+external-memory and external-semaphore path on supported hardware.
 
 Each particle also gets a velocity-colored motion streak rendered from the shared particle data.
 Move the mouse to steer the third attractor, press Space to pause/resume, R to reset, T to toggle

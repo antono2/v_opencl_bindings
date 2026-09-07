@@ -21,6 +21,9 @@ fn main() {
 	interop := probe_interop(compute.device)
 	println('Vulkan device: ${interop.vulkan_device}')
 	println('Interop mode: ${interop.describe()}')
+	if options.require_zero_copy && !interop.zero_copy_available {
+		panic('zero-copy required: ${interop.describe()}')
+	}
 	if interop.zero_copy_available {
 		zero_copy_memory_smoke(&compute) or { panic(err) }
 	}
