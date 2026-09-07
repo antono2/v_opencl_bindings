@@ -32,6 +32,7 @@ jobs:
         run: |
           install -d "$HOME/.vmodules/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/opencl/opencl.v"
+          install -m 0644 v.mod "$HOME/.vmodules/opencl/v.mod"
           v -cc gcc run test
       - name: Install advanced-example dependencies
         run: |
@@ -72,4 +73,7 @@ jobs:
         run: |
           install -d "$HOME/.vmodules/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/opencl/opencl.v"
+          install -m 0644 v.mod "$HOME/.vmodules/opencl/v.mod"
+          install -d "$HOME/.vmodules/opencl/include/CL"
+          install -m 0644 include/CL/opencl.h "$HOME/.vmodules/opencl/include/CL/opencl.h"
           v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v

@@ -140,6 +140,7 @@ module opencl
 #flag linux -lOpenCL
 #flag windows -lOpenCL
 #flag darwin -framework OpenCL
+#flag darwin -I@VMODROOT/include
 #include <CL/opencl.h>
 
 pub fn make_version(major u32, minor u32, patch u32) u32 {
