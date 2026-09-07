@@ -35,7 +35,7 @@ jobs:
           v -cc gcc run test
       - name: Install advanced-example dependencies
         run: |
-          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers
+          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers xauth xvfb
           v install https://github.com/antono2/vulkan
           v install https://github.com/antono2/glfw
           mv "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/vulkan"
@@ -50,5 +50,6 @@ jobs:
         run: |
           v -cc gcc -o /tmp/vulkan-particles examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
+          xvfb-run -a env PARTICLES_WINDOW=1 PARTICLES_FORCE_STAGED=1 PARTICLES_FRAMES=8 PARTICLE_COUNT=1024 /tmp/vulkan-particles
           v test examples/vulkan_particles/shader_test.v
           v test examples/vulkan_particles/interop_probe_test.v
