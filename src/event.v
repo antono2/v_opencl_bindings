@@ -7,6 +7,21 @@ pub mut:
 	handle Event
 }
 
+// EventProfile contains device timestamps in nanoseconds. Values are valid for
+// commands from queues created with queue_profiling_enable.
+pub struct EventProfile {
+pub:
+	queued u64
+	submit u64
+	start  u64
+	end    u64
+}
+
+// duration returns device execution time in nanoseconds.
+pub fn (profile EventProfile) duration() u64 {
+	return profile.end - profile.start
+}
+
 // wait blocks until this event reaches a terminal execution state.
 pub fn (event &OwnedEvent) wait() ! {
 	if isnil(event.handle) {
@@ -30,6 +45,32 @@ pub fn (event &OwnedEvent) execution_status() !i32 {
 	mut status := i32(0)
 	check(get_event_info(event.handle, event_command_execution_status, sizeof(status), &status, unsafe { nil }), 'query OpenCL event execution status')!
 	return status
+}
+
+// profiling_timestamp reads one OpenCL profiling timestamp.
+pub fn (event &OwnedEvent) profiling_timestamp(parameter ProfilingInfo) !u64 {
+	if isnil(event.handle) {
+		return OpenCLError{
+			operation: 'profile closed OpenCL event'
+			status: invalid_event
+		}
+	}
+	mut timestamp := u64(0)
+	check(get_event_profiling_info(event.handle, parameter, sizeof(timestamp), &timestamp, unsafe { nil }), 'query OpenCL event profiling timestamp')!
+	return timestamp
+}
+
+// profile waits for completion and returns the portable queued, submit, start,
+// and end timestamps. It returns profiling_info_not_available for queues which
+// were not created with queue_profiling_enable.
+pub fn (event &OwnedEvent) profile() !EventProfile {
+	event.wait()!
+	return EventProfile{
+		queued: event.profiling_timestamp(profiling_command_queued)!
+		submit: event.profiling_timestamp(profiling_command_submit)!
+		start: event.profiling_timestamp(profiling_command_start)!
+		end: event.profiling_timestamp(profiling_command_end)!
+	}
 }
 
 // close releases the owned event reference. It is safe to call more than once.

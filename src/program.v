@@ -147,6 +147,15 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 // returns an owned completion event. A local size of zero lets the runtime choose.
 pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_size usize,
 	local_size usize, wait_events []Event) !OwnedEvent {
+	local_sizes := if local_size > 0 { [local_size] } else { []usize{} }
+	return kernel.enqueue_nd_after(queue, [global_size], local_sizes, wait_events)
+}
+
+// enqueue_nd_after submits a one-, two-, or three-dimensional kernel after
+// wait_events and returns an owned completion event. An empty local_sizes slice
+// lets the runtime select work-group dimensions.
+pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_sizes []usize,
+	local_sizes []usize, wait_events []Event) !OwnedEvent {
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'enqueue closed OpenCL kernel'
@@ -159,23 +168,44 @@ pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_s
 			status: invalid_command_queue
 		}
 	}
-	if global_size == 0 {
+	if global_sizes.len < 1 || global_sizes.len > 3 {
 		return OpenCLError{
-			operation: 'enqueue OpenCL kernel with zero global size'
-			status: invalid_global_work_size
+			operation: 'enqueue OpenCL kernel with invalid work dimension'
+			status: invalid_work_dimension
+		}
+	}
+	for size in global_sizes {
+		if size == 0 {
+			return OpenCLError{
+				operation: 'enqueue OpenCL kernel with zero global size'
+				status: invalid_global_work_size
+			}
+		}
+	}
+	if local_sizes.len != 0 && local_sizes.len != global_sizes.len {
+		return OpenCLError{
+			operation: 'enqueue OpenCL kernel with mismatched local dimensions'
+			status: invalid_work_group_size
+		}
+	}
+	for size in local_sizes {
+		if size == 0 {
+			return OpenCLError{
+				operation: 'enqueue OpenCL kernel with zero local size'
+				status: invalid_work_group_size
+			}
 		}
 	}
 	mut local_pointer := &usize(unsafe { nil })
-	mut requested_local_size := local_size
-	if local_size > 0 {
-		local_pointer = &requested_local_size
+	if local_sizes.len > 0 {
+		local_pointer = local_sizes.data
 	}
 	mut wait_pointer := &Event(unsafe { nil })
 	if wait_events.len > 0 {
 		wait_pointer = wait_events.data
 	}
 	mut event := Event(unsafe { nil })
-	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len), unsafe { nil }, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
 	return OwnedEvent{
 		handle: event
 	}

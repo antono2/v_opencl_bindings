@@ -24,5 +24,5 @@ model rather than pretending to be reference-counted like OpenCL.
 2. Context and command-queue ownership. (Implemented.)
 3. Typed buffers and bounds-checked blocking transfer helpers. (Implemented.)
 4. Program compilation with build logs and kernel argument helpers. (Implemented.)
-5. Owned events, wait lists, markers, barriers, and asynchronous buffer/kernel operations. (Implemented.)
+5. Owned events, wait lists, profiling, markers, barriers, and asynchronous 1D/2D/3D buffer/kernel operations. (Implemented.)
 6. Optional extension capability objects and interoperability helpers.
