@@ -1,14 +1,24 @@
 module opencl
 
-type ExternalMemoryCommand = fn (queue CommandQueue, count u32, objects &Mem, event_count u32, events &Event, output &Event) ErrorCode
-
-type ExternalSemaphoreCommand = fn (queue CommandQueue, count u32, semaphores &SemaphoreKhr, payloads &SemaphorePayloadKhr, event_count u32, events &Event, output &Event) ErrorCode
+$if windows {
+	@[callconv: stdcall]
+	type CreateBufferWithPropertiesCommand = fn (context Context, properties &MemProperties, flags MemFlags, size usize, host_ptr voidptr, status &ErrorCode) Mem
+	@[callconv: stdcall]
+	type ExternalMemoryCommand = fn (queue CommandQueue, count u32, objects &Mem, event_count u32, events &Event, output &Event) ErrorCode
+	@[callconv: stdcall]
+	type ExternalSemaphoreCommand = fn (queue CommandQueue, count u32, semaphores &SemaphoreKhr, payloads &SemaphorePayloadKhr, event_count u32, events &Event, output &Event) ErrorCode
+} $else {
+	type CreateBufferWithPropertiesCommand = fn (context Context, properties &MemProperties, flags MemFlags, size usize, host_ptr voidptr, status &ErrorCode) Mem
+	type ExternalMemoryCommand = fn (queue CommandQueue, count u32, objects &Mem, event_count u32, events &Event, output &Event) ErrorCode
+	type ExternalSemaphoreCommand = fn (queue CommandQueue, count u32, semaphores &SemaphoreKhr, payloads &SemaphorePayloadKhr, event_count u32, events &Event, output &Event) ErrorCode
+}
 
 // ExternalMemoryInterop holds platform-specific cl_khr_external_memory entry
 // points. Load it only after selecting the platform and device.
 pub struct ExternalMemoryInterop {
-	acquire_command ExternalMemoryCommand = unsafe { nil }
-	release_command ExternalMemoryCommand = unsafe { nil }
+	create_buffer_command CreateBufferWithPropertiesCommand = unsafe { nil }
+	acquire_command       ExternalMemoryCommand = unsafe { nil }
+	release_command       ExternalMemoryCommand = unsafe { nil }
 }
 
 // load_external_memory_interop validates opaque-FD support and resolves entry
@@ -20,15 +30,17 @@ pub fn load_external_memory_interop(platform PlatformId, capabilities DeviceCapa
 			status: invalid_operation
 		}
 	}
+	create_buffer_address := get_extension_function_address_for_platform(platform, c'clCreateBufferWithProperties')
 	acquire_address := get_extension_function_address_for_platform(platform, c'clEnqueueAcquireExternalMemObjectsKHR')
 	release_address := get_extension_function_address_for_platform(platform, c'clEnqueueReleaseExternalMemObjectsKHR')
-	if isnil(acquire_address) || isnil(release_address) {
+	if isnil(create_buffer_address) || isnil(acquire_address) || isnil(release_address) {
 		return OpenCLError{
 			operation: 'resolve OpenCL external-memory entry points'
 			status: invalid_operation
 		}
 	}
 	return ExternalMemoryInterop{
+		create_buffer_command: unsafe { CreateBufferWithPropertiesCommand(create_buffer_address) }
 		acquire_command: unsafe { ExternalMemoryCommand(acquire_address) }
 		release_command: unsafe { ExternalMemoryCommand(release_address) }
 	}
@@ -59,7 +71,7 @@ pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &Owned
 	properties := [MemProperties(external_memory_handle_opaque_fd_khr), MemProperties(fd),
 		MemProperties(0)]
 	mut status := success
-	handle := create_buffer_with_properties(context.handle, properties.data, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
+	handle := interop.create_buffer_command(context.handle, properties.data, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
 	check(status, 'import opaque-FD OpenCL buffer')!
 	return Buffer[T]{
 		handle: handle
