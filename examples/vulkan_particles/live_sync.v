@@ -1,7 +1,7 @@
 module main
 
 import antono2.opencl as cl
-import vulkan as vk
+import antono2.vulkan as vk
 
 struct LiveInteropSync {
 	vk_to_cl  vk.Semaphore

@@ -1,7 +1,7 @@
 module main
 
 import antono2.glfw
-import vulkan as vk
+import antono2.vulkan as vk
 
 struct SwapchainBundle {
 	handle      vk.SwapchainKHR

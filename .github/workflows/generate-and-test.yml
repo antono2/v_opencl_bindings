@@ -37,9 +37,8 @@ jobs:
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers xauth xvfb
-          v install https://github.com/antono2/vulkan
-          v install https://github.com/antono2/glfw
-          mv "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/vulkan"
+          v install antono2.vulkan
+          v install antono2.glfw
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
           install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"

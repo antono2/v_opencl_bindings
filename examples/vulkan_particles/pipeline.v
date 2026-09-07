@@ -1,6 +1,6 @@
 module main
 
-import vulkan as vk
+import antono2.vulkan as vk
 
 struct ParticlePipeline {
 	handle vk.Pipeline

@@ -3,7 +3,7 @@ module main
 import antono2.glfw
 import antono2.opencl as cl
 import time
-import vulkan as vk
+import antono2.vulkan as vk
 
 fn C.glfwGetCursorPos(window &glfw.Window, x &f64, y &f64)
 
