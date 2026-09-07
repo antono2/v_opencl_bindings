@@ -70,3 +70,89 @@ pub fn (mut queue OwnedCommandQueue) close() ! {
 	check(release_command_queue(queue.handle), 'release OpenCL command queue')!
 	queue.handle = unsafe { nil }
 }
+
+// Buffer owns a typed OpenCL buffer containing count elements of T.
+pub struct Buffer[T] {
+pub mut:
+	handle Mem
+pub:
+	count int
+}
+
+// new_buffer allocates storage for count elements of T without a host pointer.
+pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !Buffer[T] {
+	if isnil(context.handle) {
+		return OpenCLError{
+			operation: 'create OpenCL buffer from closed context'
+			status: invalid_context
+		}
+	}
+	if count <= 0 {
+		return OpenCLError{
+			operation: 'create OpenCL buffer with non-positive element count'
+			status: invalid_buffer_size
+		}
+	}
+	mut status := success
+	handle := create_buffer(context.handle, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
+	check(status, 'create OpenCL buffer')!
+	if isnil(handle) {
+		return OpenCLError{
+			operation: 'create OpenCL buffer'
+			status: mem_object_allocation_failure
+		}
+	}
+	return Buffer[T]{
+		handle: handle
+		count: count
+	}
+}
+
+// write copies a slice into the buffer and waits until the host data is reusable.
+pub fn (buffer &Buffer[T]) write(queue &OwnedCommandQueue, offset int, values []T) ! {
+	buffer.validate_transfer(queue, offset, values.len, 'write')!
+	if values.len == 0 {
+		return
+	}
+	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(values.len) * sizeof(T), values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
+}
+
+// read copies elements from the buffer and waits until the destination is populated.
+pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destination []T) ! {
+	buffer.validate_transfer(queue, offset, destination.len, 'read')!
+	if destination.len == 0 {
+		return
+	}
+	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(destination.len) * sizeof(T), destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
+}
+
+fn (buffer &Buffer[T]) validate_transfer(queue &OwnedCommandQueue, offset int, length int,
+	operation string) ! {
+	if isnil(buffer.handle) {
+		return OpenCLError{
+			operation: '${operation} closed OpenCL buffer'
+			status: invalid_mem_object
+		}
+	}
+	if isnil(queue.handle) {
+		return OpenCLError{
+			operation: '${operation} OpenCL buffer using closed queue'
+			status: invalid_command_queue
+		}
+	}
+	if offset < 0 || length < 0 || offset > buffer.count || length > buffer.count - offset {
+		return OpenCLError{
+			operation: '${operation} outside OpenCL buffer bounds'
+			status: invalid_value
+		}
+	}
+}
+
+// close releases the owned memory-object reference. It is safe to call more than once.
+pub fn (mut buffer Buffer[T]) close() ! {
+	if isnil(buffer.handle) {
+		return
+	}
+	check(release_mem_object(buffer.handle), 'release OpenCL buffer')!
+	buffer.handle = unsafe { nil }
+}
