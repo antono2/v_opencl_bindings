@@ -1,8 +1,8 @@
 module opencl
 
-type ExternalMemoryCommand = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+type ExternalMemoryCommand = fn (queue CommandQueue, count u32, objects &Mem, event_count u32, events &Event, output &Event) ErrorCode
 
-type ExternalSemaphoreCommand = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+type ExternalSemaphoreCommand = fn (queue CommandQueue, count u32, semaphores &SemaphoreKhr, payloads &SemaphorePayloadKhr, event_count u32, events &Event, output &Event) ErrorCode
 
 // ExternalMemoryInterop holds platform-specific cl_khr_external_memory entry
 // points. Load it only after selecting the platform and device.
