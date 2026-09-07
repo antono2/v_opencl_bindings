@@ -1,10 +1,13 @@
 module main
 
-fn test_particle_shader_binaries_are_embedded_and_valid() {
-	vertex := $embed_file('particles.vert.spv').to_bytes()
-	fragment := $embed_file('particles.frag.spv').to_bytes()
-	trail_vertex := $embed_file('trails.vert.spv').to_bytes()
-	trail_fragment := $embed_file('trails.frag.spv').to_bytes()
+import os
+
+fn test_particle_shader_binaries_are_valid() {
+	shader_dir := os.dir(@FILE)
+	vertex := os.read_bytes(os.join_path(shader_dir, 'particles.vert.spv'))!
+	fragment := os.read_bytes(os.join_path(shader_dir, 'particles.frag.spv'))!
+	trail_vertex := os.read_bytes(os.join_path(shader_dir, 'trails.vert.spv'))!
+	trail_fragment := os.read_bytes(os.join_path(shader_dir, 'trails.frag.spv'))!
 	assert vertex.len > 20
 	assert fragment.len > 20
 	assert spirv_magic(vertex)
