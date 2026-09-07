@@ -42,6 +42,12 @@ v -cc gcc run examples/vulkan_particles --zero-copy --frames=120
 GCC or Clang is required because TinyCC cannot safely link Volk's global Vulkan
 dispatch symbols alongside some vendor OpenCL drivers.
 
+## Tested hardware
+
+- NVIDIA GeForce GTX 1060 6GB on Linux: UUID-matched opaque-FD external memory,
+  Vulkan-to-OpenCL-to-Vulkan semaphore synchronization, and 300 frames with
+  32,768 particles passed using GCC.
+
 Run with `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
 `PARTICLES_WINDOW`, `PARTICLES_FRAMES`, `PARTICLES_FORCE_STAGED`, and
 `PARTICLES_REQUIRE_ZERO_COPY` environment variables remain supported for scripts and compatibility.
