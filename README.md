@@ -35,7 +35,8 @@ v fmt -w src/opencl.v
 ```
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
-V module together with the hand-written `src/convenience.v` ergonomic layer.
+V module together with the hand-written `src/convenience.v` and `src/ownership.v`
+ergonomic layers.
 
 See [`API_DESIGN.md`](API_DESIGN.md) for the conventions shared with the companion
 Vulkan convenience layer.

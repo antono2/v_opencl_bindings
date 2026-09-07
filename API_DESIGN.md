@@ -21,7 +21,7 @@ model rather than pretending to be reference-counted like OpenCL.
 ## Delivery slices
 
 1. Typed errors, platform/device discovery, and string information helpers.
-2. Context and command-queue ownership.
+2. Context and command-queue ownership. (Implemented.)
 3. Typed buffers and transfer helpers.
 4. Program compilation with build logs and kernel argument helpers.
 5. Optional extension capability objects and interoperability helpers.
