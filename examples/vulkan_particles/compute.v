@@ -7,13 +7,14 @@ const particle_stride = usize(8 * sizeof(f32))
 struct Compute {
 	platform cl.PlatformId
 	device   cl.DeviceId
-	context  cl.OwnedContext
-	queue    cl.OwnedCommandQueue
-	program  cl.OwnedProgram
-	reset    cl.OwnedKernel
-	step     cl.OwnedKernel
-	buffer   cl.Buffer[f32]
 	count    usize
+mut:
+	context cl.OwnedContext
+	queue   cl.OwnedCommandQueue
+	program cl.OwnedProgram
+	reset   cl.OwnedKernel
+	step    cl.OwnedKernel
+	buffer  cl.Buffer[f32]
 }
 
 fn new_compute(count usize) !Compute {
