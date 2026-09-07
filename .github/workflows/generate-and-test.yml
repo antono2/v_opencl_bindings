@@ -39,6 +39,7 @@ jobs:
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           v -cc gcc run test
           v test test/convenience_test.v
+          v -cc gcc run examples/vector_add
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers xauth xvfb

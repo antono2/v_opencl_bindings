@@ -72,6 +72,10 @@ sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 
 ## Examples
 
+[`examples/vector_add`](examples/vector_add) demonstrates the generated module's
+owned convenience layer with asynchronous transfers, event dependencies, kernel
+dispatch, profiling, and cleanup.
+
 [`examples/vulkan_particles`](examples/vulkan_particles) is an interactive particle-galaxy
 example built around OpenCL compute and Vulkan presentation. Its display-independent smoke
 runner exercises the particle kernel on CPU or GPU OpenCL devices; the Vulkan renderer
