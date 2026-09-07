@@ -5,7 +5,17 @@ module opencl
 
 #flag windows -lOpenCL
 
+#flag darwin -framework OpenCL
+
+#if defined(__APPLE__)
+
+#include <OpenCL/opencl.h>
+
+#else
+
 #include <CL/opencl.h>
+
+#endif
 
 pub fn make_version(major u32, minor u32, patch u32) u32 {
 	return (major << 22) | (minor << 12) | patch

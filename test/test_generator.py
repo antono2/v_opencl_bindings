@@ -31,6 +31,13 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const device_type_gpu = DeviceType(1 << 2)", generated)
         self.assertIn("pub const platform_name = PlatformInfo(0x0902)", generated)
 
+    def test_platform_link_and_header_flags_are_generated(self) -> None:
+        generated = self.generate()
+        self.assertIn("#flag linux -lOpenCL", generated)
+        self.assertIn("#flag windows -lOpenCL", generated)
+        self.assertIn("#flag darwin -framework OpenCL", generated)
+        self.assertIn("#if defined(__APPLE__)\n#include <OpenCL/opencl.h>\n#else\n#include <CL/opencl.h>\n#endif", generated)
+
     def test_complete_core_error_range_is_emitted(self) -> None:
         generated = self.generate()
         self.assertIn("pub const success = ErrorCode(0)", generated)
