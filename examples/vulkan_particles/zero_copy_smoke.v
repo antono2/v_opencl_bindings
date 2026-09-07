@@ -3,8 +3,6 @@ module main
 import antono2.opencl as cl
 import vulkan as vk
 
-fn C.volkLoadDevice(vk.Device)
-
 type ExternalMemoryCommand = fn (cl.CommandQueue, u32, &cl.Mem, u32, &cl.Event, &cl.Event) cl.ErrorCode
 
 type CreateBufferWithPropertiesCommand = fn (cl.Context, &u64, u64, usize, voidptr, &cl.ErrorCode) cl.Mem
@@ -23,7 +21,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	if !has_uuid {
 		return error('OpenCL UUID unavailable')
 	}
-	if C.particles_volk_initialize() != vk.Result.success {
+	if vk.initialize_loader() != vk.Result.success {
 		return error('initialize Vulkan loader')
 	}
 	mut instance := vk.Instance(unsafe { nil })
@@ -34,7 +32,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	instance_info := vk.InstanceCreateInfo{ pApplicationInfo: &app_info }
 	vk_check(vk.create_instance(&instance_info, unsafe { nil }, &instance), 'create instance')!
 	defer { vk.destroy_instance(instance, unsafe { nil }) }
-	C.volkLoadInstance(instance)
+	vk.load_instance_commands(instance)
 
 	physical := find_vulkan_device_by_uuid(instance, cl_uuid)!
 	queue_family := first_queue_family(physical)!
@@ -55,7 +53,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut device := vk.Device(unsafe { nil })
 	vk_check(vk.create_device(physical, &device_info, unsafe { nil }, &device), 'create device')!
 	defer { vk.destroy_device(device, unsafe { nil }) }
-	C.volkLoadDevice(device)
+	vk.load_device_commands(device)
 	mut queue := vk.Queue(unsafe { nil })
 	vk.get_device_queue(device, queue_family, 0, &queue)
 

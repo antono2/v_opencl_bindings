@@ -24,8 +24,14 @@ Install the example-only V modules and Linux development packages before buildin
 v install antono2.opencl
 v install https://github.com/antono2/vulkan
 v install https://github.com/antono2/glfw
+mv ~/.vmodules/antono2/vulkan ~/.vmodules/vulkan
 sudo apt install ocl-icd-opencl-dev libvulkan-dev libglfw3-dev
 ```
+
+The move is currently required because both the Vulkan binding and GLFW import
+the module as `vulkan`, while URL-based V installs retain the repository owner
+directory. Keep only one active `vulkan` module on V's module search path;
+move backups outside `.vmodules` so an older copy cannot be selected.
 
 ```sh
 v run examples/vulkan_particles

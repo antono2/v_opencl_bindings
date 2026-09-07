@@ -3,30 +3,6 @@ module main
 import antono2.opencl as cl
 import vulkan as vk
 
-// The Vulkan binding uses Volk for dispatch. These are declared by the binding's
-// bundled C implementation but are not currently public V wrappers.
-#flag linux -I$env('VULKAN_SDK')/include
-
-#flag linux -I$env('VULKAN_SDK')/include/volk
-
-#flag darwin -I$env('VULKAN_SDK')/include
-
-#flag darwin -I$env('VULKAN_SDK')/include/volk
-
-#flag windows -I$env('VULKAN_SDK')/Include
-
-#flag windows -I$env('VULKAN_SDK')/Include/Volk
-
-#flag -DVK_NO_PROTOTYPES
-
-#include <volk.h>
-
-#include "volk_bridge.h"
-
-fn C.particles_volk_initialize() vk.Result
-
-fn C.volkLoadInstance(vk.Instance)
-
 struct InteropReport {
 mut:
 	opencl_device       string
@@ -52,7 +28,7 @@ fn probe_interop(cl_device cl.DeviceId) InteropReport {
 	cl_semaphore := has_all_extensions(cl_extensions, ['cl_khr_semaphore', 'cl_khr_external_semaphore',
 		'cl_khr_external_semaphore_opaque_fd'])
 	cl_uuid, cl_has_uuid := opencl_uuid(cl_device, cl_extensions)
-	if C.particles_volk_initialize() != vk.Result.success {
+	if vk.initialize_loader() != vk.Result.success {
 		return InteropReport{
 			opencl_device: cl_name
 			reason: 'Vulkan loader initialization failed'
@@ -76,7 +52,7 @@ fn probe_interop(cl_device cl.DeviceId) InteropReport {
 			reason: 'Vulkan instance creation failed'
 		}
 	}
-	C.volkLoadInstance(instance)
+	vk.load_instance_commands(instance)
 	defer {
 		vk.destroy_instance(instance, unsafe { nil })
 	}

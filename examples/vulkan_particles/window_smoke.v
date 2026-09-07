@@ -29,7 +29,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	defer { glfw.destroy_window(window) }
 
-	if C.particles_volk_initialize() != vk.Result.success {
+	if vk.initialize_loader() != vk.Result.success {
 		return error('initialize Vulkan loader')
 	}
 	mut extension_count := u32(0)
@@ -48,7 +48,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	mut instance := vk.Instance(unsafe { nil })
 	vk_check(vk.create_instance(&instance_info, unsafe { nil }, &instance), 'create window instance')!
 	defer { vk.destroy_instance(instance, unsafe { nil }) }
-	C.volkLoadInstance(instance)
+	vk.load_instance_commands(instance)
 	mut surface := vk.SurfaceKHR(unsafe { nil })
 	vk_check(glfw.create_window_surface(instance, window, unsafe { nil }, &surface), 'create GLFW surface')!
 	defer { vk.destroy_surface_khr(instance, surface, unsafe { nil }) }
@@ -86,7 +86,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	mut device := vk.Device(unsafe { nil })
 	vk_check(vk.create_device(physical, &device_info, unsafe { nil }, &device), 'create window device')!
-	C.volkLoadDevice(device)
+	vk.load_device_commands(device)
 	defer { vk.destroy_device(device, unsafe { nil }) }
 	mut queue := vk.Queue(unsafe { nil })
 	vk.get_device_queue(device, queue_family, 0, &queue)
