@@ -48,7 +48,10 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 			status: out_of_host_memory
 		}
 	}
-	option_pointer := if options.len == 0 { nil } else { options.str }
+	mut option_pointer := &char(unsafe { nil })
+	if options.len > 0 {
+		option_pointer = options.str
+	}
 	status = build_program(handle, 1, &device, option_pointer, unsafe { nil }, unsafe { nil })
 	if status != success {
 		log := read_program_build_log(handle, device)
@@ -132,7 +135,10 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 			status: invalid_global_work_size
 		}
 	}
-	local_pointer := if local_size == 0 { nil } else { &local_size }
+	mut local_pointer := &usize(unsafe { nil })
+	if local_size > 0 {
+		local_pointer = &local_size
+	}
 	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
 }
 
