@@ -110,7 +110,7 @@ fn (compute &Compute) update_buffer(buffer cl.Mem, dt f32, elapsed f32, pointer_
 	compute.step.set_buffer_arg(0, buffer)!
 	compute.step.set_arg(1, &dt)!
 	compute.step.set_arg(2, &elapsed)!
-	compute.step.set_arg(3, &pointer)!
+	compute.step.set_slice_arg(3, pointer)!
 	compute.step.set_arg(4, &attraction)!
 	compute.step.enqueue_1d(&compute.queue, compute.count, 0)!
 }

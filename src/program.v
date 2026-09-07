@@ -109,6 +109,24 @@ pub fn (kernel &OwnedKernel) set_arg[T](index u32, value &T) ! {
 	check(set_kernel_arg(kernel.handle, index, sizeof(T), value), 'set OpenCL kernel argument')!
 }
 
+// set_slice_arg copies the contiguous elements of a non-empty slice as one
+// by-value kernel argument, for example a two-element f32 slice for float2.
+pub fn (kernel &OwnedKernel) set_slice_arg[T](index u32, values []T) ! {
+	if isnil(kernel.handle) {
+		return OpenCLError{
+			operation: 'set argument on closed OpenCL kernel'
+			status: invalid_kernel
+		}
+	}
+	if values.len == 0 {
+		return OpenCLError{
+			operation: 'set empty OpenCL kernel slice argument'
+			status: invalid_arg_size
+		}
+	}
+	check(set_kernel_arg(kernel.handle, index, usize(values.len) * sizeof(T), values.data), 'set OpenCL kernel slice argument')!
+}
+
 // set_buffer_arg binds an OpenCL memory object, such as Buffer.handle.
 pub fn (kernel &OwnedKernel) set_buffer_arg(index u32, buffer Mem) ! {
 	if isnil(buffer) {
