@@ -4,6 +4,9 @@ Generates V bindings for OpenCL from the canonical Khronos
 [`cl.xml`](https://github.com/KhronosGroup/OpenCL-Docs/blob/main/xml/cl.xml)
 registry.
 
+The generated module is published as
+[`antono2.opencl` on VPM](https://vpm.vlang.io/packages/antono2.opencl).
+
 The complete OpenCL 1.0 through 3.0 core constant surface, including bitfields
 and error codes, is read directly from the registry rather than maintained as
 duplicated values. Constants retain the corresponding OpenCL typedef as their
