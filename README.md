@@ -35,7 +35,10 @@ v fmt -w src/opencl.v
 ```
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
-V module.
+V module together with the hand-written `src/convenience.v` ergonomic layer.
+
+See [`API_DESIGN.md`](API_DESIGN.md) for the conventions shared with the companion
+Vulkan convenience layer.
 
 The generated surface covers the complete cumulative OpenCL 1.0 through 3.0
 core command, type, and constant API. It also includes the portable

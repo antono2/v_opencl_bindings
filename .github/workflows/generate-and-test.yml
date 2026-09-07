@@ -32,8 +32,10 @@ jobs:
         run: |
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
+          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           v -cc gcc run test
+          v test test/convenience_test.v
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers xauth xvfb
@@ -41,6 +43,7 @@ jobs:
           v install antono2.glfw
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
+          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
           install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -74,6 +77,7 @@ jobs:
         run: |
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
+          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -91,7 +95,7 @@ jobs:
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'
           New-Item -ItemType Directory -Force $module | Out-Null
-          Copy-Item src/opencl.v, v.mod -Destination $module
+          Copy-Item src/opencl.v, src/convenience.v, v.mod -Destination $module
           $include = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/include'
           $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/lib'
           v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
