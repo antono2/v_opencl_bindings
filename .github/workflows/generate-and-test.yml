@@ -72,4 +72,4 @@ jobs:
         run: |
           install -d "$HOME/.vmodules/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/opencl/opencl.v"
-          v -cc clang -o /tmp/opencl-abi-probe test/abi_compile.c.v
+          v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v

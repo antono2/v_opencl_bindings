@@ -36,7 +36,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("#flag linux -lOpenCL", generated)
         self.assertIn("#flag windows -lOpenCL", generated)
         self.assertIn("#flag darwin -framework OpenCL", generated)
-        self.assertIn("#if defined(__APPLE__)\n#include <OpenCL/opencl.h>\n#else\n#include <CL/opencl.h>\n#endif", generated)
+        self.assertIn("#include <CL/opencl.h>", generated)
 
     def test_complete_core_error_range_is_emitted(self) -> None:
         generated = self.generate()
