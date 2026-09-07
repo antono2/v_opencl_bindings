@@ -530,7 +530,13 @@ class OpenCLGenerator:
             if node.find("proto") is not None
         }
         declarations = []
+        extension_types = []
         wrappers = []
+        core_command_names = {
+            node.attrib["name"]
+            for feature_name in CORE_FEATURES
+            for node in self.root.find(f"feature[@name='{feature_name}']").findall(".//command")
+        }
         command_names = list(dict.fromkeys(
             node.attrib["name"]
             for section in self.registry_sections()
@@ -548,18 +554,58 @@ class OpenCLGenerator:
                 params.append((param_name, self.command_type(param)))
                 param_names.append(param_name)
             c_signature = ", ".join(v_type for _, v_type in params)
-            declarations.append(
-                f"fn C.{c_name}({c_signature})" + (f" {return_type}" if return_type else "")
-            )
+            signature = f"fn ({c_signature})" + (f" {return_type}" if return_type else "")
+            is_extension = c_name not in core_command_names
+            if is_extension:
+                extension_types.append((f"PFN_{c_name}", signature))
+            else:
+                declarations.append(
+                    f"fn C.{c_name}({c_signature})" + (f" {return_type}" if return_type else "")
+                )
             v_params = ", ".join(f"{name} {v_type}" for name, v_type in params)
-            call = f"C.{c_name}({', '.join(param_names)})"
-            body = f"\treturn {call}" if return_type else f"\t{call}"
+            if is_extension:
+                pointer_type = f"PFN_{c_name}"
+                lines = [
+                    f"\textension_fn := unsafe {{ {pointer_type}(C.clGetExtensionFunctionAddress(c'{c_name}')) }}",
+                    "\tif isnil(extension_fn) {",
+                ]
+                if return_type == "ErrorCode":
+                    lines.append("\t\treturn invalid_operation")
+                elif return_type and self.resolve_type(command.findtext("proto/type")) == "voidptr":
+                    if "errcode_ret" in param_names:
+                        lines.extend([
+                            "\t\tif !isnil(errcode_ret) {",
+                            "\t\t\tunsafe { *errcode_ret = invalid_operation }",
+                            "\t\t}",
+                        ])
+                    lines.append(f"\t\treturn {return_type}(unsafe {{ nil }})")
+                else:
+                    raise RuntimeError(f"Unsupported extension fallback return type for {c_name}")
+                lines.append("\t}")
+                call = f"extension_fn({', '.join(param_names)})"
+                lines.append(f"\treturn {call}" if return_type else f"\t{call}")
+                body = "\n".join(lines)
+            else:
+                call = f"C.{c_name}({', '.join(param_names)})"
+                body = f"\treturn {call}" if return_type else f"\t{call}"
             wrappers.append(
                 f"@[inline]\npub fn {self.command_name(c_name)}({v_params})"
                 + (f" {return_type}" if return_type else "")
                 + f" {{\n{body}\n}}"
             )
-        return "\n".join(declarations) + "\n\n" + "\n\n".join(wrappers)
+        windows_extension_types = "\n".join(
+            f"\t@[callconv: stdcall]\n\tpub type {name} = {signature}"
+            for name, signature in extension_types
+        )
+        other_extension_types = "\n".join(
+            f"\tpub type {name} = {signature}"
+            for name, signature in extension_types
+        )
+        extension_type_block = (
+            f"$if windows {{\n{windows_extension_types}\n}} $else {{\n{other_extension_types}\n}}"
+        )
+        return ("\n".join(declarations) + "\n\n" + extension_type_block
+                + "\n\n" + "\n\n".join(wrappers))
 
     def write(self, output: Path) -> None:
         self.validate_registry()

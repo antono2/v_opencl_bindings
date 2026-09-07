@@ -61,7 +61,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_core_callback_types_are_emitted_and_used(self) -> None:
         generated = self.generate()
         self.assertIn("$if windows {", generated)
-        self.assertEqual(generated.count("@[callconv: stdcall]"), 7)
+        self.assertEqual(generated.count("@[callconv: stdcall]"), 21)
         self.assertIn("pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)", generated)
         self.assertIn("pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)", generated)
         self.assertIn("pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)", generated)
@@ -145,6 +145,15 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn create_command_queue_with_properties_khr(", generated)
         self.assertIn("pub fn get_kernel_sub_group_info_khr(", generated)
         self.assertIn("pub fn get_kernel_suggested_local_work_size_khr(", generated)
+
+    def test_extension_commands_are_resolved_at_runtime(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type PFN_clGetKernelSubGroupInfoKHR = fn (", generated)
+        self.assertIn("PFN_clGetKernelSubGroupInfoKHR(C.clGetExtensionFunctionAddress(c'clGetKernelSubGroupInfoKHR'))", generated)
+        self.assertNotIn("fn C.clGetKernelSubGroupInfoKHR(", generated)
+        self.assertIn("if isnil(extension_fn) {\n\t\treturn invalid_operation", generated)
+        self.assertIn("unsafe { *errcode_ret = invalid_operation }", generated)
+        self.assertIn("return Program(unsafe { nil })", generated)
 
     def test_external_memory_and_semaphore_extensions_are_generated(self) -> None:
         generated = self.generate()

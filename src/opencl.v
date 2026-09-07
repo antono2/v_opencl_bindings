@@ -988,33 +988,51 @@ fn C.clCreateBufferWithProperties(Context, &MemProperties, MemFlags, usize, void
 
 fn C.clCreateImageWithProperties(Context, &MemProperties, MemFlags, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
 
-fn C.clCreateProgramWithILKHR(Context, voidptr, usize, &ErrorCode) Program
-
-fn C.clCreateCommandQueueWithPropertiesKHR(Context, DeviceId, &QueuePropertiesKhr, &ErrorCode) CommandQueue
-
-fn C.clGetKernelSubGroupInfoKHR(Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
-
-fn C.clGetKernelSuggestedLocalWorkSizeKHR(CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
-
-fn C.clCreateSemaphoreWithPropertiesKHR(Context, &SemaphorePropertiesKhr, &ErrorCode) SemaphoreKhr
-
-fn C.clEnqueueWaitSemaphoresKHR(CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
-
-fn C.clEnqueueSignalSemaphoresKHR(CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
-
-fn C.clGetSemaphoreInfoKHR(SemaphoreKhr, SemaphoreInfoKhr, usize, voidptr, &usize) ErrorCode
-
-fn C.clReleaseSemaphoreKHR(SemaphoreKhr) ErrorCode
-
-fn C.clRetainSemaphoreKHR(SemaphoreKhr) ErrorCode
-
-fn C.clGetSemaphoreHandleForTypeKHR(SemaphoreKhr, DeviceId, ExternalSemaphoreHandleTypeKhr, usize, voidptr, &usize) ErrorCode
-
-fn C.clReImportSemaphoreSyncFdKHR(SemaphoreKhr, &SemaphoreReimportPropertiesKhr, int) ErrorCode
-
-fn C.clEnqueueAcquireExternalMemObjectsKHR(CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
-
-fn C.clEnqueueReleaseExternalMemObjectsKHR(CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+$if windows {
+	@[callconv: stdcall]
+	pub type PFN_clCreateProgramWithILKHR = fn (Context, voidptr, usize, &ErrorCode) Program
+	@[callconv: stdcall]
+	pub type PFN_clCreateCommandQueueWithPropertiesKHR = fn (Context, DeviceId, &QueuePropertiesKhr, &ErrorCode) CommandQueue
+	@[callconv: stdcall]
+	pub type PFN_clGetKernelSubGroupInfoKHR = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clGetKernelSuggestedLocalWorkSizeKHR = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clCreateSemaphoreWithPropertiesKHR = fn (Context, &SemaphorePropertiesKhr, &ErrorCode) SemaphoreKhr
+	@[callconv: stdcall]
+	pub type PFN_clEnqueueWaitSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clEnqueueSignalSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clGetSemaphoreInfoKHR = fn (SemaphoreKhr, SemaphoreInfoKhr, usize, voidptr, &usize) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clReleaseSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clRetainSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clGetSemaphoreHandleForTypeKHR = fn (SemaphoreKhr, DeviceId, ExternalSemaphoreHandleTypeKhr, usize, voidptr, &usize) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clReImportSemaphoreSyncFdKHR = fn (SemaphoreKhr, &SemaphoreReimportPropertiesKhr, int) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clEnqueueAcquireExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+	@[callconv: stdcall]
+	pub type PFN_clEnqueueReleaseExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+} $else {
+	pub type PFN_clCreateProgramWithILKHR = fn (Context, voidptr, usize, &ErrorCode) Program
+	pub type PFN_clCreateCommandQueueWithPropertiesKHR = fn (Context, DeviceId, &QueuePropertiesKhr, &ErrorCode) CommandQueue
+	pub type PFN_clGetKernelSubGroupInfoKHR = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+	pub type PFN_clGetKernelSuggestedLocalWorkSizeKHR = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
+	pub type PFN_clCreateSemaphoreWithPropertiesKHR = fn (Context, &SemaphorePropertiesKhr, &ErrorCode) SemaphoreKhr
+	pub type PFN_clEnqueueWaitSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+	pub type PFN_clEnqueueSignalSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+	pub type PFN_clGetSemaphoreInfoKHR = fn (SemaphoreKhr, SemaphoreInfoKhr, usize, voidptr, &usize) ErrorCode
+	pub type PFN_clReleaseSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+	pub type PFN_clRetainSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+	pub type PFN_clGetSemaphoreHandleForTypeKHR = fn (SemaphoreKhr, DeviceId, ExternalSemaphoreHandleTypeKhr, usize, voidptr, &usize) ErrorCode
+	pub type PFN_clReImportSemaphoreSyncFdKHR = fn (SemaphoreKhr, &SemaphoreReimportPropertiesKhr, int) ErrorCode
+	pub type PFN_clEnqueueAcquireExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+	pub type PFN_clEnqueueReleaseExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+}
 
 @[inline]
 pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
@@ -1588,70 +1606,135 @@ pub fn create_image_with_properties(context Context, properties &MemProperties, 
 
 @[inline]
 pub fn create_program_with_il_khr(context Context, il voidptr, length usize, errcode_ret &ErrorCode) Program {
-	return C.clCreateProgramWithILKHR(context, il, length, errcode_ret)
+	extension_fn := unsafe { PFN_clCreateProgramWithILKHR(C.clGetExtensionFunctionAddress(c'clCreateProgramWithILKHR')) }
+	if isnil(extension_fn) {
+		if !isnil(errcode_ret) {
+			unsafe { *errcode_ret = invalid_operation }
+		}
+		return Program(unsafe { nil })
+	}
+	return extension_fn(context, il, length, errcode_ret)
 }
 
 @[inline]
 pub fn create_command_queue_with_properties_khr(context Context, device DeviceId, properties &QueuePropertiesKhr, errcode_ret &ErrorCode) CommandQueue {
-	return C.clCreateCommandQueueWithPropertiesKHR(context, device, properties, errcode_ret)
+	extension_fn := unsafe { PFN_clCreateCommandQueueWithPropertiesKHR(C.clGetExtensionFunctionAddress(c'clCreateCommandQueueWithPropertiesKHR')) }
+	if isnil(extension_fn) {
+		if !isnil(errcode_ret) {
+			unsafe { *errcode_ret = invalid_operation }
+		}
+		return CommandQueue(unsafe { nil })
+	}
+	return extension_fn(context, device, properties, errcode_ret)
 }
 
 @[inline]
 pub fn get_kernel_sub_group_info_khr(in_kernel Kernel, in_device DeviceId, param_name KernelSubGroupInfo, input_value_size usize, input_value voidptr, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetKernelSubGroupInfoKHR(in_kernel, in_device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+	extension_fn := unsafe { PFN_clGetKernelSubGroupInfoKHR(C.clGetExtensionFunctionAddress(c'clGetKernelSubGroupInfoKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(in_kernel, in_device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
 }
 
 @[inline]
 pub fn get_kernel_suggested_local_work_size_khr(command_queue CommandQueue, kernel Kernel, work_dim u32, global_work_offset &usize, global_work_size &usize, suggested_local_work_size &usize) ErrorCode {
-	return C.clGetKernelSuggestedLocalWorkSizeKHR(command_queue, kernel, work_dim, global_work_offset, global_work_size, suggested_local_work_size)
+	extension_fn := unsafe { PFN_clGetKernelSuggestedLocalWorkSizeKHR(C.clGetExtensionFunctionAddress(c'clGetKernelSuggestedLocalWorkSizeKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(command_queue, kernel, work_dim, global_work_offset, global_work_size, suggested_local_work_size)
 }
 
 @[inline]
 pub fn create_semaphore_with_properties_khr(context Context, sema_props &SemaphorePropertiesKhr, errcode_ret &ErrorCode) SemaphoreKhr {
-	return C.clCreateSemaphoreWithPropertiesKHR(context, sema_props, errcode_ret)
+	extension_fn := unsafe { PFN_clCreateSemaphoreWithPropertiesKHR(C.clGetExtensionFunctionAddress(c'clCreateSemaphoreWithPropertiesKHR')) }
+	if isnil(extension_fn) {
+		if !isnil(errcode_ret) {
+			unsafe { *errcode_ret = invalid_operation }
+		}
+		return SemaphoreKhr(unsafe { nil })
+	}
+	return extension_fn(context, sema_props, errcode_ret)
 }
 
 @[inline]
 pub fn enqueue_wait_semaphores_khr(command_queue CommandQueue, num_sema_objects u32, sema_objects &SemaphoreKhr, sema_payload_list &SemaphorePayloadKhr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueWaitSemaphoresKHR(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
+	extension_fn := unsafe { PFN_clEnqueueWaitSemaphoresKHR(C.clGetExtensionFunctionAddress(c'clEnqueueWaitSemaphoresKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
 }
 
 @[inline]
 pub fn enqueue_signal_semaphores_khr(command_queue CommandQueue, num_sema_objects u32, sema_objects &SemaphoreKhr, sema_payload_list &SemaphorePayloadKhr, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueSignalSemaphoresKHR(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
+	extension_fn := unsafe { PFN_clEnqueueSignalSemaphoresKHR(C.clGetExtensionFunctionAddress(c'clEnqueueSignalSemaphoresKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(command_queue, num_sema_objects, sema_objects, sema_payload_list, num_events_in_wait_list, event_wait_list, event)
 }
 
 @[inline]
 pub fn get_semaphore_info_khr(sema_object SemaphoreKhr, param_name SemaphoreInfoKhr, param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetSemaphoreInfoKHR(sema_object, param_name, param_value_size, param_value, param_value_size_ret)
+	extension_fn := unsafe { PFN_clGetSemaphoreInfoKHR(C.clGetExtensionFunctionAddress(c'clGetSemaphoreInfoKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(sema_object, param_name, param_value_size, param_value, param_value_size_ret)
 }
 
 @[inline]
 pub fn release_semaphore_khr(sema_object SemaphoreKhr) ErrorCode {
-	return C.clReleaseSemaphoreKHR(sema_object)
+	extension_fn := unsafe { PFN_clReleaseSemaphoreKHR(C.clGetExtensionFunctionAddress(c'clReleaseSemaphoreKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(sema_object)
 }
 
 @[inline]
 pub fn retain_semaphore_khr(sema_object SemaphoreKhr) ErrorCode {
-	return C.clRetainSemaphoreKHR(sema_object)
+	extension_fn := unsafe { PFN_clRetainSemaphoreKHR(C.clGetExtensionFunctionAddress(c'clRetainSemaphoreKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(sema_object)
 }
 
 @[inline]
 pub fn get_semaphore_handle_for_type_khr(sema_object SemaphoreKhr, device DeviceId, handle_type ExternalSemaphoreHandleTypeKhr, handle_size usize, handle_ptr voidptr, handle_size_ret &usize) ErrorCode {
-	return C.clGetSemaphoreHandleForTypeKHR(sema_object, device, handle_type, handle_size, handle_ptr, handle_size_ret)
+	extension_fn := unsafe { PFN_clGetSemaphoreHandleForTypeKHR(C.clGetExtensionFunctionAddress(c'clGetSemaphoreHandleForTypeKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(sema_object, device, handle_type, handle_size, handle_ptr, handle_size_ret)
 }
 
 @[inline]
 pub fn re_import_semaphore_sync_fd_khr(sema_object SemaphoreKhr, reimport_props &SemaphoreReimportPropertiesKhr, fd int) ErrorCode {
-	return C.clReImportSemaphoreSyncFdKHR(sema_object, reimport_props, fd)
+	extension_fn := unsafe { PFN_clReImportSemaphoreSyncFdKHR(C.clGetExtensionFunctionAddress(c'clReImportSemaphoreSyncFdKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(sema_object, reimport_props, fd)
 }
 
 @[inline]
 pub fn enqueue_acquire_external_mem_objects_khr(command_queue CommandQueue, num_mem_objects u32, mem_objects &Mem, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueAcquireExternalMemObjectsKHR(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
+	extension_fn := unsafe { PFN_clEnqueueAcquireExternalMemObjectsKHR(C.clGetExtensionFunctionAddress(c'clEnqueueAcquireExternalMemObjectsKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
 }
 
 @[inline]
 pub fn enqueue_release_external_mem_objects_khr(command_queue CommandQueue, num_mem_objects u32, mem_objects &Mem, num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueReleaseExternalMemObjectsKHR(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
+	extension_fn := unsafe { PFN_clEnqueueReleaseExternalMemObjectsKHR(C.clGetExtensionFunctionAddress(c'clEnqueueReleaseExternalMemObjectsKHR')) }
+	if isnil(extension_fn) {
+		return invalid_operation
+	}
+	return extension_fn(command_queue, num_mem_objects, mem_objects, num_events_in_wait_list, event_wait_list, event)
 }
