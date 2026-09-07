@@ -1,6 +1,6 @@
 module main
 
-import opencl as cl
+import antono2.opencl as cl
 
 fn main() {
 	_ = cl.PlatformId(unsafe { nil })
