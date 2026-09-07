@@ -72,9 +72,10 @@ TYPED_CONSTANTS = {
     "ProgramBuildInfo": ("CL_PROGRAM_BUILD_LOG",),
     "EventInfo": ("CL_EVENT_COMMAND_EXECUTION_STATUS",),
     "i32": ("CL_COMPLETE", "CL_RUNNING", "CL_SUBMITTED", "CL_QUEUED"),
+    "Bool": ("CL_FALSE", "CL_TRUE"),
     "u32": (
-        "CL_FALSE", "CL_TRUE", "CL_VERSION_MAJOR_BITS", "CL_VERSION_MINOR_BITS",
-        "CL_VERSION_PATCH_BITS", "CL_NAME_VERSION_MAX_NAME_SIZE",
+        "CL_VERSION_MAJOR_BITS", "CL_VERSION_MINOR_BITS", "CL_VERSION_PATCH_BITS",
+        "CL_NAME_VERSION_MAX_NAME_SIZE",
     ),
 }
 
@@ -84,6 +85,13 @@ PRIMITIVE_TYPES = {
     "float": "f32", "double": "f64", "int8_t": "i8", "int16_t": "i16",
     "int32_t": "i32", "int64_t": "i64", "uint8_t": "u8",
     "uint16_t": "u16", "uint32_t": "u32", "uint64_t": "u64",
+}
+
+# Keep C arithmetic typedefs convenient for ordinary V values and pointers,
+# while preserving semantic OpenCL typedefs in public command signatures.
+ABI_SCALAR_TYPES = {
+    "cl_char", "cl_uchar", "cl_short", "cl_ushort", "cl_int", "cl_uint",
+    "cl_long", "cl_ulong", "cl_float", "cl_double",
 }
 
 V_KEYWORDS = {
@@ -495,11 +503,9 @@ class OpenCLGenerator:
             return "&" * max(0, pointer_depth - 1) + "voidptr"
         if c_type == "cl_int" and (is_return or name == "errcode_ret"):
             base = "ErrorCode"
-        elif c_type.startswith("cl_") and self.types[c_type].attrib.get("category") == "struct":
-            base = self.type_name(c_type)
         elif c_type == "char":
             base = "char"
-        elif c_type.startswith("cl_") and self.resolve_type(c_type) == "voidptr":
+        elif c_type.startswith("cl_") and c_type not in ABI_SCALAR_TYPES:
             base = self.type_name(c_type)
         else:
             base = self.resolve_type(c_type)

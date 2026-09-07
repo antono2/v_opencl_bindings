@@ -65,7 +65,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)", generated)
         self.assertIn("pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)", generated)
         self.assertIn("pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)", generated)
-        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, ContextNotifyCallback", generated)
+        self.assertIn("fn C.clCreateContext(&ContextProperties, u32, &DeviceId, ContextNotifyCallback", generated)
         self.assertIn("pub fn set_event_callback(event Event, command_exec_callback_type i32, pfn_notify EventCallback", generated)
         self.assertIn("pub fn enqueue_native_kernel(command_queue CommandQueue, user_func NativeKernelCallback", generated)
 
@@ -74,11 +74,20 @@ class OpenCLGeneratorTests(unittest.TestCase):
 
     def test_opencl_1_0_commands_are_generated_from_xml(self) -> None:
         generated = self.generate()
-        self.assertIn("fn C.clCreateContext(&isize, u32, &DeviceId, ContextNotifyCallback", generated)
+        self.assertIn("fn C.clCreateContext(&ContextProperties, u32, &DeviceId, ContextNotifyCallback", generated)
         self.assertIn("pub fn get_platform_ids(", generated)
         self.assertIn("pub fn enqueue_nd_range_kernel(", generated)
         self.assertIn("pub fn get_supported_image_formats(", generated)
         self.assertEqual(generated.count("@[inline]\npub fn "), 128)
+
+    def test_command_signatures_preserve_semantic_typedefs(self) -> None:
+        generated = self.generate()
+        self.assertIn("fn C.clGetDeviceIDs(PlatformId, DeviceType, u32", generated)
+        self.assertIn("pub fn get_device_info(device DeviceId, param_name DeviceInfo", generated)
+        self.assertIn("pub fn create_buffer(context Context, flags MemFlags", generated)
+        self.assertIn("pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read Bool", generated)
+        self.assertIn("pub fn create_semaphore_with_properties_khr(context Context, sema_props &SemaphorePropertiesKhr", generated)
+        self.assertIn("handle_type ExternalSemaphoreHandleTypeKhr", generated)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()
