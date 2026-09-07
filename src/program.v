@@ -136,8 +136,9 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 		}
 	}
 	mut local_pointer := &usize(unsafe { nil })
+	mut requested_local_size := local_size
 	if local_size > 0 {
-		local_pointer = &local_size
+		local_pointer = &requested_local_size
 	}
 	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
 }
