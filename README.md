@@ -55,3 +55,11 @@ is required. On Debian or Ubuntu, PoCL provides a suitable CPU implementation:
 ```sh
 sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 ```
+
+## Examples
+
+[`examples/vulkan_particles`](examples/vulkan_particles) is an evolving particle-galaxy
+example built around OpenCL compute and Vulkan presentation. Its display-independent smoke
+runner already exercises the particle kernel on CPU or GPU OpenCL devices; the Vulkan renderer
+prefers UUID-matched external-memory interop and falls back to host staging. On qualifying
+hardware, OpenCL updates the same exported allocation that Vulkan consumes as a vertex buffer.
