@@ -42,7 +42,9 @@ jobs:
           mv "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/vulkan"
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
-          install -m 0644 VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
+          install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
+          install -d "$HOME/.vmodules/antono2/opencl/include/CL"
+          install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
       - name: Build and test Vulkan particles example
         env:
           VULKAN_SDK: /usr
