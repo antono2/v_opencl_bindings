@@ -22,12 +22,11 @@ fn (report InteropReport) describe() string {
 
 fn probe_interop(cl_device cl.DeviceId) InteropReport {
 	cl_name := cl_info_string(cl_device, cl.device_name)
-	cl_extensions := cl_info_string(cl_device, cl.device_extensions)
-	cl_memory := has_all_extensions(cl_extensions, ['cl_khr_external_memory',
-		'cl_khr_external_memory_opaque_fd'])
-	cl_semaphore := has_all_extensions(cl_extensions, ['cl_khr_semaphore', 'cl_khr_external_semaphore',
+	capabilities := cl.device_capabilities(cl_device) or { cl.DeviceCapabilities{ device: cl_device } }
+	cl_memory := capabilities.has_all(['cl_khr_external_memory', 'cl_khr_external_memory_opaque_fd'])
+	cl_semaphore := capabilities.has_all(['cl_khr_semaphore', 'cl_khr_external_semaphore',
 		'cl_khr_external_semaphore_opaque_fd'])
-	cl_uuid, cl_has_uuid := opencl_uuid(cl_device, cl_extensions)
+	cl_uuid, cl_has_uuid := opencl_uuid(capabilities)
 	if vk.initialize_loader() != vk.Result.success {
 		return InteropReport{
 			opencl_device: cl_name
@@ -125,23 +124,15 @@ fn probe_interop(cl_device cl.DeviceId) InteropReport {
 	return fallback
 }
 
-fn opencl_uuid(device cl.DeviceId, extensions string) ([16]u8, bool) {
+fn opencl_uuid(capabilities cl.DeviceCapabilities) ([16]u8, bool) {
 	mut uuid := [16]u8{}
-	if !extensions.split(' ').contains('cl_khr_device_uuid') {
+	if !capabilities.device_uuid {
 		return uuid, false
 	}
-	result := cl.get_device_info(device, cl.device_uuid_khr, usize(uuid.len), &uuid[0], unsafe { nil })
-	return uuid, result == cl.success
-}
-
-fn has_all_extensions(extensions string, required []string) bool {
-	available := extensions.split(' ')
-	for extension in required {
-		if extension !in available {
-			return false
-		}
+	uuid = capabilities.uuid() or {
+		return uuid, false
 	}
-	return true
+	return uuid, true
 }
 
 fn uuid_equal(left [16]u8, right &u8) bool {

@@ -14,8 +14,8 @@ type ReleaseSemaphoreCommand = fn (cl.SemaphoreKhr) cl.ErrorCode
 // Exercises the external allocation before the window and render loop are involved.
 // This function is intentionally hardware-gated by probe_interop.
 fn zero_copy_memory_smoke(compute &Compute) ! {
-	cl_extensions := cl_info_string(compute.device, cl.device_extensions)
-	cl_uuid, has_uuid := opencl_uuid(compute.device, cl_extensions)
+	cl_capabilities := cl.device_capabilities(compute.device)!
+	cl_uuid, has_uuid := opencl_uuid(cl_capabilities)
 	if !has_uuid {
 		return error('OpenCL UUID unavailable')
 	}
@@ -92,20 +92,20 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	properties := [cl.MemProperties(cl.external_memory_handle_opaque_fd_khr), cl.MemProperties(fd),
 		cl.MemProperties(0)]
 	mut code := cl.success
-	imported_buffer := cl.create_buffer_with_properties(compute.context, properties.data, cl.mem_read_write, compute.count * particle_stride, unsafe { nil }, &code)
+	imported_buffer := cl.create_buffer_with_properties(compute.context.handle, properties.data, cl.mem_read_write, compute.count * particle_stride, unsafe { nil }, &code)
 	cl_check(code, 'import Vulkan memory into OpenCL')!
 	defer { cl.release_mem_object(imported_buffer) }
 	acquire := load_external_memory_command(compute.platform, c'clEnqueueAcquireExternalMemObjectsKHR')!
 	release := load_external_memory_command(compute.platform, c'clEnqueueReleaseExternalMemObjectsKHR')!
-	cl_check(acquire(compute.queue, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire external particle buffer')!
+	cl_check(acquire(compute.queue.handle, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire external particle buffer')!
 	seed := u32(7)
-	cl_check(cl.set_kernel_arg(compute.reset, 0, sizeof(cl.Mem), &imported_buffer), 'set shared particle buffer')!
-	cl_check(cl.set_kernel_arg(compute.reset, 1, sizeof(u32), &seed), 'set shared reset seed')!
-	cl_check(cl.enqueue_nd_range_kernel(compute.queue, compute.reset, 1, unsafe { nil }, &compute.count, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'write shared particle buffer')!
+	compute.reset.set_buffer_arg(0, imported_buffer)!
+	compute.reset.set_arg(1, &seed)!
+	compute.reset.enqueue_1d(&compute.queue, compute.count, 0)!
 	mut sample := []f32{len: 8}
-	cl_check(cl.enqueue_read_buffer(compute.queue, imported_buffer, cl._true, 0, particle_stride, sample.data, 0, unsafe { nil }, unsafe { nil }), 'verify shared particle buffer')!
-	cl_check(release(compute.queue, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'release external particle buffer')!
-	cl_check(cl.finish(compute.queue), 'finish zero-copy smoke')!
+	cl_check(cl.enqueue_read_buffer(compute.queue.handle, imported_buffer, cl._true, 0, particle_stride, sample.data, 0, unsafe { nil }, unsafe { nil }), 'verify shared particle buffer')!
+	cl_check(release(compute.queue.handle, 1, &imported_buffer, 0, unsafe { nil }, unsafe { nil }), 'release external particle buffer')!
+	cl_check(cl.finish(compute.queue.handle), 'finish zero-copy smoke')!
 	println('Zero-copy memory smoke: first particle = (${sample[0]:.3f}, ${sample[1]:.3f})')
 	zero_copy_semaphore_smoke(compute, device, queue)!
 }
@@ -144,10 +144,10 @@ fn zero_copy_semaphore_smoke(compute &Compute, device vk.Device, queue vk.Queue)
 	cl_to_vk_properties := [u64(cl.semaphore_type_khr), u64(cl.semaphore_type_binary_khr),
 		u64(cl.semaphore_handle_opaque_fd_khr), u64(cl_to_vk_fd), u64(0)]
 	mut code := cl.success
-	cl_wait := create(compute.context, vk_to_cl_properties.data, &code)
+	cl_wait := create(compute.context.handle, vk_to_cl_properties.data, &code)
 	cl_check(code, 'import Vulkan-to-OpenCL semaphore')!
 	defer { release(cl_wait) }
-	cl_signal := create(compute.context, cl_to_vk_properties.data, &code)
+	cl_signal := create(compute.context.handle, cl_to_vk_properties.data, &code)
 	cl_check(code, 'import OpenCL-to-Vulkan semaphore')!
 	defer { release(cl_signal) }
 
@@ -156,8 +156,8 @@ fn zero_copy_semaphore_smoke(compute &Compute, device vk.Device, queue vk.Queue)
 		pSignalSemaphores: &vk_to_cl
 	}
 	vk_check(vk.queue_submit(queue, 1, &vk_signal_submit, unsafe { nil }), 'signal Vulkan-to-OpenCL semaphore')!
-	cl_check(wait(compute.queue, 1, &cl_wait, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'wait for Vulkan in OpenCL')!
-	cl_check(signal(compute.queue, 1, &cl_signal, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'signal OpenCL-to-Vulkan semaphore')!
+	cl_check(wait(compute.queue.handle, 1, &cl_wait, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'wait for Vulkan in OpenCL')!
+	cl_check(signal(compute.queue.handle, 1, &cl_signal, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'signal OpenCL-to-Vulkan semaphore')!
 
 	stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.all_commands)
 	vk_wait_submit := vk.SubmitInfo{

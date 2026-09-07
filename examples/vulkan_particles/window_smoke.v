@@ -53,8 +53,8 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	vk_check(glfw.create_window_surface(instance, window, unsafe { nil }, &surface), 'create GLFW surface')!
 	defer { vk.destroy_surface_khr(instance, surface, unsafe { nil }) }
 
-	cl_extensions := cl_info_string(cl_device, cl.device_extensions)
-	cl_uuid, has_uuid := opencl_uuid(cl_device, cl_extensions)
+	cl_capabilities := cl.device_capabilities(cl_device) or { cl.DeviceCapabilities{ device: cl_device } }
+	cl_uuid, has_uuid := opencl_uuid(cl_capabilities)
 	physical := if use_zero_copy && has_uuid {
 		find_vulkan_device_by_uuid(instance, cl_uuid)!
 	} else {
@@ -118,10 +118,10 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		ExternalMemoryCommand(unsafe { nil })
 	}
 	if particle_buffer.zero_copy {
-		cl_check(acquire(compute.queue, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire live particle buffer for reset')!
+		cl_check(acquire(compute.queue.handle, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire live particle buffer for reset')!
 		compute.reset_buffer(particle_buffer.cl_buffer, 1)!
-		cl_check(release(compute.queue, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'release live particle buffer after reset')!
-		cl_check(cl.finish(compute.queue), 'finish live particle reset')!
+		cl_check(release(compute.queue.handle, 1, &particle_buffer.cl_buffer, 0, unsafe { nil }, unsafe { nil }), 'release live particle buffer after reset')!
+		cl_check(cl.finish(compute.queue.handle), 'finish live particle reset')!
 	}
 	interop_sync := if particle_buffer.zero_copy {
 		create_live_interop_sync(compute, device, queue)!
@@ -221,7 +221,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 			title_updated = now
 		}
 	}
-	cl_check(cl.finish(compute.queue), 'finish particle compute queue')!
+	cl_check(cl.finish(compute.queue.handle), 'finish particle compute queue')!
 	vk_check(vk.device_wait_idle(device), 'finish particle render queue')!
 	backend := if particle_buffer.zero_copy { 'zero-copy' } else { 'staged' }
 	println('Particle loop: rendered ${frame_number} frames with ${particle_count} particles at ${swapchain.extent.width}x${swapchain.extent.height} (${backend})')

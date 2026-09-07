@@ -48,9 +48,9 @@ fn create_live_interop_sync(compute &Compute, device vk.Device, queue vk.Queue) 
 	signal_properties := [u64(cl.semaphore_type_khr), u64(cl.semaphore_type_binary_khr),
 		u64(cl.semaphore_handle_opaque_fd_khr), u64(cl_to_vk_fd), u64(0)]
 	mut code := cl.success
-	cl_wait := create(compute.context, wait_properties.data, &code)
+	cl_wait := create(compute.context.handle, wait_properties.data, &code)
 	cl_check(code, 'import live Vulkan-to-OpenCL semaphore')!
-	cl_signal := create(compute.context, signal_properties.data, &code)
+	cl_signal := create(compute.context.handle, signal_properties.data, &code)
 	cl_check(code, 'import live OpenCL-to-Vulkan semaphore') or {
 		release(cl_wait)
 		return err
@@ -67,14 +67,14 @@ fn create_live_interop_sync(compute &Compute, device vk.Device, queue vk.Queue) 
 
 fn (sync &LiveInteropSync) begin_compute(compute &Compute, buffer cl.Mem,
 	acquire ExternalMemoryCommand) ! {
-	cl_check(sync.wait(compute.queue, 1, &sync.cl_wait, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'wait for Vulkan particle read')!
-	cl_check(acquire(compute.queue, 1, &buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire live particle buffer')!
+	cl_check(sync.wait(compute.queue.handle, 1, &sync.cl_wait, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'wait for Vulkan particle read')!
+	cl_check(acquire(compute.queue.handle, 1, &buffer, 0, unsafe { nil }, unsafe { nil }), 'acquire live particle buffer')!
 }
 
 fn (sync &LiveInteropSync) end_compute(compute &Compute, buffer cl.Mem,
 	release_memory ExternalMemoryCommand) ! {
-	cl_check(release_memory(compute.queue, 1, &buffer, 0, unsafe { nil }, unsafe { nil }), 'release live particle buffer')!
-	cl_check(sync.signal(compute.queue, 1, &sync.cl_signal, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'signal Vulkan particle render')!
+	cl_check(release_memory(compute.queue.handle, 1, &buffer, 0, unsafe { nil }, unsafe { nil }), 'release live particle buffer')!
+	cl_check(sync.signal(compute.queue.handle, 1, &sync.cl_signal, unsafe { nil }, 0, unsafe { nil }, unsafe { nil }), 'signal Vulkan particle render')!
 }
 
 fn (sync &LiveInteropSync) destroy(device vk.Device) {

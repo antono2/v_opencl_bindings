@@ -1,12 +1,15 @@
 module main
 
+import antono2.opencl as cl
+
 fn test_extension_sets_require_complete_tokens() {
-	extensions := 'cl_khr_external_memory cl_khr_external_memory_opaque_fd cl_khr_semaphore'
-	assert has_all_extensions(extensions, ['cl_khr_external_memory'])
-	assert has_all_extensions(extensions, ['cl_khr_external_memory',
-		'cl_khr_external_memory_opaque_fd'])
-	assert !has_all_extensions(extensions, ['cl_khr_external_semaphore'])
-	assert !has_all_extensions(extensions, ['cl_khr_external'])
+	capabilities := cl.DeviceCapabilities{
+		extensions: ['cl_khr_external_memory', 'cl_khr_external_memory_opaque_fd', 'cl_khr_semaphore']
+	}
+	assert capabilities.has_all(['cl_khr_external_memory'])
+	assert capabilities.has_all(['cl_khr_external_memory', 'cl_khr_external_memory_opaque_fd'])
+	assert !capabilities.has_all(['cl_khr_external_semaphore'])
+	assert !capabilities.has_all(['cl_khr_external'])
 }
 
 fn test_uuid_comparison() {
