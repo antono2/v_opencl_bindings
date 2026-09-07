@@ -38,6 +38,29 @@ fn test_owned_context_and_queue_lifecycle() ! {
 	context.close()!
 }
 
+fn test_owned_event_marker_lifecycle() ! {
+	available_platforms := cl.platforms()!
+	if available_platforms.len == 0 {
+		return
+	}
+	available_devices := cl.devices(available_platforms[0], cl.device_type_all)!
+	if available_devices.len == 0 {
+		return
+	}
+	mut context := cl.new_context(available_devices[0])!
+	mut queue := context.command_queue(available_devices[0], cl.CommandQueueProperties(0))!
+	mut first := queue.marker([]cl.Event{})!
+	mut second := queue.barrier([first.handle])!
+	second.wait()!
+	assert second.execution_status()! == cl.complete
+	second.close()!
+	first.close()!
+	assert isnil(second.handle)
+	second.close()!
+	queue.close()!
+	context.close()!
+}
+
 fn test_typed_buffer_round_trip() ! {
 	available_platforms := cl.platforms()!
 	if available_platforms.len == 0 {
