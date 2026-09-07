@@ -143,6 +143,44 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
 }
 
+// enqueue_1d_after submits a one-dimensional kernel after wait_events and
+// returns an owned completion event. A local size of zero lets the runtime choose.
+pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_size usize,
+	local_size usize, wait_events []Event) !OwnedEvent {
+	if isnil(kernel.handle) {
+		return OpenCLError{
+			operation: 'enqueue closed OpenCL kernel'
+			status: invalid_kernel
+		}
+	}
+	if isnil(queue.handle) {
+		return OpenCLError{
+			operation: 'enqueue OpenCL kernel on closed queue'
+			status: invalid_command_queue
+		}
+	}
+	if global_size == 0 {
+		return OpenCLError{
+			operation: 'enqueue OpenCL kernel with zero global size'
+			status: invalid_global_work_size
+		}
+	}
+	mut local_pointer := &usize(unsafe { nil })
+	mut requested_local_size := local_size
+	if local_size > 0 {
+		local_pointer = &requested_local_size
+	}
+	mut wait_pointer := &Event(unsafe { nil })
+	if wait_events.len > 0 {
+		wait_pointer = wait_events.data
+	}
+	mut event := Event(unsafe { nil })
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
+	return OwnedEvent{
+		handle: event
+	}
+}
+
 // close releases the owned kernel reference.
 pub fn (mut kernel OwnedKernel) close() ! {
 	if isnil(kernel.handle) {

@@ -117,6 +117,25 @@ pub fn (buffer &Buffer[T]) write(queue &OwnedCommandQueue, offset int, values []
 	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(values.len) * sizeof(T), values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
 }
 
+// write_async enqueues a non-blocking copy and returns its completion event.
+// values must remain allocated and unchanged until the returned event completes.
+pub fn (buffer &Buffer[T]) write_async(queue &OwnedCommandQueue, offset int, values []T,
+	wait_events []Event) !OwnedEvent {
+	buffer.validate_transfer(queue, offset, values.len, 'write')!
+	if values.len == 0 {
+		return queue.marker(wait_events)
+	}
+	mut wait_pointer := &Event(unsafe { nil })
+	if wait_events.len > 0 {
+		wait_pointer = wait_events.data
+	}
+	mut event := Event(unsafe { nil })
+	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, usize(offset) * sizeof(T), usize(values.len) * sizeof(T), values.data, u32(wait_events.len), wait_pointer, &event), 'write OpenCL buffer asynchronously')!
+	return OwnedEvent{
+		handle: event
+	}
+}
+
 // read copies elements from the buffer and waits until the destination is populated.
 pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destination []T) ! {
 	buffer.validate_transfer(queue, offset, destination.len, 'read')!
@@ -124,6 +143,25 @@ pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destin
 		return
 	}
 	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(destination.len) * sizeof(T), destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
+}
+
+// read_async enqueues a non-blocking copy and returns its completion event.
+// destination must remain allocated and must not be read until the event completes.
+pub fn (buffer &Buffer[T]) read_async(queue &OwnedCommandQueue, offset int, mut destination []T,
+	wait_events []Event) !OwnedEvent {
+	buffer.validate_transfer(queue, offset, destination.len, 'read')!
+	if destination.len == 0 {
+		return queue.marker(wait_events)
+	}
+	mut wait_pointer := &Event(unsafe { nil })
+	if wait_events.len > 0 {
+		wait_pointer = wait_events.data
+	}
+	mut event := Event(unsafe { nil })
+	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, usize(offset) * sizeof(T), usize(destination.len) * sizeof(T), destination.data, u32(wait_events.len), wait_pointer, &event), 'read OpenCL buffer asynchronously')!
+	return OwnedEvent{
+		handle: event
+	}
 }
 
 fn (buffer &Buffer[T]) validate_transfer(queue &OwnedCommandQueue, offset int, length int,

@@ -100,11 +100,16 @@ fn test_program_kernel_and_typed_argument() ! {
 	kernel.set_buffer_arg(0, buffer.handle)!
 	amount := u32(7)
 	kernel.set_arg(1, &amount)!
-	buffer.write(&queue, 0, [u32(1), 2, 3, 4])!
-	kernel.enqueue_1d(&queue, 4, 0)!
+	values := [u32(1), 2, 3, 4]
+	mut write_event := buffer.write_async(&queue, 0, values, []cl.Event{})!
+	mut kernel_event := kernel.enqueue_1d_after(&queue, 4, 0, [write_event.handle])!
 	mut result := []u32{len: 4}
-	buffer.read(&queue, 0, mut result)!
+	mut read_event := buffer.read_async(&queue, 0, mut result, [kernel_event.handle])!
+	read_event.wait()!
 	assert result == [u32(8), 9, 10, 11]
+	read_event.close()!
+	kernel_event.close()!
+	write_event.close()!
 	kernel.close()!
 	program.close()!
 	buffer.close()!
