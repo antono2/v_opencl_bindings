@@ -24,6 +24,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-opencl-module
+  cancel-in-progress: true
+
 jobs:
   propose:
     runs-on: ubuntu-24.04
@@ -55,8 +59,7 @@ jobs:
           git -C published commit -m "Update generated OpenCL bindings"
           git -C published push --force origin "HEAD:refs/heads/$branch"
           cd published
-          version=$(cat VERSION)
-          body="Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Version metadata is synchronized automatically. Merge this PR before creating v$version in the generator repository."
+          body="Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
           pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
             --json number --jq '.[0].number // empty')
           if test -n "$pr_number"; then
