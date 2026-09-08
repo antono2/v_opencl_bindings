@@ -54,6 +54,10 @@ stable device and driver identity queries for interop device matching.
 Optional extension commands are resolved through the ICD at runtime instead of
 being required linker symbols, allowing the same module to build against older
 OpenCL loaders when those extensions are not used.
+The hand-written interoperability layer validates device capabilities, resolves
+commands for the selected platform, imports opaque-FD buffers and binary
+semaphores into owned wrappers, and returns owned events from acquire, release,
+wait, and signal operations for explicit dependency chaining.
 
 ## Test
 

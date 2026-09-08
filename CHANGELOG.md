@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Add owned opaque-FD external-memory and external-semaphore interoperability helpers.
+- Resolve extension entry points for the selected OpenCL platform and preserve Windows calling conventions.
+- Migrate the Vulkan particles example to typed imports and explicit event dependency chains.
+- Validate live zero-copy memory and semaphore interoperability on an NVIDIA GeForce GTX 1060.
+
 ## 0.2.1
 
 - Add parsed runtime capability and device/driver UUID helpers.
