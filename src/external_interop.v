@@ -62,7 +62,7 @@ pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &Owned
 			status: invalid_buffer_size
 		}
 	}
-	properties := [MemProperties(external_memory_handle_opaque_fd_khr), MemProperties(fd),
+	properties := [MemProperties(external_memory_handle_opaque_fd_khr), MemProperties(u64(fd)),
 		MemProperties(0)]
 	mut status := success
 	mut handle := Mem(unsafe { nil })
@@ -179,7 +179,7 @@ pub fn (interop ExternalSemaphoreInterop) import_opaque_fd(context &OwnedContext
 	}
 	properties := [SemaphorePropertiesKhr(semaphore_type_khr),
 		SemaphorePropertiesKhr(semaphore_type_binary_khr),
-		SemaphorePropertiesKhr(semaphore_handle_opaque_fd_khr), SemaphorePropertiesKhr(fd),
+		SemaphorePropertiesKhr(semaphore_handle_opaque_fd_khr), SemaphorePropertiesKhr(u64(fd)),
 		SemaphorePropertiesKhr(0)]
 	mut status := success
 	handle := interop.create_command(context.handle, properties.data, &status)

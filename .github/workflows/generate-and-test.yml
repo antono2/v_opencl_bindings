@@ -2,11 +2,18 @@ name: Generate and test OpenCL bindings
 
 on:
   push:
+    branches: [master]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  # Pin the required compiler and formatter so generated-source checks do not
+  # change when a new V release artifact is published.
+  V_VERSION: 0.5.2
 
 jobs:
   generate-and-test:
@@ -16,18 +23,26 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-Docs
+          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
       - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-Headers
+          ref: c4c8fd6f9556c92b212308880854e6294d61b314
           path: openclheaders
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Install OpenCL ICD development files and CPU implementation
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate bindings
         run: |
+          test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
+          test "$(git -C openclheaders rev-parse HEAD)" = "$(cat HEADERS_COMMIT)"
           python3 test/test_generator.py
           python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          v fmt -w src/opencl.v
+          git diff --exit-code -- src/opencl.v
       - name: Assemble module and run smoke test
         run: |
           install -d "$HOME/.vmodules/antono2/opencl"
@@ -41,6 +56,7 @@ jobs:
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           v -cc gcc run test
           v test test/convenience_test.v
+          v test test/pointer_abi_test.v
           v -cc gcc run examples/vector_add
       - name: Install advanced-example dependencies
         run: |
@@ -78,12 +94,18 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: KhronosGroup/OpenCL-Docs
+          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Generate bindings
         run: |
+          test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
           python3 test/test_generator.py
           python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          v fmt -w src/opencl.v
+          git diff --exit-code -- src/opencl.v
       - name: Compile macOS ABI probe
         run: |
           install -d "$HOME/.vmodules/antono2/opencl"
@@ -99,11 +121,55 @@ jobs:
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
           v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v
 
+  linux-v-master:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: KhronosGroup/OpenCL-Docs
+          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          path: opencldocs
+      - uses: prantlf/setup-v-action@v4
+        id: setup_v_master
+        continue-on-error: true
+        with:
+          version: master
+      - name: Install OpenCL runtime and headers
+        if: steps.setup_v_master.outcome == 'success'
+        run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
+      - name: Generate and assemble module
+        id: generate_v_master
+        if: steps.setup_v_master.outcome == 'success'
+        continue-on-error: true
+        run: |
+          test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
+          python3 test/test_generator.py
+          python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          v fmt -w src/opencl.v
+          git diff --exit-code -- src/opencl.v
+          install -d "$HOME/.vmodules/antono2/opencl"
+          install -m 0644 src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
+      - name: Run correctness smoke tests on V master
+        id: test_v_master
+        if: steps.setup_v_master.outcome == 'success' && steps.generate_v_master.outcome == 'success'
+        continue-on-error: true
+        run: |
+          v -cc gcc run test
+          v test test/convenience_test.v
+          v test test/pointer_abi_test.v
+          v -cc gcc run examples/vector_add
+      - name: Report V master compatibility warning
+        if: always() && (steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
+        run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 remains authoritative."
+
   windows-abi-compile:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v5
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
         run: vcpkg install opencl:x64-windows
       - name: Assemble generated module and compile ABI probe
@@ -117,8 +183,8 @@ jobs:
           v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: [generate-and-test, macos-abi-compile, windows-abi-compile]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [generate-and-test, linux-v-master, macos-abi-compile, windows-abi-compile]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -132,17 +198,11 @@ jobs:
           version=$(cat VERSION)
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           grep -F "version: '$version'" v.mod
+          test "$GITHUB_REF_NAME" = "v$version"
       - name: Publish tag and GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag="v$(cat VERSION)"
-          if ! git rev-parse --verify --quiet "refs/tags/$tag" >/dev/null; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "$tag" -m "v_opencl_bindings $tag"
-            git push origin "refs/tags/$tag"
-          fi
-          gh release view "$tag" >/dev/null 2>&1 || \
-            gh release create "$tag" --verify-tag --generate-notes --title "v_opencl_bindings $tag"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "v_opencl_bindings $GITHUB_REF_NAME"

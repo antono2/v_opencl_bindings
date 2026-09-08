@@ -8,6 +8,7 @@ pub:
 	log    string
 }
 
+// msg describes the build failure and includes the compiler log when available.
 pub fn (err ProgramBuildError) msg() string {
 	return if err.log.len > 0 {
 		'build OpenCL program: ${error_code_name(err.status)} (${err.status})\n${err.log}'
@@ -16,6 +17,7 @@ pub fn (err ProgramBuildError) msg() string {
 	}
 }
 
+// code returns the native OpenCL build status as an integer error code.
 pub fn (err ProgramBuildError) code() int {
 	return int(err.status)
 }
@@ -49,7 +51,7 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 		}
 	}
 	mut option_pointer := &char(unsafe { nil })
-	if options.len > 0 {
+	if options != '' {
 		option_pointer = options.str
 	}
 	status = build_program(handle, 1, &device, option_pointer, unsafe { nil }, unsafe { nil })
@@ -158,7 +160,8 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 	if local_size > 0 {
 		local_pointer = &requested_local_size
 	}
-	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, unsafe { nil }, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
+	mut no_global_offset := &usize(unsafe { nil })
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, no_global_offset, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
 }
 
 // enqueue_1d_after submits a one-dimensional kernel after wait_events and
@@ -223,7 +226,8 @@ pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_s
 		wait_pointer = wait_events.data
 	}
 	mut event := Event(unsafe { nil })
-	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len), unsafe { nil }, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
+	mut no_global_offset := &usize(unsafe { nil })
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len), no_global_offset, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
 	return OwnedEvent{
 		handle: event
 	}

@@ -164,6 +164,8 @@ pub type ErrorCode = i32
 
 // __REGISTRY_CONSTANTS__
 
+// __REGISTRY_ERROR_NAMES__
+
 fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
 fn C.clGetPlatformInfo(PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
 fn C.clGetDeviceIDs(PlatformId, DeviceType, u32, &DeviceId, &u32) ErrorCode
@@ -355,14 +357,7 @@ class OpenCLGenerator:
 
     def render_constants(self) -> str:
         assert self.root is not None
-        error_names = [
-            node.attrib["name"]
-            for group in self.root.findall("enums")
-            if group.attrib.get("name") == "ErrorCodes.0"
-            for node in group.findall("enum")
-            if node.get("value") is not None
-        ]
-        error_names.append("CL_PLATFORM_NOT_FOUND_KHR")
+        error_names = self.error_code_names()
         emitted = set(error_names)
         sections = ["\n".join(self.constant(name, "ErrorCode") for name in error_names)]
         for v_type, names in TYPED_CONSTANTS.items():
@@ -373,12 +368,6 @@ class OpenCLGenerator:
             for requirement in section.findall("require"):
                 comment = requirement.attrib.get("comment", "")
                 if comment == "Error codes":
-                    for reference in requirement.findall("enum"):
-                        name = reference.attrib["name"]
-                        if name in emitted or name not in self.enums:
-                            continue
-                        core_constants.append(self.constant(name, "ErrorCode"))
-                        emitted.add(name)
                     continue
                 if comment == "Size Constants":
                     for reference in requirement.findall("enum"):
@@ -405,6 +394,41 @@ class OpenCLGenerator:
                     emitted.add(name)
         sections.append("\n".join(core_constants))
         return "\n\n".join(sections)
+
+    def error_code_names(self) -> list[str]:
+        assert self.root is not None
+        names = [
+            node.attrib["name"]
+            for group in self.root.findall("enums")
+            if group.attrib.get("name") == "ErrorCodes.0"
+            for node in group.findall("enum")
+            if node.get("value") is not None
+        ]
+        names.append("CL_PLATFORM_NOT_FOUND_KHR")
+        for section in self.registry_sections():
+            for requirement in section.findall("require"):
+                if requirement.attrib.get("comment", "") != "Error codes":
+                    continue
+                for reference in requirement.findall("enum"):
+                    name = reference.attrib["name"]
+                    if name in self.enums:
+                        names.append(name)
+        return list(dict.fromkeys(names))
+
+    def render_error_code_names(self) -> str:
+        arms = "\n".join(
+            f"\t\t{self.v_name(name)} {{ '{self.v_name(name)}' }}"
+            for name in self.error_code_names()
+        )
+        return (
+            "// error_code_name returns the canonical registry name for an OpenCL status code.\n"
+            "pub fn error_code_name(status ErrorCode) string {\n"
+            "\treturn match status {\n"
+            f"{arms}\n"
+            "\t\telse { 'opencl_error' }\n"
+            "\t}\n"
+            "}"
+        )
 
     @staticmethod
     def type_name(c_name: str) -> str:
@@ -513,6 +537,35 @@ class OpenCLGenerator:
             base = self.resolve_type(c_type)
         return "&" * pointer_depth + base
 
+    def public_command_type(self, declaration: ET.Element) -> str:
+        """Return the safe-to-call V type for a generated wrapper parameter.
+
+        OpenCL handles are C pointers represented as ``voidptr`` in V. A C
+        pointer to one of those handles therefore has an ABI type such as
+        ``&Event`` (``void **`` in C). Exposing that ABI type directly in V is
+        unsafe for ordinary ``nil`` and ``slice.data`` arguments: V may take
+        the address of the argument expression instead of passing its pointer
+        value. Keep the typed pointer in the C/PFN declaration, but accept a
+        ``voidptr`` at the public wrapper boundary and cast internally.
+        """
+        abi_type = self.command_type(declaration)
+        if not abi_type.startswith("&"):
+            return abi_type
+        c_type = declaration.findtext("type")
+        if c_type is None:
+            return abi_type
+        try:
+            resolved = "voidptr" if c_type == "void" else self.resolve_type(c_type)
+        except RuntimeError:
+            return abi_type
+        return "voidptr" if resolved == "voidptr" else abi_type
+
+    @staticmethod
+    def public_call_argument(name: str, abi_type: str, public_type: str) -> str:
+        if public_type == "voidptr" and abi_type.startswith("&"):
+            return f"unsafe {{ {abi_type}({name}) }}"
+        return name
+
     @staticmethod
     def command_name(c_name: str) -> str:
         bare = c_name.removeprefix("cl")
@@ -553,9 +606,11 @@ class OpenCLGenerator:
                 param_name = param.findtext("name")
                 if param_name is None:
                     raise RuntimeError(f"Unnamed parameter in {c_name}")
-                params.append((param_name, self.command_type(param)))
+                abi_type = self.command_type(param)
+                public_type = self.public_command_type(param)
+                params.append((param_name, abi_type, public_type))
                 param_names.append(param_name)
-            c_signature = ", ".join(v_type for _, v_type in params)
+            c_signature = ", ".join(abi_type for _, abi_type, _ in params)
             signature = f"fn ({c_signature})" + (f" {return_type}" if return_type else "")
             is_extension = c_name not in core_command_names
             if is_extension:
@@ -564,7 +619,13 @@ class OpenCLGenerator:
                 declarations.append(
                     f"fn C.{c_name}({c_signature})" + (f" {return_type}" if return_type else "")
                 )
-            v_params = ", ".join(f"{name} {v_type}" for name, v_type in params)
+            v_params = ", ".join(
+                f"{name} {public_type}" for name, _, public_type in params
+            )
+            call_arguments = [
+                self.public_call_argument(name, abi_type, public_type)
+                for name, abi_type, public_type in params
+            ]
             if is_extension:
                 pointer_type = f"PFN_{c_name}"
                 lines = [
@@ -584,11 +645,11 @@ class OpenCLGenerator:
                 else:
                     raise RuntimeError(f"Unsupported extension fallback return type for {c_name}")
                 lines.append("\t}")
-                call = f"extension_fn({', '.join(param_names)})"
+                call = f"extension_fn({', '.join(call_arguments)})"
                 lines.append(f"\treturn {call}" if return_type else f"\t{call}")
                 body = "\n".join(lines)
             else:
-                call = f"C.{c_name}({', '.join(param_names)})"
+                call = f"C.{c_name}({', '.join(call_arguments)})"
                 body = f"\treturn {call}" if return_type else f"\t{call}"
             wrappers.append(
                 f"@[inline]\npub fn {self.command_name(c_name)}({v_params})"
@@ -613,5 +674,6 @@ class OpenCLGenerator:
         self.validate_registry()
         generated = HEADER.replace("// __REGISTRY_TYPES__", self.render_types())
         generated = generated.replace("// __REGISTRY_CONSTANTS__", self.render_constants())
+        generated = generated.replace("// __REGISTRY_ERROR_NAMES__", self.render_error_code_names())
         generated = generated.replace("// __REGISTRY_COMMANDS__", self.render_commands())
         output.write_text(generated, encoding="utf-8")

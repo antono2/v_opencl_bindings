@@ -19,6 +19,31 @@ fn test_unknown_error_name_is_stable() {
 	assert cl.error_code_name(cl.ErrorCode(-9999)) == 'opencl_error'
 }
 
+fn test_generated_error_name_covers_full_core_range() {
+	assert cl.error_code_name(cl.invalid_event_wait_list) == 'invalid_event_wait_list'
+}
+
+fn test_typed_buffer_rejects_byte_size_overflow_before_opencl_call() {
+	element_size := usize(sizeof(u64))
+	if usize(max_int) <= ~usize(0) / element_size {
+		// On V versions with a 32-bit int, this API cannot express a count
+		// large enough to overflow usize on a 64-bit host.
+		return
+	}
+	mut context_storage := u8(0)
+	context := cl.OwnedContext{
+		handle: cl.Context(&context_storage)
+	}
+	cl.new_buffer[u64](&context, cl.mem_read_write, max_int) or {
+		assert err is cl.OpenCLError
+		if err is cl.OpenCLError {
+			assert err.status == cl.invalid_buffer_size
+		}
+		return
+	}
+	assert false
+}
+
 fn test_device_capabilities_use_exact_extension_names() {
 	capabilities := cl.DeviceCapabilities{
 		extensions: ['cl_khr_device_uuid', 'cl_khr_external_memory']

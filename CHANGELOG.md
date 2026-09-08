@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+- Preserve typed OpenCL pointer declarations at the C ABI while accepting opaque-handle arrays through pointer-safe `voidptr` wrapper parameters.
+- Pass real null event and global-offset pointers from blocking transfers and synchronous kernel dispatch.
+- Add a strict C pointer-ABI regression test independent of the installed OpenCL implementation.
+- Reject typed-buffer byte-size overflow before calling OpenCL.
+- Pin the Khronos registry and header revisions used by generation and CI.
+- Publish releases only from matching version tags after the full test matrix succeeds.
+
 ## 0.2.2
 
 - Add owned opaque-FD external-memory and external-semaphore interoperability helpers.

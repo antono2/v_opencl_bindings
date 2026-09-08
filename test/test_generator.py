@@ -45,6 +45,12 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub const max_size_restriction_exceeded = ErrorCode(-72)", generated)
         self.assertIn("pub const platform_not_found_khr = ErrorCode(-1001)", generated)
 
+    def test_error_names_are_generated_from_the_registry(self) -> None:
+        generated = self.generate()
+        self.assertIn("invalid_event_wait_list { 'invalid_event_wait_list' }", generated)
+        self.assertIn("invalid_semaphore_khr { 'invalid_semaphore_khr' }", generated)
+        self.assertIn("else { 'opencl_error' }", generated)
+
     def test_complete_core_api_constants_are_emitted(self) -> None:
         generated = self.generate()
         self.assertIn("pub const device_max_compute_units = DeviceInfo(0x1002)", generated)
@@ -96,6 +102,27 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read Bool", generated)
         self.assertIn("pub fn create_semaphore_with_properties_khr(context Context, sema_props &SemaphorePropertiesKhr", generated)
         self.assertIn("handle_type ExternalSemaphoreHandleTypeKhr", generated)
+
+    def test_opaque_handle_arrays_use_voidptr_at_public_boundary(self) -> None:
+        generated = self.generate()
+        self.assertIn("fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode", generated)
+        self.assertIn("pub fn get_platform_ids(num_entries u32, platforms voidptr", generated)
+        self.assertIn("unsafe { &PlatformId(platforms) }", generated)
+        self.assertIn("pub fn wait_for_events(num_events u32, event_list voidptr)", generated)
+        self.assertIn("unsafe { &Event(event_list) }", generated)
+        self.assertIn("pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_pointers voidptr", generated)
+        self.assertIn("unsafe { &voidptr(svm_pointers) }", generated)
+
+    def test_scalar_pointer_parameters_remain_typed(self) -> None:
+        generated = self.generate()
+        self.assertIn("global_work_size &usize", generated)
+        self.assertIn("param_value_size_ret &usize", generated)
+
+    def test_extension_pfn_abi_remains_typed_while_wrapper_is_pointer_safe(self) -> None:
+        generated = self.generate()
+        self.assertIn("pub type PFN_clEnqueueWaitSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr", generated)
+        self.assertIn("pub fn enqueue_wait_semaphores_khr(command_queue CommandQueue, num_sema_objects u32, sema_objects voidptr", generated)
+        self.assertIn("unsafe { &SemaphoreKhr(sema_objects) }", generated)
 
     def test_opencl_1_1_types_constants_and_commands_are_generated(self) -> None:
         generated = self.generate()

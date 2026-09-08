@@ -23,6 +23,8 @@ from cumulative feature requirements, including pointer depth, opaque handles,
 callbacks, return types, and acronym-aware snake-case function names.
 The seven distinct callback ABIs used by core commands are exposed as named V
 function types rather than untyped pointers.
+`REGISTRY_COMMIT` and `HEADERS_COMMIT` record the immutable Khronos inputs used
+for generation and ABI validation.
 The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 `Mem` field because both C union alternatives have the same handle type.
 
@@ -33,6 +35,13 @@ git clone --depth 1 https://github.com/KhronosGroup/OpenCL-Docs.git opencldocs
 python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
 v fmt -w src/opencl.v
 ```
+
+`v_opencl_bindings` is the canonical source for generated bindings,
+hand-written convenience code, ABI probes, and examples. Run
+`python3 tools/sync_published_module.py ../opencl --check` to detect drift or
+omit `--check` to synchronize a checkout. The publication workflow opens an
+`antono2/opencl` pull request when the repository secret
+`OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written `src/convenience.v`, `src/ownership.v`,
@@ -58,6 +67,11 @@ The hand-written interoperability layer validates device capabilities, resolves
 commands for the selected platform, imports opaque-FD buffers and binary
 semaphores into owned wrappers, and returns owned events from acquire, release,
 wait, and signal operations for explicit dependency chaining.
+
+Typed buffers and argument helpers require plain C-layout element types without
+V-managed references. Buffer-size multiplication is checked before native
+allocation and transfer calls. See [`OWNERSHIP.md`](OWNERSHIP.md) for the copy
+and cleanup rules of owning value wrappers.
 
 ## Test
 
