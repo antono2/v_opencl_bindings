@@ -13,7 +13,7 @@ permissions:
 env:
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
-  V_VERSION: 73287062e9a11bd807b1cc437890a3a6aed8b696
+  V_VERSION: 0.5.2
 
 jobs:
   generate-and-test:
