@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+- Add stable aggregate `required-checks` status for protected branches.
+- Record the exact generator revision in published modules with `GENERATOR_COMMIT`.
+- Synchronize package version metadata and the license into `antono2/opencl` publication pull requests.
+- Coordinate releases so a successful generator release creates the matching OpenCL tag only after version and provenance validation.
+- Serialize publication runs and reliably update only an open publication pull request.
+
 ## 0.3.0
 
 - Preserve typed OpenCL pointer declarations at the C ABI while accepting opaque-handle arrays through pointer-safe `voidptr` wrapper parameters.
