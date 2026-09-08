@@ -14,6 +14,7 @@ on:
       - 'OWNERSHIP.md'
       - 'REGISTRY_COMMIT'
       - 'HEADERS_COMMIT'
+      - 'tools/sync_published_module.py'
   workflow_dispatch:
 
 permissions:
@@ -30,7 +31,9 @@ jobs:
           path: published
           token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
       - name: Synchronize canonical distribution files
-        run: python3 tools/sync_published_module.py published
+        env:
+          GENERATOR_COMMIT: ${{ github.sha }}
+        run: python3 tools/sync_published_module.py published --generator-commit "$GENERATOR_COMMIT"
       - name: Create or update the publication pull request
         env:
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
