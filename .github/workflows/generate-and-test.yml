@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # Pin the required compiler and formatter so generated-source checks do not
+  # change when a new V release artifact is published.
+  V_VERSION: 73287062e9a11bd807b1cc437890a3a6aed8b696
+
 jobs:
   generate-and-test:
     runs-on: ubuntu-24.04
@@ -26,6 +31,8 @@ jobs:
           ref: c4c8fd6f9556c92b212308880854e6294d61b314
           path: openclheaders
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Install OpenCL ICD development files and CPU implementation
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate bindings
@@ -90,6 +97,8 @@ jobs:
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Generate bindings
         run: |
           test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
@@ -113,6 +122,7 @@ jobs:
           v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v
 
   linux-v-master:
+    continue-on-error: true
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -147,6 +157,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: prantlf/setup-v-action@v4
+        with:
+          version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
         run: vcpkg install opencl:x64-windows
       - name: Assemble generated module and compile ABI probe
