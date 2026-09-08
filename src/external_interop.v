@@ -62,12 +62,13 @@ pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &Owned
 			status: invalid_buffer_size
 		}
 	}
+	byte_size := checked_element_bytes[T](count, 'import OpenCL external buffer with overflowing element count')!
 	properties := [MemProperties(external_memory_handle_opaque_fd_khr), MemProperties(u64(fd)),
 		MemProperties(0)]
 	mut status := success
 	mut handle := Mem(unsafe { nil })
 	$if linux {
-		handle = C.clCreateBufferWithProperties(context.handle, properties.data, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
+		handle = C.clCreateBufferWithProperties(context.handle, properties.data, flags, byte_size, unsafe { nil }, &status)
 	} $else {
 		return OpenCLError{
 			operation: 'import opaque-FD OpenCL buffer on unsupported operating system'

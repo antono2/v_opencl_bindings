@@ -31,3 +31,9 @@ fn test_invalid_command_line_options_are_rejected() {
 		assert false
 	}
 }
+
+fn test_headless_mode_is_explicitly_explained() {
+	assert headless_mode_notice().contains('no window')
+	assert headless_mode_notice().contains('--window')
+	assert usage().contains('headless smoke test without opening a window')
+}

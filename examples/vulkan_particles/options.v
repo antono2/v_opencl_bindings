@@ -73,5 +73,9 @@ fn parse_options(base AppOptions, arguments []string) !AppOptions {
 }
 
 fn usage() string {
-	return 'Usage: vulkan-particles [options]\n\n' + '  --window           open the interactive Vulkan renderer\n' + '  --staged           open the renderer and force host-staged transfers\n' + '  --zero-copy        require the external-memory renderer path\n' + '  --particles=N      simulate N particles (default: 32768)\n' + '  --frames=N         render N frames, or 0 until closed\n' + '  -h, --help         show this help\n'
+	return 'Usage: vulkan-particles [options]\n\n' + 'With no renderer option, run a headless smoke test without opening a window.\n\n' + '  --window           open the interactive Vulkan renderer\n' + '  --staged           open the renderer and force host-staged transfers\n' + '  --zero-copy        require the external-memory renderer path\n' + '  --particles=N      simulate N particles (default: 32768)\n' + '  --frames=N         render N frames, or 0 until closed\n' + '  -h, --help         show this help\n'
+}
+
+fn headless_mode_notice() string {
+	return 'Run mode: headless smoke test (no window). Add `--window` to open the interactive renderer.'
 }

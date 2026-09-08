@@ -14,6 +14,9 @@ fn main() {
 		println(usage())
 		return
 	}
+	if !options.window {
+		println(headless_mode_notice())
+	}
 	count := options.particle_count
 	mut compute := new_compute(count) or { panic(err) }
 	defer {
@@ -37,8 +40,8 @@ fn main() {
 		window_device_loop(&compute, count, interop.zero_copy_available && !options.force_staged, options.frame_limit) or { panic(err) }
 	}
 
-	// Until the Vulkan presentation loop is connected, exercise the exact simulation buffer
-	// contract for a few frames. This also provides a display-independent CI smoke mode.
+	// After the renderer closes, or immediately in headless mode, exercise the exact simulation
+	// buffer contract for a few frames. This also provides a display-independent CI smoke mode.
 	mut particles := []f32{len: int(count * 8)}
 	started := time.now()
 	for frame in 0 .. 8 {
