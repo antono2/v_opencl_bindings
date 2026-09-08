@@ -76,7 +76,7 @@ wait, and signal operations for explicit dependency chaining.
 
 Typed buffers and argument helpers require plain C-layout element types without
 V-managed references. Buffer-size multiplication is checked before native
-allocation and transfer calls. See [`OWNERSHIP.md`](OWNERSHIP.md) for the copy
+allocation, external import, and transfer calls. See [`OWNERSHIP.md`](OWNERSHIP.md) for the copy
 and cleanup rules of owning value wrappers.
 
 ## Test

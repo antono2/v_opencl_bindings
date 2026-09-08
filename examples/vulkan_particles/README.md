@@ -31,12 +31,15 @@ The source imports the published modules through their VPM names, so no manual
 move or symlink inside `.vmodules` is needed.
 
 ```sh
-v -cc gcc run examples/vulkan_particles
-v -cc gcc run examples/vulkan_particles --particles=4096
+# Interactive renderer
 v -cc gcc run examples/vulkan_particles --window
 v -cc gcc run examples/vulkan_particles --frames=120
 v -cc gcc run examples/vulkan_particles --staged
 v -cc gcc run examples/vulkan_particles --zero-copy --frames=120
+
+# Headless smoke test (does not open a window)
+v -cc gcc run examples/vulkan_particles
+v -cc gcc run examples/vulkan_particles --particles=4096
 ```
 
 GCC or Clang is required because TinyCC cannot safely link Volk's global Vulkan
@@ -48,7 +51,9 @@ dispatch symbols alongside some vendor OpenCL drivers.
   Vulkan-to-OpenCL-to-Vulkan semaphore synchronization, and 300 frames with
   32,768 particles passed using GCC.
 
-Run with `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
+Running without a renderer option intentionally performs only the display-independent smoke test
+and prints a reminder that no window will be opened. Run with `--window` for the interactive
+renderer or `--help` for the complete command-line interface. The original `PARTICLE_COUNT`,
 `PARTICLES_WINDOW`, `PARTICLES_FRAMES`, `PARTICLES_FORCE_STAGED`, and
 `PARTICLES_REQUIRE_ZERO_COPY` environment variables remain supported for scripts and compatibility.
 

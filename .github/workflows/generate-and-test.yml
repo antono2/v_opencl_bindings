@@ -131,11 +131,25 @@ jobs:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
-      - uses: prantlf/setup-v-action@v4
-        id: setup_v_master
+      # V master currently builds a separate v1_fallback executable for tool
+      # commands such as `v test`. Keep the complete source build together;
+      # setup-v-action@v4's reduced cache bundle omits that executable.
+      - name: Check out V master
+        uses: actions/checkout@v5
+        id: checkout_v_master
         continue-on-error: true
         with:
-          version: master
+          repository: vlang/v
+          path: .ci-v-master
+          fetch-depth: 1
+      - name: Build V master
+        id: setup_v_master
+        if: steps.checkout_v_master.outcome == 'success'
+        continue-on-error: true
+        run: |
+          make -C .ci-v-master
+          echo "$GITHUB_WORKSPACE/.ci-v-master" >> "$GITHUB_PATH"
+          .ci-v-master/v -V
       - name: Install OpenCL runtime and headers
         if: steps.setup_v_master.outcome == 'success'
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
@@ -161,7 +175,7 @@ jobs:
           v test test/pointer_abi_test.v
           v -cc gcc run examples/vector_add
       - name: Report V master compatibility warning
-        if: always() && (steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
+        if: always() && (steps.checkout_v_master.outcome == 'failure' || steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
         run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 remains authoritative."
 
   windows-abi-compile:
