@@ -8,10 +8,12 @@ pub:
 	status    ErrorCode
 }
 
+// msg describes the failed operation and preserves the native status name and value.
 pub fn (err OpenCLError) msg() string {
 	return '${err.operation}: ${error_code_name(err.status)} (${err.status})'
 }
 
+// code returns the native OpenCL status as an integer error code.
 pub fn (err OpenCLError) code() int {
 	return int(err.status)
 }
@@ -23,27 +25,6 @@ pub fn check(status ErrorCode, operation string) ! {
 			operation: operation
 			status: status
 		}
-	}
-}
-
-// error_code_name returns the registry name for common OpenCL status codes.
-pub fn error_code_name(status ErrorCode) string {
-	return match status {
-		success { 'success' }
-		device_not_found { 'device_not_found' }
-		device_not_available { 'device_not_available' }
-		compiler_not_available { 'compiler_not_available' }
-		mem_object_allocation_failure { 'mem_object_allocation_failure' }
-		out_of_resources { 'out_of_resources' }
-		out_of_host_memory { 'out_of_host_memory' }
-		build_program_failure { 'build_program_failure' }
-		invalid_value { 'invalid_value' }
-		invalid_platform { 'invalid_platform' }
-		invalid_device { 'invalid_device' }
-		invalid_context { 'invalid_context' }
-		invalid_operation { 'invalid_operation' }
-		platform_not_found_khr { 'platform_not_found_khr' }
-		else { 'opencl_error' }
 	}
 }
 

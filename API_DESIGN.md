@@ -10,6 +10,7 @@ can continue calling the generated functions directly.
 - Return `!T` from convenience operations instead of discarding status codes.
 - Hide count-then-fill enumeration without hiding the returned native handles.
 - Use `close()` for reference-counted OpenCL ownership wrappers.
+- Owning wrappers are copyable V values; copying does not transfer ownership. Exactly one copy may close the native handle until a future reference-backed ownership redesign.
 - Keep constructors explicit about device choice and requested capabilities.
 - Never enable an extension or feature merely because headers declare it; query runtime support.
 - Keep unsafe pointers at the low-level boundary and expose slices or strings where ownership is clear.

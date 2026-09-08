@@ -71,12 +71,30 @@ pub fn (mut queue OwnedCommandQueue) close() ! {
 	queue.handle = unsafe { nil }
 }
 
-// Buffer owns a typed OpenCL buffer containing count elements of T.
+// Buffer owns a typed OpenCL buffer containing count elements of T. T must be
+// a plain C-layout value without V-managed references.
 pub struct Buffer[T] {
 pub mut:
 	handle Mem
 pub:
 	count int
+}
+
+fn checked_element_bytes[T](count int, operation string) !usize {
+	if count < 0 {
+		return OpenCLError{
+			operation: operation
+			status: invalid_buffer_size
+		}
+	}
+	element_size := usize(sizeof(T))
+	if element_size == 0 || usize(count) > ~usize(0) / element_size {
+		return OpenCLError{
+			operation: operation
+			status: invalid_buffer_size
+		}
+	}
+	return usize(count) * element_size
 }
 
 // new_buffer allocates storage for count elements of T without a host pointer.
@@ -93,8 +111,9 @@ pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !Buffer[T
 			status: invalid_buffer_size
 		}
 	}
+	byte_size := checked_element_bytes[T](count, 'create OpenCL buffer with overflowing element count')!
 	mut status := success
-	handle := create_buffer(context.handle, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
+	handle := create_buffer(context.handle, flags, byte_size, unsafe { nil }, &status)
 	check(status, 'create OpenCL buffer')!
 	if isnil(handle) {
 		return OpenCLError{
@@ -114,7 +133,9 @@ pub fn (buffer &Buffer[T]) write(queue &OwnedCommandQueue, offset int, values []
 	if values.len == 0 {
 		return
 	}
-	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(values.len) * sizeof(T), values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
+	byte_offset := checked_element_bytes[T](offset, 'write OpenCL buffer with overflowing offset')!
+	byte_size := checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
+	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size, values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
 }
 
 // write_async enqueues a non-blocking copy and returns its completion event.
@@ -130,7 +151,9 @@ pub fn (buffer &Buffer[T]) write_async(queue &OwnedCommandQueue, offset int, val
 		wait_pointer = wait_events.data
 	}
 	mut event := Event(unsafe { nil })
-	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, usize(offset) * sizeof(T), usize(values.len) * sizeof(T), values.data, u32(wait_events.len), wait_pointer, &event), 'write OpenCL buffer asynchronously')!
+	byte_offset := checked_element_bytes[T](offset, 'write OpenCL buffer with overflowing offset')!
+	byte_size := checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
+	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size, values.data, u32(wait_events.len), wait_pointer, &event), 'write OpenCL buffer asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -142,7 +165,9 @@ pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destin
 	if destination.len == 0 {
 		return
 	}
-	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, usize(offset) * sizeof(T), usize(destination.len) * sizeof(T), destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
+	byte_offset := checked_element_bytes[T](offset, 'read OpenCL buffer with overflowing offset')!
+	byte_size := checked_element_bytes[T](destination.len, 'read OpenCL buffer with overflowing length')!
+	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size, destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
 }
 
 // read_async enqueues a non-blocking copy and returns its completion event.
@@ -158,7 +183,9 @@ pub fn (buffer &Buffer[T]) read_async(queue &OwnedCommandQueue, offset int, mut 
 		wait_pointer = wait_events.data
 	}
 	mut event := Event(unsafe { nil })
-	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, usize(offset) * sizeof(T), usize(destination.len) * sizeof(T), destination.data, u32(wait_events.len), wait_pointer, &event), 'read OpenCL buffer asynchronously')!
+	byte_offset := checked_element_bytes[T](offset, 'read OpenCL buffer with overflowing offset')!
+	byte_size := checked_element_bytes[T](destination.len, 'read OpenCL buffer with overflowing length')!
+	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size, destination.data, u32(wait_events.len), wait_pointer, &event), 'read OpenCL buffer asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}

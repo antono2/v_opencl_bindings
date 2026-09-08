@@ -1,0 +1,58 @@
+name: Propose published OpenCL module update
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'test/convenience_test.v'
+      - 'test/pointer_abi_*'
+      - 'abi/**'
+      - 'examples/**'
+      - 'include/**'
+      - 'API_DESIGN.md'
+      - 'OWNERSHIP.md'
+      - 'REGISTRY_COMMIT'
+      - 'HEADERS_COMMIT'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  propose:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: antono2/opencl
+          path: published
+          token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+      - name: Synchronize canonical distribution files
+        run: python3 tools/sync_published_module.py published
+      - name: Create or update the publication pull request
+        env:
+          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch=automation/v-opencl-bindings
+          git -C published checkout -B "$branch"
+          git -C published add --all
+          if git -C published diff --cached --quiet; then
+            echo "The published module is already synchronized"
+            exit 0
+          fi
+          git -C published config user.name github-actions[bot]
+          git -C published config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C published commit -m "Update generated OpenCL bindings"
+          git -C published push --force origin "HEAD:refs/heads/$branch"
+          cd published
+          if gh pr view "$branch" --repo antono2/opencl >/dev/null 2>&1; then
+            gh pr edit "$branch" --repo antono2/opencl \
+              --body "Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Review the API diff and bump the package version before merging when required."
+          else
+            gh pr create --repo antono2/opencl --base master --head "$branch" \
+              --title "Update generated OpenCL bindings" \
+              --body "Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Review the API diff and bump the package version before merging when required."
+          fi
