@@ -14,6 +14,9 @@ on:
       - 'OWNERSHIP.md'
       - 'REGISTRY_COMMIT'
       - 'HEADERS_COMMIT'
+      - 'LICENSE'
+      - 'VERSION'
+      - 'v.mod'
       - 'tools/sync_published_module.py'
   workflow_dispatch:
 
@@ -51,11 +54,13 @@ jobs:
           git -C published commit -m "Update generated OpenCL bindings"
           git -C published push --force origin "HEAD:refs/heads/$branch"
           cd published
+          version=$(cat VERSION)
+          body="Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Version metadata is synchronized automatically. Merge this PR before creating v$version in the generator repository."
           if gh pr view "$branch" --repo antono2/opencl >/dev/null 2>&1; then
             gh pr edit "$branch" --repo antono2/opencl \
-              --body "Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Review the API diff and bump the package version before merging when required."
+              --body "$body"
           else
             gh pr create --repo antono2/opencl --base master --head "$branch" \
               --title "Update generated OpenCL bindings" \
-              --body "Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Review the API diff and bump the package version before merging when required."
+              --body "$body"
           fi

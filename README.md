@@ -44,6 +44,10 @@ omit `--check` to synchronize a checkout. The publication workflow opens an
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
 The published module's `GENERATOR_COMMIT` records the exact commit synchronized
 by that workflow so a release can be traced back to its canonical source.
+`VERSION`, the published module's `v.mod` version, and `LICENSE` are synchronized
+as well. Merge the publication pull request before tagging this repository. A
+successful generator release then creates the matching annotated `antono2/opencl`
+tag; rerunning the release is safe when that tag already targets the same commit.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written `src/convenience.v`, `src/ownership.v`,
