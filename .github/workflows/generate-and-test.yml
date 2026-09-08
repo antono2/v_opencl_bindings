@@ -122,7 +122,6 @@ jobs:
           v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v
 
   linux-v-master:
-    continue-on-error: true
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -132,11 +131,17 @@ jobs:
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
       - uses: prantlf/setup-v-action@v4
+        id: setup_v_master
+        continue-on-error: true
         with:
           version: master
       - name: Install OpenCL runtime and headers
+        if: steps.setup_v_master.outcome == 'success'
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate and assemble module
+        id: generate_v_master
+        if: steps.setup_v_master.outcome == 'success'
+        continue-on-error: true
         run: |
           test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
           python3 test/test_generator.py
@@ -146,11 +151,17 @@ jobs:
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
       - name: Run correctness smoke tests on V master
+        id: test_v_master
+        if: steps.setup_v_master.outcome == 'success' && steps.generate_v_master.outcome == 'success'
+        continue-on-error: true
         run: |
           v -cc gcc run test
           v test test/convenience_test.v
           v test test/pointer_abi_test.v
           v -cc gcc run examples/vector_add
+      - name: Report V master compatibility warning
+        if: always() && (steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
+        run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 remains authoritative."
 
   windows-abi-compile:
     runs-on: windows-2022
