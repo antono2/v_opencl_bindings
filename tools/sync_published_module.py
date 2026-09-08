@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import shutil
+import re
 import subprocess
 
 
@@ -43,20 +43,36 @@ def validate_target(target: Path) -> None:
         raise SystemExit(f"not an antono2.opencl checkout: {target}")
 
 
-def sync(target: Path, *, check: bool) -> int:
+def resolve_generator_commit(value: str | None) -> str:
+    if value is None:
+        value = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
+        )
+    commit = value.strip().lower()
+    if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        raise ValueError("generator commit must be a full 40-character Git SHA")
+    return commit
+
+
+def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> int:
     validate_target(target)
     mappings = SOURCE_FILES | tracked_distribution_files()
+    contents = {
+        target_name: (ROOT / source_name).read_bytes()
+        for source_name, target_name in mappings.items()
+    }
+    contents["GENERATOR_COMMIT"] = (
+        resolve_generator_commit(generator_commit) + "\n"
+    ).encode()
     changed = []
-    for source_name, target_name in sorted(mappings.items()):
-        source = ROOT / source_name
+    for target_name, source_bytes in sorted(contents.items()):
         destination = target / target_name
-        source_bytes = source.read_bytes()
         if destination.is_file() and destination.read_bytes() == source_bytes:
             continue
         changed.append(target_name)
         if not check:
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, destination)
+            destination.write_bytes(source_bytes)
     if changed:
         print("published module differs:")
         for path in changed:
@@ -70,8 +86,20 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("target", type=Path)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--generator-commit",
+        help="full generator commit SHA (defaults to this checkout's HEAD)",
+    )
     args = parser.parse_args()
-    raise SystemExit(sync(args.target.resolve(), check=args.check))
+    try:
+        result = sync(
+            args.target.resolve(),
+            check=args.check,
+            generator_commit=args.generator_commit,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    raise SystemExit(result)
 
 
 if __name__ == "__main__":

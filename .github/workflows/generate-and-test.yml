@@ -40,6 +40,7 @@ jobs:
           test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
           test "$(git -C openclheaders rev-parse HEAD)" = "$(cat HEADERS_COMMIT)"
           python3 test/test_generator.py
+          python3 test/test_sync_published_module.py
           python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
           v fmt -w src/opencl.v
           git diff --exit-code -- src/opencl.v

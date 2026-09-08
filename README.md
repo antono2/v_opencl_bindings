@@ -42,6 +42,8 @@ hand-written convenience code, ABI probes, and examples. Run
 omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
+The published module's `GENERATOR_COMMIT` records the exact commit synchronized
+by that workflow so a release can be traced back to its canonical source.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written `src/convenience.v`, `src/ownership.v`,
