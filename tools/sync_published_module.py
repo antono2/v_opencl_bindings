@@ -24,6 +24,8 @@ SOURCE_FILES = {
     "test/pointer_abi_shim.c": "test/pointer_abi_shim.c",
     "API_DESIGN.md": "API_DESIGN.md",
     "OWNERSHIP.md": "OWNERSHIP.md",
+    "LICENSE": "LICENSE",
+    "VERSION": "VERSION",
     "REGISTRY_COMMIT": "REGISTRY_COMMIT",
     "HEADERS_COMMIT": "HEADERS_COMMIT",
 }
@@ -54,6 +56,27 @@ def resolve_generator_commit(value: str | None) -> str:
     return commit
 
 
+def resolve_distribution_version() -> str:
+    version = (ROOT / "VERSION").read_text().strip()
+    if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) is None:
+        raise ValueError("VERSION must contain a semantic version")
+    if f"version: '{version}'" not in (ROOT / "v.mod").read_text():
+        raise ValueError("VERSION and v.mod disagree")
+    return version
+
+
+def published_module_file(target: Path, version: str) -> bytes:
+    module_file = (target / "v.mod").read_text()
+    updated, replacements = re.subn(
+        r"(?m)^(\s*version:\s*')[^']+('.*)$",
+        rf"\g<1>{version}\2",
+        module_file,
+    )
+    if replacements != 1:
+        raise ValueError("published v.mod must contain exactly one version field")
+    return updated.encode()
+
+
 def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> int:
     validate_target(target)
     mappings = SOURCE_FILES | tracked_distribution_files()
@@ -64,6 +87,9 @@ def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> i
     contents["GENERATOR_COMMIT"] = (
         resolve_generator_commit(generator_commit) + "\n"
     ).encode()
+    contents["v.mod"] = published_module_file(
+        target, resolve_distribution_version()
+    )
     changed = []
     for target_name, source_bytes in sorted(contents.items()):
         destination = target / target_name

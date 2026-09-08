@@ -224,3 +224,43 @@ jobs:
           set -euo pipefail
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
             gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "v_opencl_bindings $GITHUB_REF_NAME"
+      - name: Tag matching published module
+        env:
+          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+          generator_commit=$(git rev-parse "$GITHUB_REF_NAME^{}")
+          version=$(cat VERSION)
+          opencl_commit=$(gh api repos/antono2/opencl/git/ref/heads/master --jq '.object.sha')
+          read_opencl_file() {
+            gh api "repos/antono2/opencl/contents/$1?ref=$opencl_commit" --jq '.content' | base64 --decode
+          }
+          test "$(read_opencl_file VERSION)" = "$version"
+          test "$(read_opencl_file GENERATOR_COMMIT)" = "$generator_commit"
+          grep -F "version: '$version'" < <(read_opencl_file v.mod)
+
+          if existing_refs=$(git ls-remote --exit-code \
+            https://github.com/antono2/opencl.git \
+            "refs/tags/$GITHUB_REF_NAME" "refs/tags/$GITHUB_REF_NAME^{}" 2>/dev/null); then
+            existing_commit=$(printf '%s\n' "$existing_refs" | awk '
+              /\^\{\}$/ { peeled = $1 }
+              !/\^\{\}$/ { direct = $1 }
+              END { print peeled != "" ? peeled : direct }
+            ')
+            if test "$existing_commit" != "$opencl_commit"; then
+              echo "::error::opencl $GITHUB_REF_NAME already resolves to $existing_commit, expected $opencl_commit"
+              exit 1
+            fi
+            echo "opencl $GITHUB_REF_NAME already points to $opencl_commit"
+            exit 0
+          fi
+
+          tag_object=$(gh api --method POST repos/antono2/opencl/git/tags \
+            -f tag="$GITHUB_REF_NAME" \
+            -f message="Release $GITHUB_REF_NAME synchronized from v_opencl_bindings" \
+            -f object="$opencl_commit" \
+            -f type=commit \
+            --jq '.sha')
+          gh api --method POST repos/antono2/opencl/git/refs \
+            -f ref="refs/tags/$GITHUB_REF_NAME" \
+            -f sha="$tag_object" >/dev/null
