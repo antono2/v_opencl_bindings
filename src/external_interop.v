@@ -67,7 +67,7 @@ pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &Owned
 	mut status := success
 	mut handle := Mem(unsafe { nil })
 	$if linux {
-		handle = create_buffer_with_properties(context.handle, properties.data, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
+		handle = C.clCreateBufferWithProperties(context.handle, properties.data, flags, usize(count) * sizeof(T), unsafe { nil }, &status)
 	} $else {
 		return OpenCLError{
 			operation: 'import opaque-FD OpenCL buffer on unsupported operating system'
