@@ -182,9 +182,26 @@ jobs:
           $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/lib'
           v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
 
+  required-checks:
+    name: required-checks
+    if: always()
+    needs: [generate-and-test, linux-v-master, macos-abi-compile, windows-abi-compile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every supported CI lane to pass
+        env:
+          GENERATE_RESULT: ${{ needs.generate-and-test.result }}
+          V_MASTER_RESULT: ${{ needs.linux-v-master.result }}
+          MACOS_RESULT: ${{ needs.macos-abi-compile.result }}
+          WINDOWS_RESULT: ${{ needs.windows-abi-compile.result }}
+        run: |
+          for result in "$GENERATE_RESULT" "$V_MASTER_RESULT" "$MACOS_RESULT" "$WINDOWS_RESULT"; do
+            test "$result" = success
+          done
+
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs: [generate-and-test, linux-v-master, macos-abi-compile, windows-abi-compile]
+    needs: required-checks
     runs-on: ubuntu-24.04
     permissions:
       contents: write
