@@ -45,7 +45,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	mut extension_count := u32(0)
 	extensions := glfw.get_required_instance_extensions(&extension_count)
-	app_info := vk.ApplicationInfo{
+	mut app_info := vk.ApplicationInfo{
 		pApplicationName:   c'Vulkan + OpenCL particles'
 		applicationVersion: 1
 		pEngineName:        c'none'
@@ -78,8 +78,8 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		first_vulkan_device(instance)!
 	}
 	queue_family := graphics_present_queue_family(physical, surface)!
-	priority := f32(1)
-	queue_info := vk.DeviceQueueCreateInfo{
+	mut priority := f32(1)
+	mut queue_info := vk.DeviceQueueCreateInfo{
 		queueFamilyIndex: queue_family
 		queueCount:       1
 		pQueuePriorities: &priority
@@ -93,7 +93,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	mut supported_features := vk.PhysicalDeviceFeatures{}
 	vk.get_physical_device_features(physical, mut supported_features)
-	enabled_features := vk.PhysicalDeviceFeatures{
+	mut enabled_features := vk.PhysicalDeviceFeatures{
 		largePoints: supported_features.largePoints
 	}
 	device_info := vk.DeviceCreateInfo{

@@ -13,7 +13,7 @@ struct FrameResources {
 }
 
 fn create_frame_resources(device vk.Device, family u32, swapchain &SwapchainBundle) !FrameResources {
-	attachment := vk.AttachmentDescription{
+	mut attachment := vk.AttachmentDescription{
 		format: swapchain.format
 		samples: ._1
 		loadOp: .clear
@@ -23,13 +23,13 @@ fn create_frame_resources(device vk.Device, family u32, swapchain &SwapchainBund
 		initialLayout: .undefined
 		finalLayout: .present_src_khr
 	}
-	reference := vk.AttachmentReference{ attachment: 0, layout: .color_attachment_optimal }
-	subpass := vk.SubpassDescription{
+	mut reference := vk.AttachmentReference{ attachment: 0, layout: .color_attachment_optimal }
+	mut subpass := vk.SubpassDescription{
 		pipelineBindPoint: .graphics
 		colorAttachmentCount: 1
 		pColorAttachments: &reference
 	}
-	dependency := vk.SubpassDependency{
+	mut dependency := vk.SubpassDependency{
 		srcSubpass: vk.subpass_external
 		dstSubpass: 0
 		srcStageMask: u32(vk.PipelineStageFlagBits.color_attachment_output)

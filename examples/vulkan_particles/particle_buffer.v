@@ -39,7 +39,7 @@ fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, p
 fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.ExternalMemoryInterop,
 	physical vk.PhysicalDevice, device vk.Device) !ParticleBuffer {
 	size := compute.count * particle_stride
-	external_info := vk.ExternalMemoryBufferCreateInfo{
+	mut external_info := vk.ExternalMemoryBufferCreateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	info := vk.BufferCreateInfo{
@@ -56,7 +56,7 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	export_info := vk.ExportMemoryAllocateInfo{
+	mut export_info := vk.ExportMemoryAllocateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	allocate := vk.MemoryAllocateInfo{

@@ -1,4 +1,5 @@
 # v_opencl_bindings
+[![Generate and test OpenCL bindings](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml/badge.svg)](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml)
 
 Generates V bindings for OpenCL from the canonical Khronos
 [`cl.xml`](https://github.com/KhronosGroup/OpenCL-Docs/blob/main/xml/cl.xml)

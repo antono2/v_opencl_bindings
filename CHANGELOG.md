@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.4.1 - 2026-09-09
+
+- Allow the Vulkan particles example to compile and run with TinyCC by keeping
+  every Vulkan structure referenced through generated mutable-pointer fields
+  mutable and removing the obsolete compiler guard.
+- Update GitHub checkout actions to the Node.js 24 generation.
+
 ## 0.4.0
 
 - Add owned typed 2D images with format-size validation, bounds-checked blocking and asynchronous transfers, supported-format discovery, and typed kernel arguments.

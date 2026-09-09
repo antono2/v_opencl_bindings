@@ -21,20 +21,20 @@ fn create_particle_pipeline(device vk.Device, pass vk.RenderPass, extent vk.Exte
 		vk.PipelineShaderStageCreateInfo{ stage: .vertex, module: vert, pName: c'main' },
 		vk.PipelineShaderStageCreateInfo{ stage: .fragment, module: frag, pName: c'main' },
 	]
-	binding := vk.VertexInputBindingDescription{ stride: u32(particle_stride), inputRate: .vertex }
+	mut binding := vk.VertexInputBindingDescription{ stride: u32(particle_stride), inputRate: .vertex }
 	attributes := [vk.VertexInputAttributeDescription{ format: .r32g32b32a32_sfloat },
 		vk.VertexInputAttributeDescription{ location: 1, format: .r32g32b32a32_sfloat, offset: 16 }]
-	vertex := vk.PipelineVertexInputStateCreateInfo{ vertexBindingDescriptionCount: 1, pVertexBindingDescriptions: &binding, vertexAttributeDescriptionCount: 2, pVertexAttributeDescriptions: attributes.data }
-	assembly := vk.PipelineInputAssemblyStateCreateInfo{ topology: .point_list }
-	viewport := vk.Viewport{ width: f32(extent.width), height: f32(extent.height), maxDepth: 1 }
-	scissor := vk.Rect2D{ extent: extent }
-	viewport_state := vk.PipelineViewportStateCreateInfo{ viewportCount: 1, pViewports: &viewport, scissorCount: 1, pScissors: &scissor }
-	raster := vk.PipelineRasterizationStateCreateInfo{ polygonMode: .fill, cullMode: u32(vk.CullModeFlagBits.none), lineWidth: 1 }
-	multisample := vk.PipelineMultisampleStateCreateInfo{ rasterizationSamples: ._1 }
+	mut vertex := vk.PipelineVertexInputStateCreateInfo{ vertexBindingDescriptionCount: 1, pVertexBindingDescriptions: &binding, vertexAttributeDescriptionCount: 2, pVertexAttributeDescriptions: attributes.data }
+	mut assembly := vk.PipelineInputAssemblyStateCreateInfo{ topology: .point_list }
+	mut viewport := vk.Viewport{ width: f32(extent.width), height: f32(extent.height), maxDepth: 1 }
+	mut scissor := vk.Rect2D{ extent: extent }
+	mut viewport_state := vk.PipelineViewportStateCreateInfo{ viewportCount: 1, pViewports: &viewport, scissorCount: 1, pScissors: &scissor }
+	mut raster := vk.PipelineRasterizationStateCreateInfo{ polygonMode: .fill, cullMode: u32(vk.CullModeFlagBits.none), lineWidth: 1 }
+	mut multisample := vk.PipelineMultisampleStateCreateInfo{ rasterizationSamples: ._1 }
 	mask := u32(vk.ColorComponentFlagBits.r) | u32(vk.ColorComponentFlagBits.g) | u32(vk.ColorComponentFlagBits.b) | u32(vk.ColorComponentFlagBits.a)
-	blend_attachment := vk.PipelineColorBlendAttachmentState{ blendEnable: vk._true, srcColorBlendFactor: .one, dstColorBlendFactor: .one, colorBlendOp: .add, srcAlphaBlendFactor: .one, dstAlphaBlendFactor: .one, alphaBlendOp: .add, colorWriteMask: mask }
-	blend := vk.PipelineColorBlendStateCreateInfo{ attachmentCount: 1, pAttachments: &blend_attachment }
-	push := vk.PushConstantRange{ stageFlags: u32(vk.ShaderStageFlagBits.vertex), size: 16 }
+	mut blend_attachment := vk.PipelineColorBlendAttachmentState{ blendEnable: vk._true, srcColorBlendFactor: .one, dstColorBlendFactor: .one, colorBlendOp: .add, srcAlphaBlendFactor: .one, dstAlphaBlendFactor: .one, alphaBlendOp: .add, colorWriteMask: mask }
+	mut blend := vk.PipelineColorBlendStateCreateInfo{ attachmentCount: 1, pAttachments: &blend_attachment }
+	mut push := vk.PushConstantRange{ stageFlags: u32(vk.ShaderStageFlagBits.vertex), size: 16 }
 	layout_info := vk.PipelineLayoutCreateInfo{ pushConstantRangeCount: 1, pPushConstantRanges: &push }
 	mut layout := vk.PipelineLayout(unsafe { nil })
 	vk_check(vk.create_pipeline_layout(device, &layout_info, unsafe { nil }, &layout), 'create pipeline layout')!
@@ -49,17 +49,17 @@ fn create_particle_pipeline(device vk.Device, pass vk.RenderPass, extent vk.Exte
 		vk.PipelineShaderStageCreateInfo{ stage: .vertex, module: trail_vert, pName: c'main' },
 		vk.PipelineShaderStageCreateInfo{ stage: .fragment, module: trail_frag, pName: c'main' },
 	]
-	trail_binding := vk.VertexInputBindingDescription{
+	mut trail_binding := vk.VertexInputBindingDescription{
 		stride: u32(particle_stride)
 		inputRate: .instance
 	}
-	trail_vertex := vk.PipelineVertexInputStateCreateInfo{
+	mut trail_vertex := vk.PipelineVertexInputStateCreateInfo{
 		vertexBindingDescriptionCount: 1
 		pVertexBindingDescriptions: &trail_binding
 		vertexAttributeDescriptionCount: 2
 		pVertexAttributeDescriptions: attributes.data
 	}
-	trail_assembly := vk.PipelineInputAssemblyStateCreateInfo{ topology: .line_list }
+	mut trail_assembly := vk.PipelineInputAssemblyStateCreateInfo{ topology: .line_list }
 	trail_info := vk.GraphicsPipelineCreateInfo{
 		stageCount: 2
 		pStages: trail_stages.data
