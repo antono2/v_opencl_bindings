@@ -1,5 +1,5 @@
 # v_opencl_bindings
-[Project portfolio](https://oreskin.de/projects_en.php) · [Support independent development](https://oreskin.de/dono_en.php)
+[Project portfolio](https://oreskin.de/projects_en.php)
 
 [![Generate and test OpenCL bindings](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml/badge.svg)](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml)
 
