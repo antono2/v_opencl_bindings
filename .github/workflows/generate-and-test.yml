@@ -61,7 +61,7 @@ jobs:
           v -cc gcc run examples/vector_add
       - name: Install advanced-example dependencies
         run: |
-          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers xauth xvfb
+          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
           v install antono2.vulkan
           v install antono2.glfw
           install -d "$HOME/.vmodules/antono2/opencl"
@@ -83,7 +83,13 @@ jobs:
         run: |
           v -cc gcc -o /tmp/vulkan-particles examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
-          xvfb-run -a /tmp/vulkan-particles --staged --frames=8 --particles=1024
+          VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation \
+            xvfb-run -a /tmp/vulkan-particles --staged --frames=16 --particles=1024 \
+            2>&1 | tee /tmp/vulkan-particles-window.log
+          if grep -E 'Validation (Error|Warning)' /tmp/vulkan-particles-window.log; then
+            echo '::error::Vulkan validation reported a particle-renderer synchronization or API error'
+            exit 1
+          fi
           v test examples/vulkan_particles/options_test.v
           v test examples/vulkan_particles/shader_test.v
           v test examples/vulkan_particles/interop_probe_test.v

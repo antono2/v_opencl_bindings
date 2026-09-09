@@ -8,7 +8,7 @@ struct FrameResources {
 	command_pool vk.CommandPool
 	commands     []vk.CommandBuffer
 	image_ready  vk.Semaphore
-	render_done  vk.Semaphore
+	render_done  []vk.Semaphore
 	fence        vk.Fence
 }
 
@@ -72,9 +72,13 @@ fn create_frame_resources(device vk.Device, family u32, swapchain &SwapchainBund
 	vk_check(vk.allocate_command_buffers(device, &allocate, commands.data), 'allocate commands')!
 	semaphore_info := vk.SemaphoreCreateInfo{}
 	mut ready := vk.Semaphore(unsafe { nil })
-	mut done := vk.Semaphore(unsafe { nil })
 	vk_check(vk.create_semaphore(device, &semaphore_info, unsafe { nil }, &ready), 'create acquire semaphore')!
-	vk_check(vk.create_semaphore(device, &semaphore_info, unsafe { nil }, &done), 'create render semaphore')!
+	mut done := []vk.Semaphore{cap: swapchain.images.len}
+	for _ in swapchain.images {
+		mut semaphore := vk.Semaphore(unsafe { nil })
+		vk_check(vk.create_semaphore(device, &semaphore_info, unsafe { nil }, &semaphore), 'create render semaphore')!
+		done << semaphore
+	}
 	mut fence := vk.Fence(unsafe { nil })
 	fence_info := vk.FenceCreateInfo{ flags: u32(vk.FenceCreateFlagBits.signaled) }
 	vk_check(vk.create_fence(device, &fence_info, unsafe { nil }, &fence), 'create frame fence')!
@@ -85,6 +89,11 @@ fn (r &FrameResources) draw_particles(device vk.Device, queue vk.Queue, swapchai
 	pipeline &ParticlePipeline, particles &ParticleBuffer, count usize, elapsed f32,
 	compute_ready vk.Semaphore, graphics_done vk.Semaphore, external_sync bool,
 	show_trails bool) !bool {
+	// The acquire semaphore cannot be reused until the previous queue submission
+	// has consumed its signal. Waiting before acquisition makes that lifecycle
+	// explicit; resetting the fence is delayed until an image was acquired so an
+	// out-of-date swapchain leaves the frame slot reusable.
+	vk_check(vk.wait_for_fences(device, 1, &r.fence, vk._true, max_u64), 'wait frame')!
 	mut index := u32(0)
 	acquire_result := vk.acquire_next_image_khr(device, swapchain.handle, max_u64, r.image_ready, unsafe { nil }, &index)
 	if acquire_result == .error_out_of_date_khr {
@@ -95,7 +104,6 @@ fn (r &FrameResources) draw_particles(device vk.Device, queue vk.Queue, swapchai
 		return error('acquire image failed with Vulkan result ${acquire_result}')
 	}
 	mut recreate := acquire_result == .suboptimal_khr
-	vk_check(vk.wait_for_fences(device, 1, &r.fence, vk._true, max_u64), 'wait frame')!
 	vk_check(vk.reset_fences(device, 1, &r.fence), 'reset frame')!
 	vk_check(vk.reset_command_pool(device, r.command_pool, 0), 'reset command pool')!
 	mut command := r.commands[index]
@@ -129,11 +137,12 @@ fn (r &FrameResources) draw_particles(device vk.Device, queue vk.Queue, swapchai
 	vk.cmd_end_render_pass(command)
 	vk_check(vk.end_command_buffer(command), 'end commands')!
 	mut color_stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.color_attachment_output)
+	mut render_done := r.render_done[index]
 	mut submit := vk.SubmitInfo{}
 	if external_sync {
 		waits := [r.image_ready, compute_ready]
 		stages := [color_stage, vk.PipelineStageFlags(vk.PipelineStageFlagBits.vertex_input)]
-		signals := [r.render_done, graphics_done]
+		signals := [render_done, graphics_done]
 		submit = vk.SubmitInfo{
 			waitSemaphoreCount: 2
 			pWaitSemaphores: waits.data
@@ -151,13 +160,13 @@ fn (r &FrameResources) draw_particles(device vk.Device, queue vk.Queue, swapchai
 			commandBufferCount: 1
 			pCommandBuffers: &command
 			signalSemaphoreCount: 1
-			pSignalSemaphores: &r.render_done
+			pSignalSemaphores: &render_done
 		}
 	}
 	vk_check(vk.queue_submit(queue, 1, &submit, r.fence), 'submit frame')!
 	present := vk.PresentInfoKHR{
 		waitSemaphoreCount: 1
-		pWaitSemaphores: &r.render_done
+		pWaitSemaphores: &render_done
 		swapchainCount: 1
 		pSwapchains: &swapchain.handle
 		pImageIndices: &index
@@ -190,7 +199,9 @@ fn complete_external_handoff(queue vk.Queue, compute_ready vk.Semaphore, graphic
 
 fn (r &FrameResources) destroy(device vk.Device) {
 	vk.destroy_fence(device, r.fence, unsafe { nil })
-	vk.destroy_semaphore(device, r.render_done, unsafe { nil })
+	for semaphore in r.render_done {
+		vk.destroy_semaphore(device, semaphore, unsafe { nil })
+	}
 	vk.destroy_semaphore(device, r.image_ready, unsafe { nil })
 	vk.destroy_command_pool(device, r.command_pool, unsafe { nil })
 	for framebuffer in r.framebuffers {
