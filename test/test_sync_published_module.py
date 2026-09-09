@@ -44,7 +44,11 @@ class SyncPublishedModuleTests(unittest.TestCase):
             self.assertIn(f"version: '{version}'", module_file)
             self.assertEqual((target / "VERSION").read_text().strip(), version)
             manifest = (target / sync_published_module.MANIFEST_FILE).read_text()
+            self.assertIn(".gitignore\n", manifest)
             self.assertIn("examples/vulkan_particles/README.md\n", manifest)
+            self.assertEqual(
+                (target / ".gitignore").read_bytes(), (ROOT / ".gitignore").read_bytes()
+            )
             self.assertEqual(
                 (target / "image.v").read_bytes(), (ROOT / "src/image.v").read_bytes()
             )

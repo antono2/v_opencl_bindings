@@ -16,6 +16,7 @@ MANIFEST_HEADER = (
 )
 
 SOURCE_FILES = {
+    ".gitignore": ".gitignore",
     "src/opencl.v": "opencl.v",
     "src/convenience.v": "convenience.v",
     "src/ownership.v": "ownership.v",

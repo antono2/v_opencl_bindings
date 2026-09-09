@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Publish ignore rules for local compiler products and Python caches so running
+  examples and generator tests does not dirty either repository checkout.
 - Mark the generator as the source of truth for the Vulkan particles example
   while continuing to ship its synchronized copy with the public module.
 - Record synchronized paths in `DISTRIBUTION_FILES` and remove files retired
