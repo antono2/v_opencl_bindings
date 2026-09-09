@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Mark the generator as the source of truth for the Vulkan particles example
+  while continuing to ship its synchronized copy with the public module.
+- Record synchronized paths in `DISTRIBUTION_FILES` and remove files retired
+  from the canonical distribution without touching unrelated local files.
+
 ## 0.4.1 - 2026-09-09
 
 - Allow the Vulkan particles example to compile and run with TinyCC by keeping

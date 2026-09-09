@@ -43,6 +43,8 @@ class SyncPublishedModuleTests(unittest.TestCase):
             self.assertIn("name: 'antono2.opencl'", module_file)
             self.assertIn(f"version: '{version}'", module_file)
             self.assertEqual((target / "VERSION").read_text().strip(), version)
+            manifest = (target / sync_published_module.MANIFEST_FILE).read_text()
+            self.assertIn("examples/vulkan_particles/README.md\n", manifest)
             self.assertEqual(
                 (target / "image.v").read_bytes(), (ROOT / "src/image.v").read_bytes()
             )
@@ -81,6 +83,52 @@ class SyncPublishedModuleTests(unittest.TestCase):
                     target, check=True, generator_commit="a" * 40
                 )
             self.assertEqual(result, 1)
+
+    def test_sync_removes_files_from_the_previous_distribution_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = self.make_target(directory)
+            generator_commit = "a" * 40
+            with redirect_stdout(io.StringIO()):
+                sync_published_module.sync(
+                    target, check=False, generator_commit=generator_commit
+                )
+
+            stale = target / "examples/obsolete.txt"
+            stale.parent.mkdir(parents=True, exist_ok=True)
+            stale.write_text("obsolete\n")
+            manifest = target / sync_published_module.MANIFEST_FILE
+            manifest.write_text(manifest.read_text() + "examples/obsolete.txt\n")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                check_result = sync_published_module.sync(
+                    target, check=True, generator_commit=generator_commit
+                )
+            self.assertEqual(check_result, 1)
+            self.assertIn("examples/obsolete.txt (remove)", output.getvalue())
+            self.assertTrue(stale.is_file())
+
+            with redirect_stdout(io.StringIO()):
+                sync_result = sync_published_module.sync(
+                    target, check=False, generator_commit=generator_commit
+                )
+                clean_result = sync_published_module.sync(
+                    target, check=True, generator_commit=generator_commit
+                )
+            self.assertEqual(sync_result, 0)
+            self.assertEqual(clean_result, 0)
+            self.assertFalse(stale.exists())
+
+    def test_sync_rejects_unsafe_manifest_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = self.make_target(directory)
+            (target / sync_published_module.MANIFEST_FILE).write_text(
+                "# managed paths\n../outside.txt\n"
+            )
+            with self.assertRaisesRegex(ValueError, "unsafe path"):
+                sync_published_module.sync(
+                    target, check=False, generator_commit="a" * 40
+                )
 
 
 if __name__ == "__main__":

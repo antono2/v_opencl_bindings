@@ -51,6 +51,8 @@ by that workflow so a release can be traced back to its canonical source.
 as well. Merge the publication pull request before tagging this repository. A
 successful generator release then creates the matching annotated `antono2/opencl`
 tag; rerunning the release is safe when that tag already targets the same commit.
+The published `DISTRIBUTION_FILES` manifest records every synchronized path so
+the publisher can detect and remove files retired from the canonical source.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written discovery, ownership, program, event,
