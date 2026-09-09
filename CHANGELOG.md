@@ -8,6 +8,7 @@
 - Add owned samplers and typed sampler kernel arguments.
 - Add owned typed shared virtual memory with capability discovery, checked allocation and transfers, coarse-grained map/unmap operations, and typed kernel arguments.
 - Add an image and SVM example that executes both memory models through real OpenCL kernels.
+- Map particle-example cursor coordinates to Vulkan's downward-positive viewport and use logical window dimensions on HiDPI displays.
 - Reuse acquire semaphores only after their submission fence signals and keep one presentation semaphore per swapchain image in the Vulkan particle renderer.
 
 ## 0.3.2

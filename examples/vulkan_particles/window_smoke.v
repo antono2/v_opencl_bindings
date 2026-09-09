@@ -7,10 +7,20 @@ import antono2.vulkan as vk
 
 fn C.glfwGetCursorPos(window &glfw.Window, x &f64, y &f64)
 
+fn C.glfwGetWindowSize(window &glfw.Window, width &i32, height &i32)
+
 fn C.glfwSetWindowTitle(window &glfw.Window, title &char)
 
 const key_r = 82
 const key_t = 84
+
+fn cursor_to_particle_position(cursor_x f64, cursor_y f64, window_width i32,
+	window_height i32) (f32, f32) {
+	if window_width <= 0 || window_height <= 0 {
+		return 0, 0
+	}
+	return f32(cursor_x / f64(window_width) * 2.0 - 1.0), f32(cursor_y / f64(window_height) * 2.0 - 1.0)
+}
 
 fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool,
 	frame_limit int) ! {
@@ -23,7 +33,8 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		return error('GLFW cannot find a Vulkan loader')
 	}
 	glfw.window_hint(glfw.client_api, glfw.no_api)
-	window := glfw.create_window(960, 640, 'Vulkan + OpenCL particles', unsafe { nil }, unsafe { nil })
+	window := glfw.create_window(960, 640, 'Vulkan + OpenCL particles', unsafe { nil },
+		unsafe { nil })
 	if isnil(window) {
 		return error('GLFW window creation failed')
 	}
@@ -35,25 +46,31 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	mut extension_count := u32(0)
 	extensions := glfw.get_required_instance_extensions(&extension_count)
 	app_info := vk.ApplicationInfo{
-		pApplicationName: c'Vulkan + OpenCL particles'
+		pApplicationName:   c'Vulkan + OpenCL particles'
 		applicationVersion: 1
-		pEngineName: c'none'
-		apiVersion: vk.api_version_1_1
+		pEngineName:        c'none'
+		apiVersion:         vk.api_version_1_1
 	}
 	instance_info := vk.InstanceCreateInfo{
-		pApplicationInfo: &app_info
-		enabledExtensionCount: extension_count
+		pApplicationInfo:        &app_info
+		enabledExtensionCount:   extension_count
 		ppEnabledExtensionNames: extensions
 	}
 	mut instance := vk.Instance(unsafe { nil })
-	vk_check(vk.create_instance(&instance_info, unsafe { nil }, &instance), 'create window instance')!
+	vk_check(vk.create_instance(&instance_info, unsafe { nil }, &instance),
+		'create window instance')!
 	defer { vk.destroy_instance(instance, unsafe { nil }) }
 	vk.load_instance_commands(instance)
 	mut surface := vk.SurfaceKHR(unsafe { nil })
-	vk_check(glfw.create_window_surface(instance, window, unsafe { nil }, &surface), 'create GLFW surface')!
+	vk_check(glfw.create_window_surface(instance, window, unsafe { nil }, &surface),
+		'create GLFW surface')!
 	defer { vk.destroy_surface_khr(instance, surface, unsafe { nil }) }
 
-	cl_capabilities := cl.device_capabilities(cl_device) or { cl.DeviceCapabilities{ device: cl_device } }
+	cl_capabilities := cl.device_capabilities(cl_device) or {
+		cl.DeviceCapabilities{
+			device: cl_device
+		}
+	}
 	cl_uuid, has_uuid := opencl_uuid(cl_capabilities)
 	physical := if use_zero_copy && has_uuid {
 		find_vulkan_device_by_uuid(instance, cl_uuid)!
@@ -64,7 +81,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	priority := f32(1)
 	queue_info := vk.DeviceQueueCreateInfo{
 		queueFamilyIndex: queue_family
-		queueCount: 1
+		queueCount:       1
 		pQueuePriorities: &priority
 	}
 	mut device_extensions := [vk.khr_swapchain_extension_name]
@@ -76,16 +93,19 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	mut supported_features := vk.PhysicalDeviceFeatures{}
 	vk.get_physical_device_features(physical, mut supported_features)
-	enabled_features := vk.PhysicalDeviceFeatures{ largePoints: supported_features.largePoints }
+	enabled_features := vk.PhysicalDeviceFeatures{
+		largePoints: supported_features.largePoints
+	}
 	device_info := vk.DeviceCreateInfo{
-		queueCreateInfoCount: 1
-		pQueueCreateInfos: &queue_info
-		enabledExtensionCount: u32(device_extensions.len)
+		queueCreateInfoCount:    1
+		pQueueCreateInfos:       &queue_info
+		enabledExtensionCount:   u32(device_extensions.len)
 		ppEnabledExtensionNames: device_extensions.data
-		pEnabledFeatures: &enabled_features
+		pEnabledFeatures:        &enabled_features
 	}
 	mut device := vk.Device(unsafe { nil })
-	vk_check(vk.create_device(physical, &device_info, unsafe { nil }, &device), 'create window device')!
+	vk_check(vk.create_device(physical, &device_info, unsafe { nil }, &device),
+		'create window device')!
 	vk.load_device_commands(device)
 	defer { vk.destroy_device(device, unsafe { nil }) }
 	mut queue := vk.Queue(unsafe { nil })
@@ -177,14 +197,18 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		mut cursor_x := f64(0)
 		mut cursor_y := f64(0)
 		C.glfwGetCursorPos(window, &cursor_x, &cursor_y)
-		pointer_x := f32(cursor_x / f64(swapchain.extent.width) * 2.0 - 1.0)
-		pointer_y := f32(1.0 - cursor_y / f64(swapchain.extent.height) * 2.0)
+		mut window_width := i32(0)
+		mut window_height := i32(0)
+		C.glfwGetWindowSize(window, &window_width, &window_height)
+		pointer_x, pointer_y := cursor_to_particle_position(cursor_x, cursor_y, window_width,
+			window_height)
 		if particle_buffer.zero_copy {
 			interop_sync.begin_compute(compute, particle_buffer.cl_buffer.handle)!
 			if reset_requested {
 				compute.reset_buffer(particle_buffer.cl_buffer.handle, u32(frame_number + 1))!
 			} else if !paused {
-				compute.update_buffer(particle_buffer.cl_buffer.handle, dt, elapsed, pointer_x, pointer_y, 0.11)!
+				compute.update_buffer(particle_buffer.cl_buffer.handle, dt, elapsed, pointer_x,
+					pointer_y, 0.11)!
 			}
 			interop_sync.end_compute(compute, particle_buffer.cl_buffer.handle)!
 		} else {
@@ -196,7 +220,9 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 			compute.read_particles(mut particles)!
 			particle_buffer.upload(device, particles)!
 		}
-		frame_ok := frames.draw_particles(device, queue, &swapchain, &pipeline, &particle_buffer, particle_count, elapsed, interop_sync.cl_to_vk, interop_sync.vk_to_cl, particle_buffer.zero_copy, trails)!
+		frame_ok := frames.draw_particles(device, queue, &swapchain, &pipeline, &particle_buffer,
+			particle_count, elapsed, interop_sync.cl_to_vk, interop_sync.vk_to_cl,
+			particle_buffer.zero_copy, trails)!
 		if !frame_ok {
 			vk_check(vk.device_wait_idle(device), 'wait to recreate swapchain')!
 			pipeline.destroy(device)
@@ -252,7 +278,8 @@ fn graphics_present_queue_family(device vk.PhysicalDevice, surface vk.SurfaceKHR
 	vk.get_physical_device_queue_family_properties(device, &count, mut properties[0])
 	for index, property in properties {
 		mut present := vk.Bool32(0)
-		vk_check(vk.get_physical_device_surface_support_khr(device, u32(index), surface, &present), 'query presentation support')!
+		vk_check(vk.get_physical_device_surface_support_khr(device, u32(index), surface, &present),
+			'query presentation support')!
 		if property.queueFlags & u32(vk.QueueFlagBits.graphics) != 0 && present == vk._true {
 			return u32(index)
 		}
