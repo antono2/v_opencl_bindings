@@ -40,10 +40,12 @@ v -cc gcc run examples/vulkan_particles --zero-copy --frames=120
 # Headless smoke test (does not open a window)
 v -cc gcc run examples/vulkan_particles
 v -cc gcc run examples/vulkan_particles --particles=4096
+
+# TinyCC is supported as well
+v -cc tcc run examples/vulkan_particles --particles=4096
 ```
 
-GCC or Clang is required because TinyCC cannot safely link Volk's global Vulkan
-dispatch symbols alongside some vendor OpenCL drivers.
+TinyCC requires `antono2.vulkan` 1.7.0 or newer for its deep-bound Volk loader.
 
 ## Tested hardware
 

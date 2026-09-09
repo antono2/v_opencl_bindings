@@ -19,13 +19,13 @@ jobs:
   generate-and-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: KhronosGroup/OpenCL-Headers
           ref: c4c8fd6f9556c92b212308880854e6294d61b314
@@ -88,6 +88,8 @@ jobs:
         run: |
           v -cc gcc -o /tmp/vulkan-particles examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
+          v -cc tcc -o /tmp/vulkan-particles-tcc examples/vulkan_particles
+          PARTICLE_COUNT=1024 /tmp/vulkan-particles-tcc
           VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation \
             xvfb-run -a /tmp/vulkan-particles --staged --frames=16 --particles=1024 \
             2>&1 | tee /tmp/vulkan-particles-window.log
@@ -102,8 +104,8 @@ jobs:
   macos-abi-compile:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
@@ -138,8 +140,8 @@ jobs:
   linux-v-master:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
@@ -148,7 +150,7 @@ jobs:
       # commands such as `v test`. Keep the complete source build together;
       # setup-v-action@v4's reduced cache bundle omits that executable.
       - name: Check out V master
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         id: checkout_v_master
         continue-on-error: true
         with:
@@ -196,7 +198,7 @@ jobs:
   windows-abi-compile:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: prantlf/setup-v-action@v4
         with:
           version: ${{ env.V_VERSION }}
@@ -236,7 +238,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Validate release version

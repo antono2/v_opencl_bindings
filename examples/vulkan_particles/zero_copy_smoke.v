@@ -17,7 +17,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 		return error('initialize Vulkan loader')
 	}
 	mut instance := vk.Instance(unsafe { nil })
-	app_info := vk.ApplicationInfo{
+	mut app_info := vk.ApplicationInfo{
 		pApplicationName: c'V OpenCL zero-copy smoke'
 		apiVersion: vk.api_version_1_1
 	}
@@ -28,8 +28,8 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 
 	physical := find_vulkan_device_by_uuid(instance, cl_uuid)!
 	queue_family := first_queue_family(physical)!
-	priority := f32(1)
-	queue_info := vk.DeviceQueueCreateInfo{
+	mut priority := f32(1)
+	mut queue_info := vk.DeviceQueueCreateInfo{
 		queueFamilyIndex: queue_family
 		queueCount: 1
 		pQueuePriorities: &priority
@@ -49,7 +49,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut queue := vk.Queue(unsafe { nil })
 	vk.get_device_queue(device, queue_family, 0, &queue)
 
-	external_info := vk.ExternalMemoryBufferCreateInfo{
+	mut external_info := vk.ExternalMemoryBufferCreateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	buffer_info := vk.BufferCreateInfo{
@@ -64,7 +64,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut requirements := vk.MemoryRequirements{}
 	vk.get_buffer_memory_requirements(device, buffer, mut requirements)
 	memory_type := find_memory_type(physical, requirements.memoryTypeBits)!
-	export_info := vk.ExportMemoryAllocateInfo{
+	mut export_info := vk.ExportMemoryAllocateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	allocation_info := vk.MemoryAllocateInfo{
@@ -106,7 +106,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 
 fn zero_copy_semaphore_smoke(compute &Compute, interop cl.ExternalSemaphoreInterop,
 	device vk.Device, queue vk.Queue) ! {
-	export_info := vk.ExportSemaphoreCreateInfo{
+	mut export_info := vk.ExportSemaphoreCreateInfo{
 		handleTypes: u32(vk.ExternalSemaphoreHandleTypeFlagBits.opaque_fd)
 	}
 	semaphore_info := vk.SemaphoreCreateInfo{ pNext: &export_info }
@@ -145,7 +145,7 @@ fn zero_copy_semaphore_smoke(compute &Compute, interop cl.ExternalSemaphoreInter
 	signal_event.close()!
 	wait_event.close()!
 
-	stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.all_commands)
+	mut stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.all_commands)
 	vk_wait_submit := vk.SubmitInfo{
 		waitSemaphoreCount: 1
 		pWaitSemaphores: &cl_to_vk

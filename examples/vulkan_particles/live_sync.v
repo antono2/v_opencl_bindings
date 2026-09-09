@@ -14,7 +14,7 @@ mut:
 
 fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 	semaphores cl.ExternalSemaphoreInterop, device vk.Device, queue vk.Queue) !LiveInteropSync {
-	export_info := vk.ExportSemaphoreCreateInfo{
+	mut export_info := vk.ExportSemaphoreCreateInfo{
 		handleTypes: u32(vk.ExternalSemaphoreHandleTypeFlagBits.opaque_fd)
 	}
 	info := vk.SemaphoreCreateInfo{ pNext: &export_info }

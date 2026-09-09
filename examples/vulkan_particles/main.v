@@ -5,9 +5,6 @@ import antono2.opencl as cl
 import time
 
 fn main() {
-	$if tinyc {
-		panic('the Vulkan/OpenCL example requires GCC or Clang; rerun with `v -cc gcc run examples/vulkan_particles`')
-	}
 	base_options := options_from_environment() or { panic(err) }
 	options := parse_options(base_options, os.args[1..]) or { panic('${err}\n\n${usage()}') }
 	if options.help {

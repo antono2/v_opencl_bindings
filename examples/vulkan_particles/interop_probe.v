@@ -35,7 +35,7 @@ fn probe_interop(cl_device cl.DeviceId) InteropReport {
 	}
 
 	mut instance := vk.Instance(unsafe { nil })
-	app_info := vk.ApplicationInfo{
+	mut app_info := vk.ApplicationInfo{
 		pApplicationName: c'V OpenCL particle interop probe'
 		applicationVersion: 1
 		pEngineName: c'none'
