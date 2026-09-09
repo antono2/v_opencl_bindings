@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pin Vulkan and GLFW example dependencies to immutable revisions in CI rather
+  than relying on mutable, occasionally stalled VPM installs.
 - Publish ignore rules for local compiler products and Python caches so running
   examples and generator tests does not dirty either repository checkout.
 - Mark the generator as the source of truth for the Vulkan particles example

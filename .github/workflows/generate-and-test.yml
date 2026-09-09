@@ -14,6 +14,8 @@ env:
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
   V_VERSION: 0.5.2
+  VULKAN_COMMIT: cd304bc19fd2a669d29b2d1a7975d55ee3b61952
+  GLFW_COMMIT: 3d7c1ddacb7215a7bbeb5fef0d7a68c90ba392ed
 
 jobs:
   generate-and-test:
@@ -30,6 +32,18 @@ jobs:
           repository: KhronosGroup/OpenCL-Headers
           ref: c4c8fd6f9556c92b212308880854e6294d61b314
           path: openclheaders
+      - name: Check out pinned Vulkan module
+        uses: actions/checkout@v7
+        with:
+          repository: antono2/vulkan
+          ref: ${{ env.VULKAN_COMMIT }}
+          path: .ci-modules/vulkan
+      - name: Check out pinned GLFW module
+        uses: actions/checkout@v7
+        with:
+          repository: antono2/glfw
+          ref: ${{ env.GLFW_COMMIT }}
+          path: .ci-modules/glfw
       - uses: prantlf/setup-v-action@v4
         with:
           version: ${{ env.V_VERSION }}
@@ -65,8 +79,11 @@ jobs:
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
-          v install antono2.vulkan
-          v install antono2.glfw
+          test "$(git -C .ci-modules/vulkan rev-parse HEAD)" = "$VULKAN_COMMIT"
+          test "$(git -C .ci-modules/glfw rev-parse HEAD)" = "$GLFW_COMMIT"
+          install -d "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
+          cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
+          cp -a .ci-modules/glfw/. "$HOME/.vmodules/antono2/glfw/"
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
           install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
