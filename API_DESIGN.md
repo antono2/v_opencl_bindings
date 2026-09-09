@@ -28,6 +28,7 @@ model rather than pretending to be reference-counted like OpenCL.
 5. Owned events, wait lists, profiling, markers, barriers, and asynchronous 1D/2D/3D buffer/kernel operations. (Implemented.)
 6. Optional extension capability objects and device UUID helpers. (Implemented.)
 7. Platform-specific external-memory and external-semaphore loaders, opaque-FD imports, ownership handoffs, and owned imported semaphores. (Implemented.)
+8. Typed two-dimensional images, owned samplers, and typed shared virtual memory with explicit host/device synchronization. (Implemented.)
 
 ## Ecosystem boundary
 

@@ -54,11 +54,14 @@ jobs:
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
           install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
+          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
+          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           v -cc gcc run test
           v test test/convenience_test.v
           v test test/pointer_abi_test.v
           v -cc gcc run examples/vector_add
+          v -cc gcc run examples/image_svm
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
@@ -72,6 +75,8 @@ jobs:
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
           install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
+          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
+          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
           install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -123,6 +128,8 @@ jobs:
           install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
           install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
           install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
+          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
+          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
           install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
@@ -171,7 +178,7 @@ jobs:
           # Here, compile the fresh generator output directly so V-master
           # formatter changes cannot masquerade as source incompatibilities.
           install -d "$HOME/.vmodules/antono2/opencl"
-          install -m 0644 src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
+          install -m 0644 src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/capabilities.v src/external_interop.v src/image.v src/svm.v v.mod "$HOME/.vmodules/antono2/opencl/"
       - name: Run correctness smoke tests on V master
         id: test_v_master
         if: steps.setup_v_master.outcome == 'success' && steps.generate_v_master.outcome == 'success'
@@ -181,6 +188,7 @@ jobs:
           v test test/convenience_test.v
           v test test/pointer_abi_test.v
           v -cc gcc run examples/vector_add
+          v -cc gcc run examples/image_svm
       - name: Report V master compatibility warning
         if: always() && (steps.checkout_v_master.outcome == 'failure' || steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
         run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 remains authoritative."
@@ -199,7 +207,7 @@ jobs:
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'
           New-Item -ItemType Directory -Force $module | Out-Null
-          Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, src/capabilities.v, src/external_interop.v, v.mod -Destination $module
+          Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, src/capabilities.v, src/external_interop.v, src/image.v, src/svm.v, v.mod -Destination $module
           $include = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/include'
           $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/lib'
           v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v

@@ -50,9 +50,8 @@ successful generator release then creates the matching annotated `antono2/opencl
 tag; rerunning the release is safe when that tag already targets the same commit.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
-V module together with the hand-written `src/convenience.v`, `src/ownership.v`,
-`src/program.v`, `src/event.v`, `src/capabilities.v`, and `src/external_interop.v`
-ergonomic layers.
+V module together with the hand-written discovery, ownership, program, event,
+image, SVM, capability, and external-interoperability layers under `src/`.
 
 See [`API_DESIGN.md`](API_DESIGN.md) for the conventions shared with the companion
 Vulkan convenience layer.
@@ -74,9 +73,11 @@ commands for the selected platform, imports opaque-FD buffers and binary
 semaphores into owned wrappers, and returns owned events from acquire, release,
 wait, and signal operations for explicit dependency chaining.
 
-Typed buffers and argument helpers require plain C-layout element types without
-V-managed references. Buffer-size multiplication is checked before native
-allocation, external import, and transfer calls. See [`OWNERSHIP.md`](OWNERSHIP.md) for the copy
+Typed buffers, images, SVM allocations, and argument helpers require plain
+C-layout element types without V-managed references. Size multiplication is
+checked before native allocation, external import, and transfer calls. Typed
+images additionally verify that `sizeof(T)` matches one complete pixel in the
+requested OpenCL image format. See [`OWNERSHIP.md`](OWNERSHIP.md) for the copy
 and cleanup rules of owning value wrappers.
 
 ## Test
@@ -100,6 +101,11 @@ sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 [`examples/vector_add`](examples/vector_add) demonstrates the generated module's
 owned convenience layer with asynchronous transfers, event dependencies, kernel
 dispatch, profiling, and cleanup.
+
+[`examples/image_svm`](examples/image_svm) executes an image-to-image kernel
+through typed `Image2D` owners and an owned sampler, then runs a second kernel
+directly over typed shared virtual memory when the selected device advertises
+buffer SVM support.
 
 [`examples/vulkan_particles`](examples/vulkan_particles) is an interactive particle-galaxy
 example built around OpenCL compute and Vulkan presentation. Its display-independent smoke
