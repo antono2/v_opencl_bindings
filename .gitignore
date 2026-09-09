@@ -1,5 +1,23 @@
 opencldocs/
 openclheaders/
+
+# Python caches and local distributions
 __pycache__/
+*.py[cod]
+.pytest_cache/
 *.tmp
 dist/
+
+# Native compiler output
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+*.tmp.c
+
+# Extensionless V example binaries
+/examples/image_svm/image_svm
+/examples/vector_add/vector_add
+/examples/vulkan_particles/vulkan_particles
