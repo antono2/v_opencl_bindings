@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Reuse acquire semaphores only after their submission fence signals and keep one presentation semaphore per swapchain image in the Vulkan particle renderer.
+
 ## 0.3.2
 
 - Make the particle example's headless default explicit at runtime and in its usage documentation.
