@@ -11,7 +11,9 @@ v -cc gcc run examples/image_svm
 
 The image path requires support for 2D `CL_RGBA`/`CL_UNORM_INT8` images. The
 SVM path is optional and reports a skip on OpenCL 1.x devices or OpenCL 3.0
-devices that do not advertise coarse- or fine-grained buffer SVM.
+devices that do not advertise coarse- or fine-grained buffer SVM. Apple's
+OpenCL 1.2 framework does not expose SVM entry points, so the SVM path is
+reported as unavailable on macOS while the image path remains supported.
 
 `Image2D[T]` treats `T` as one complete pixel and rejects a format whose storage
 size differs from `sizeof(T)`. `SvmAllocation[T]` performs checked OpenCL copy

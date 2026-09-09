@@ -1,5 +1,56 @@
 module opencl
 
+fn platform_svm_alloc(context Context, flags SvmMemFlags, size usize, alignment u32) voidptr {
+	$if macos {
+		return unsafe { nil }
+	} $else {
+		return svm_alloc(context, flags, size, alignment)
+	}
+}
+
+fn platform_svm_free(context Context, pointer voidptr) {
+	$if !macos {
+		svm_free(context, pointer)
+	}
+}
+
+fn platform_enqueue_svm_memcpy(queue CommandQueue, blocking_copy Bool, destination voidptr,
+	source voidptr, size usize, wait_count u32, wait_events voidptr, event voidptr) ErrorCode {
+	$if macos {
+		return invalid_operation
+	} $else {
+		return enqueue_svm_memcpy(queue, blocking_copy, destination, source, size, wait_count,
+			wait_events, event)
+	}
+}
+
+fn platform_enqueue_svm_map(queue CommandQueue, blocking_map Bool, flags MapFlags,
+	pointer voidptr, size usize, wait_count u32, wait_events voidptr, event voidptr) ErrorCode {
+	$if macos {
+		return invalid_operation
+	} $else {
+		return enqueue_svm_map(queue, blocking_map, flags, pointer, size, wait_count, wait_events,
+			event)
+	}
+}
+
+fn platform_enqueue_svm_unmap(queue CommandQueue, pointer voidptr, wait_count u32,
+	wait_events voidptr, event voidptr) ErrorCode {
+	$if macos {
+		return invalid_operation
+	} $else {
+		return enqueue_svm_unmap(queue, pointer, wait_count, wait_events, event)
+	}
+}
+
+fn platform_set_kernel_arg_svm_pointer(kernel Kernel, index u32, pointer voidptr) ErrorCode {
+	$if macos {
+		return invalid_operation
+	} $else {
+		return set_kernel_arg_svm_pointer(kernel, index, pointer)
+	}
+}
+
 // SvmAllocation owns a typed OpenCL shared virtual memory allocation. T must
 // be a plain C-layout value without V-managed references.
 pub struct SvmAllocation[T] {
@@ -70,7 +121,7 @@ pub fn new_svm[T](context &OwnedContext, flags MemFlags, count int,
 			status:    invalid_value
 		}
 	}
-	handle := svm_alloc(context.handle, SvmMemFlags(flags), byte_size, alignment)
+	handle := platform_svm_alloc(context.handle, SvmMemFlags(flags), byte_size, alignment)
 	if isnil(handle) {
 		return OpenCLError{
 			operation: 'allocate OpenCL SVM'
@@ -121,8 +172,8 @@ pub fn (allocation &SvmAllocation[T]) write(queue &OwnedCommandQueue, offset int
 		return
 	}
 	destination := allocation.pointer_at(offset, 'write')!
-	check(enqueue_svm_memcpy(queue.handle, blocking, destination, values.data, byte_size, 0,
-		unsafe { nil }, unsafe { nil }), 'write OpenCL SVM')!
+	check(platform_enqueue_svm_memcpy(queue.handle, blocking, destination, values.data, byte_size,
+		0, unsafe { nil }, unsafe { nil }), 'write OpenCL SVM')!
 }
 
 // write_async enqueues a copy into SVM. values must remain allocated and
@@ -139,8 +190,8 @@ pub fn (allocation &SvmAllocation[T]) write_async(queue &OwnedCommandQueue, offs
 	}
 	mut event := Event(unsafe { nil })
 	destination := allocation.pointer_at(offset, 'write')!
-	check(enqueue_svm_memcpy(queue.handle, non_blocking, destination, values.data, byte_size,
-		u32(wait_events.len), wait_pointer, &event), 'write OpenCL SVM asynchronously')!
+	check(platform_enqueue_svm_memcpy(queue.handle, non_blocking, destination, values.data,
+		byte_size, u32(wait_events.len), wait_pointer, &event), 'write OpenCL SVM asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -154,8 +205,8 @@ pub fn (allocation &SvmAllocation[T]) read(queue &OwnedCommandQueue, offset int,
 		return
 	}
 	source := allocation.pointer_at(offset, 'read')!
-	check(enqueue_svm_memcpy(queue.handle, blocking, destination.data, source, byte_size, 0,
-		unsafe { nil }, unsafe { nil }), 'read OpenCL SVM')!
+	check(platform_enqueue_svm_memcpy(queue.handle, blocking, destination.data, source, byte_size,
+		0, unsafe { nil }, unsafe { nil }), 'read OpenCL SVM')!
 }
 
 // read_async enqueues a copy from SVM. destination must remain allocated and
@@ -172,8 +223,8 @@ pub fn (allocation &SvmAllocation[T]) read_async(queue &OwnedCommandQueue, offse
 	}
 	mut event := Event(unsafe { nil })
 	source := allocation.pointer_at(offset, 'read')!
-	check(enqueue_svm_memcpy(queue.handle, non_blocking, destination.data, source, byte_size,
-		u32(wait_events.len), wait_pointer, &event), 'read OpenCL SVM asynchronously')!
+	check(platform_enqueue_svm_memcpy(queue.handle, non_blocking, destination.data, source,
+		byte_size, u32(wait_events.len), wait_pointer, &event), 'read OpenCL SVM asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -182,7 +233,7 @@ pub fn (allocation &SvmAllocation[T]) read_async(queue &OwnedCommandQueue, offse
 // map blocks until a coarse-grained SVM allocation is host-accessible through handle.
 pub fn (allocation &SvmAllocation[T]) map(queue &OwnedCommandQueue, flags MapFlags) ! {
 	byte_size := allocation.validate_transfer(queue, 0, allocation.count, 'map')!
-	check(enqueue_svm_map(queue.handle, blocking, flags, allocation.handle, byte_size, 0,
+	check(platform_enqueue_svm_map(queue.handle, blocking, flags, allocation.handle, byte_size, 0,
 		unsafe { nil }, unsafe { nil }), 'map OpenCL SVM')!
 }
 
@@ -195,8 +246,8 @@ pub fn (allocation &SvmAllocation[T]) unmap(queue &OwnedCommandQueue,
 		wait_pointer = wait_events.data
 	}
 	mut event := Event(unsafe { nil })
-	check(enqueue_svm_unmap(queue.handle, allocation.handle, u32(wait_events.len), wait_pointer,
-		&event), 'unmap OpenCL SVM')!
+	check(platform_enqueue_svm_unmap(queue.handle, allocation.handle, u32(wait_events.len),
+		wait_pointer, &event), 'unmap OpenCL SVM')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -216,7 +267,7 @@ pub fn (allocation &SvmAllocation[T]) set_kernel_arg(kernel &OwnedKernel, index 
 			status:    invalid_arg_value
 		}
 	}
-	check(set_kernel_arg_svm_pointer(kernel.handle, index, allocation.handle),
+	check(platform_set_kernel_arg_svm_pointer(kernel.handle, index, allocation.handle),
 		'set OpenCL kernel SVM argument')!
 }
 
@@ -225,6 +276,6 @@ pub fn (mut allocation SvmAllocation[T]) close() {
 	if isnil(allocation.handle) {
 		return
 	}
-	svm_free(allocation.context, allocation.handle)
+	platform_svm_free(allocation.context, allocation.handle)
 	allocation.handle = unsafe { nil }
 }

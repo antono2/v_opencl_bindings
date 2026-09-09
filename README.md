@@ -105,7 +105,8 @@ dispatch, profiling, and cleanup.
 [`examples/image_svm`](examples/image_svm) executes an image-to-image kernel
 through typed `Image2D` owners and an owned sampler, then runs a second kernel
 directly over typed shared virtual memory when the selected device advertises
-buffer SVM support.
+buffer SVM support. On macOS, Apple's OpenCL 1.2 framework does not expose SVM
+entry points, so the typed SVM API reports the feature as unavailable.
 
 [`examples/vulkan_particles`](examples/vulkan_particles) is an interactive particle-galaxy
 example built around OpenCL compute and Vulkan presentation. Its display-independent smoke
