@@ -4,6 +4,8 @@ module opencl
 pub struct OwnedContext {
 pub mut:
 	handle Context
+pub:
+	device DeviceId
 }
 
 // new_context creates a context containing exactly one explicitly selected device.
@@ -14,11 +16,12 @@ pub fn new_context(device DeviceId) !OwnedContext {
 	if isnil(handle) {
 		return OpenCLError{
 			operation: 'create OpenCL context'
-			status: out_of_host_memory
+			status:    out_of_host_memory
 		}
 	}
 	return OwnedContext{
 		handle: handle
+		device: device
 	}
 }
 
@@ -29,7 +32,7 @@ pub fn (context &OwnedContext) command_queue(device DeviceId,
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL command queue from closed context'
-			status: invalid_context
+			status:    invalid_context
 		}
 	}
 	mut status := success
@@ -38,7 +41,7 @@ pub fn (context &OwnedContext) command_queue(device DeviceId,
 	if isnil(handle) {
 		return OpenCLError{
 			operation: 'create OpenCL command queue'
-			status: out_of_host_memory
+			status:    out_of_host_memory
 		}
 	}
 	return OwnedCommandQueue{
@@ -84,14 +87,14 @@ fn checked_element_bytes[T](count int, operation string) !usize {
 	if count < 0 {
 		return OpenCLError{
 			operation: operation
-			status: invalid_buffer_size
+			status:    invalid_buffer_size
 		}
 	}
 	element_size := usize(sizeof(T))
 	if element_size == 0 || usize(count) > ~usize(0) / element_size {
 		return OpenCLError{
 			operation: operation
-			status: invalid_buffer_size
+			status:    invalid_buffer_size
 		}
 	}
 	return usize(count) * element_size
@@ -102,28 +105,29 @@ pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !Buffer[T
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL buffer from closed context'
-			status: invalid_context
+			status:    invalid_context
 		}
 	}
 	if count <= 0 {
 		return OpenCLError{
 			operation: 'create OpenCL buffer with non-positive element count'
-			status: invalid_buffer_size
+			status:    invalid_buffer_size
 		}
 	}
-	byte_size := checked_element_bytes[T](count, 'create OpenCL buffer with overflowing element count')!
+	byte_size := checked_element_bytes[T](count,
+		'create OpenCL buffer with overflowing element count')!
 	mut status := success
 	handle := create_buffer(context.handle, flags, byte_size, unsafe { nil }, &status)
 	check(status, 'create OpenCL buffer')!
 	if isnil(handle) {
 		return OpenCLError{
 			operation: 'create OpenCL buffer'
-			status: mem_object_allocation_failure
+			status:    mem_object_allocation_failure
 		}
 	}
 	return Buffer[T]{
 		handle: handle
-		count: count
+		count:  count
 	}
 }
 
@@ -134,8 +138,10 @@ pub fn (buffer &Buffer[T]) write(queue &OwnedCommandQueue, offset int, values []
 		return
 	}
 	byte_offset := checked_element_bytes[T](offset, 'write OpenCL buffer with overflowing offset')!
-	byte_size := checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
-	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size, values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
+	byte_size :=
+		checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
+	check(enqueue_write_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size,
+		values.data, 0, unsafe { nil }, unsafe { nil }), 'write OpenCL buffer')!
 }
 
 // write_async enqueues a non-blocking copy and returns its completion event.
@@ -152,8 +158,11 @@ pub fn (buffer &Buffer[T]) write_async(queue &OwnedCommandQueue, offset int, val
 	}
 	mut event := Event(unsafe { nil })
 	byte_offset := checked_element_bytes[T](offset, 'write OpenCL buffer with overflowing offset')!
-	byte_size := checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
-	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size, values.data, u32(wait_events.len), wait_pointer, &event), 'write OpenCL buffer asynchronously')!
+	byte_size :=
+		checked_element_bytes[T](values.len, 'write OpenCL buffer with overflowing length')!
+	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size,
+		values.data, u32(wait_events.len), wait_pointer, &event),
+		'write OpenCL buffer asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -166,8 +175,10 @@ pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destin
 		return
 	}
 	byte_offset := checked_element_bytes[T](offset, 'read OpenCL buffer with overflowing offset')!
-	byte_size := checked_element_bytes[T](destination.len, 'read OpenCL buffer with overflowing length')!
-	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size, destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
+	byte_size := checked_element_bytes[T](destination.len,
+		'read OpenCL buffer with overflowing length')!
+	check(enqueue_read_buffer(queue.handle, buffer.handle, blocking, byte_offset, byte_size,
+		destination.data, 0, unsafe { nil }, unsafe { nil }), 'read OpenCL buffer')!
 }
 
 // read_async enqueues a non-blocking copy and returns its completion event.
@@ -184,8 +195,11 @@ pub fn (buffer &Buffer[T]) read_async(queue &OwnedCommandQueue, offset int, mut 
 	}
 	mut event := Event(unsafe { nil })
 	byte_offset := checked_element_bytes[T](offset, 'read OpenCL buffer with overflowing offset')!
-	byte_size := checked_element_bytes[T](destination.len, 'read OpenCL buffer with overflowing length')!
-	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size, destination.data, u32(wait_events.len), wait_pointer, &event), 'read OpenCL buffer asynchronously')!
+	byte_size := checked_element_bytes[T](destination.len,
+		'read OpenCL buffer with overflowing length')!
+	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size,
+		destination.data, u32(wait_events.len), wait_pointer, &event),
+		'read OpenCL buffer asynchronously')!
 	return OwnedEvent{
 		handle: event
 	}
@@ -196,19 +210,19 @@ fn (buffer &Buffer[T]) validate_transfer(queue &OwnedCommandQueue, offset int, l
 	if isnil(buffer.handle) {
 		return OpenCLError{
 			operation: '${operation} closed OpenCL buffer'
-			status: invalid_mem_object
+			status:    invalid_mem_object
 		}
 	}
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: '${operation} OpenCL buffer using closed queue'
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	if offset < 0 || length < 0 || offset > buffer.count || length > buffer.count - offset {
 		return OpenCLError{
 			operation: '${operation} outside OpenCL buffer bounds'
-			status: invalid_value
+			status:    invalid_value
 		}
 	}
 }

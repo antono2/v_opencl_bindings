@@ -19,6 +19,8 @@ SOURCE_FILES = {
     "src/event.v": "event.v",
     "src/capabilities.v": "capabilities.v",
     "src/external_interop.v": "external_interop.v",
+    "src/image.v": "image.v",
+    "src/svm.v": "svm.v",
     "test/convenience_test.v": "convenience_test.v",
     "test/pointer_abi_test.v": "test/pointer_abi_test.v",
     "test/pointer_abi_shim.c": "test/pointer_abi_shim.c",

@@ -36,7 +36,7 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'build program from closed OpenCL context'
-			status: invalid_context
+			status:    invalid_context
 		}
 	}
 	pointer := source.str
@@ -47,7 +47,7 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 	if isnil(handle) {
 		return OpenCLError{
 			operation: 'create OpenCL source program'
-			status: out_of_host_memory
+			status:    out_of_host_memory
 		}
 	}
 	mut option_pointer := &char(unsafe { nil })
@@ -60,7 +60,7 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 		release_program(handle)
 		return ProgramBuildError{
 			status: status
-			log: log
+			log:    log
 		}
 	}
 	return OwnedProgram{
@@ -74,7 +74,7 @@ pub fn (program &OwnedProgram) kernel(name string) !OwnedKernel {
 	if isnil(program.handle) {
 		return OpenCLError{
 			operation: 'create kernel from closed OpenCL program'
-			status: invalid_program
+			status:    invalid_program
 		}
 	}
 	mut status := success
@@ -105,7 +105,7 @@ pub fn (kernel &OwnedKernel) set_arg[T](index u32, value &T) ! {
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'set argument on closed OpenCL kernel'
-			status: invalid_kernel
+			status:    invalid_kernel
 		}
 	}
 	check(set_kernel_arg(kernel.handle, index, sizeof(T), value), 'set OpenCL kernel argument')!
@@ -117,16 +117,17 @@ pub fn (kernel &OwnedKernel) set_slice_arg[T](index u32, values []T) ! {
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'set argument on closed OpenCL kernel'
-			status: invalid_kernel
+			status:    invalid_kernel
 		}
 	}
 	if values.len == 0 {
 		return OpenCLError{
 			operation: 'set empty OpenCL kernel slice argument'
-			status: invalid_arg_size
+			status:    invalid_arg_size
 		}
 	}
-	check(set_kernel_arg(kernel.handle, index, usize(values.len) * sizeof(T), values.data), 'set OpenCL kernel slice argument')!
+	check(set_kernel_arg(kernel.handle, index, usize(values.len) * sizeof(T), values.data),
+		'set OpenCL kernel slice argument')!
 }
 
 // set_buffer_arg binds an OpenCL memory object, such as Buffer.handle.
@@ -134,10 +135,21 @@ pub fn (kernel &OwnedKernel) set_buffer_arg(index u32, buffer Mem) ! {
 	if isnil(buffer) {
 		return OpenCLError{
 			operation: 'bind closed OpenCL buffer to kernel'
-			status: invalid_mem_object
+			status:    invalid_mem_object
 		}
 	}
 	kernel.set_arg(index, &buffer)!
+}
+
+// set_sampler_arg binds an owned sampler.
+pub fn (kernel &OwnedKernel) set_sampler_arg(index u32, sampler &OwnedSampler) ! {
+	if isnil(sampler.handle) {
+		return OpenCLError{
+			operation: 'bind closed OpenCL sampler to kernel'
+			status:    invalid_sampler
+		}
+	}
+	kernel.set_arg(index, &sampler.handle)!
 }
 
 // enqueue_1d submits a one-dimensional kernel. A local size of zero lets the runtime choose.
@@ -146,13 +158,13 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: 'enqueue OpenCL kernel on closed queue'
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	if global_size == 0 {
 		return OpenCLError{
 			operation: 'enqueue OpenCL kernel with zero global size'
-			status: invalid_global_work_size
+			status:    invalid_global_work_size
 		}
 	}
 	mut local_pointer := &usize(unsafe { nil })
@@ -161,7 +173,8 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 		local_pointer = &requested_local_size
 	}
 	mut no_global_offset := &usize(unsafe { nil })
-	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, no_global_offset, &global_size, local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, no_global_offset, &global_size,
+		local_pointer, 0, unsafe { nil }, unsafe { nil }), 'enqueue OpenCL kernel')!
 }
 
 // enqueue_1d_after submits a one-dimensional kernel after wait_events and
@@ -180,40 +193,40 @@ pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_s
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'enqueue closed OpenCL kernel'
-			status: invalid_kernel
+			status:    invalid_kernel
 		}
 	}
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: 'enqueue OpenCL kernel on closed queue'
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	if global_sizes.len < 1 || global_sizes.len > 3 {
 		return OpenCLError{
 			operation: 'enqueue OpenCL kernel with invalid work dimension'
-			status: invalid_work_dimension
+			status:    invalid_work_dimension
 		}
 	}
 	for size in global_sizes {
 		if size == 0 {
 			return OpenCLError{
 				operation: 'enqueue OpenCL kernel with zero global size'
-				status: invalid_global_work_size
+				status:    invalid_global_work_size
 			}
 		}
 	}
 	if local_sizes.len != 0 && local_sizes.len != global_sizes.len {
 		return OpenCLError{
 			operation: 'enqueue OpenCL kernel with mismatched local dimensions'
-			status: invalid_work_group_size
+			status:    invalid_work_group_size
 		}
 	}
 	for size in local_sizes {
 		if size == 0 {
 			return OpenCLError{
 				operation: 'enqueue OpenCL kernel with zero local size'
-				status: invalid_work_group_size
+				status:    invalid_work_group_size
 			}
 		}
 	}
@@ -227,7 +240,9 @@ pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_s
 	}
 	mut event := Event(unsafe { nil })
 	mut no_global_offset := &usize(unsafe { nil })
-	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len), no_global_offset, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer, &event), 'enqueue OpenCL kernel with event')!
+	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len),
+		no_global_offset, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer,
+		&event), 'enqueue OpenCL kernel with event')!
 	return OwnedEvent{
 		handle: event
 	}

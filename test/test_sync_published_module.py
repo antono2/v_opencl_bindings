@@ -43,6 +43,12 @@ class SyncPublishedModuleTests(unittest.TestCase):
             self.assertIn("name: 'antono2.opencl'", module_file)
             self.assertIn(f"version: '{version}'", module_file)
             self.assertEqual((target / "VERSION").read_text().strip(), version)
+            self.assertEqual(
+                (target / "image.v").read_bytes(), (ROOT / "src/image.v").read_bytes()
+            )
+            self.assertEqual(
+                (target / "svm.v").read_bytes(), (ROOT / "src/svm.v").read_bytes()
+            )
             with redirect_stdout(io.StringIO()):
                 check_result = sync_published_module.sync(
                     target, check=True, generator_commit=generator_commit
