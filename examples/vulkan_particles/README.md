@@ -1,5 +1,12 @@
 # Vulkan particles
 
+> **Source of truth:** This example is maintained in
+> [`antono2/v_opencl_bindings`](https://github.com/antono2/v_opencl_bindings/tree/master/examples/vulkan_particles)
+> and copied unchanged into
+> [`antono2/opencl`](https://github.com/antono2/opencl/tree/master/examples/vulkan_particles)
+> so it ships beside the public module. Submit source changes to the generator;
+> its publication workflow updates the distributed copy.
+
 This example evolves a colorful particle galaxy with OpenCL and renders the same particle
 buffer with Vulkan. Its preferred path exports a Vulkan allocation and imports it into OpenCL;
 systems without compatible external-memory and external-semaphore support use per-frame staging.

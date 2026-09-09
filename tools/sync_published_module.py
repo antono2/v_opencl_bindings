@@ -4,12 +4,16 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
 
 ROOT = Path(__file__).resolve().parent.parent
+MANIFEST_FILE = "DISTRIBUTION_FILES"
+MANIFEST_HEADER = (
+    "# Managed by antono2/v_opencl_bindings. Edit the canonical generator, not this file.\n"
+)
 
 SOURCE_FILES = {
     "src/opencl.v": "opencl.v",
@@ -39,6 +43,35 @@ def tracked_distribution_files() -> dict[str, str]:
     )
     paths = output.decode().rstrip("\0").split("\0") if output else []
     return {path: path for path in paths}
+
+
+def distribution_manifest(paths: set[str]) -> bytes:
+    return (MANIFEST_HEADER + "".join(f"{path}\n" for path in sorted(paths))).encode()
+
+
+def previous_distribution_files(target: Path) -> set[str]:
+    manifest = target / MANIFEST_FILE
+    if not manifest.is_file():
+        return set()
+    paths = set()
+    for line in manifest.read_text().splitlines():
+        if not line or line.startswith("#"):
+            continue
+        path = PurePosixPath(line)
+        if path.is_absolute() or ".." in path.parts or path.as_posix() != line:
+            raise ValueError(f"unsafe path in {MANIFEST_FILE}: {line}")
+        paths.add(line)
+    return paths
+
+
+def remove_empty_parents(path: Path, target: Path) -> None:
+    parent = path.parent
+    while parent != target:
+        try:
+            parent.rmdir()
+        except OSError:
+            return
+        parent = parent.parent
 
 
 def validate_target(target: Path) -> None:
@@ -92,7 +125,17 @@ def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> i
     contents["v.mod"] = published_module_file(
         target, resolve_distribution_version()
     )
+    managed_paths = set(contents)
+    stale_paths = previous_distribution_files(target) - managed_paths
+    contents[MANIFEST_FILE] = distribution_manifest(managed_paths)
     changed = []
+    for target_name in sorted(stale_paths):
+        changed.append(f"{target_name} (remove)")
+        if not check:
+            destination = target / target_name
+            if destination.is_file() or destination.is_symlink():
+                destination.unlink()
+                remove_empty_parents(destination, target)
     for target_name, source_bytes in sorted(contents.items()):
         destination = target / target_name
         if destination.is_file() and destination.read_bytes() == source_bytes:
