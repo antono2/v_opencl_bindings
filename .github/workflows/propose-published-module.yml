@@ -10,6 +10,7 @@ on:
       - 'abi/**'
       - 'examples/**'
       - 'include/**'
+      - 'packaging/published_setup.vsh'
       - 'API_DESIGN.md'
       - 'OWNERSHIP.md'
       - 'REGISTRY_COMMIT'
