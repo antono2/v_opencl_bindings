@@ -52,7 +52,7 @@ fn install_macos() ! {
 	println('The OpenCL headers, loader, and implementation are provided by the macOS OpenCL framework.')
 }
 
-fn copy_windows_import_library(module_root string) ! {
+fn copy_windows_sdk_files(module_root string) ! {
 	sdk_root := os.getenv('OPENCL_SDK')
 	source := os.join_path(sdk_root, 'lib', 'OpenCL.lib')
 	if !os.is_file(source) {
@@ -60,6 +60,7 @@ fn copy_windows_import_library(module_root string) ! {
 	}
 	os.mkdir_all(os.join_path(module_root, 'lib'))!
 	os.cp(source, os.join_path(module_root, 'lib', 'OpenCL.lib'))!
+	os.cp_all(os.join_path(sdk_root, 'include'), os.join_path(module_root, 'include'), true)!
 }
 
 fn install_windows() ! {
@@ -90,7 +91,7 @@ fn install_windows() ! {
 	run('${os.quoted_path(vcpkg)} install opencl:x64-windows')!
 	sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
 	os.setenv('OPENCL_SDK', sdk_root, true)
-	copy_windows_import_library(os.dir(os.real_path(@FILE)))!
+	copy_windows_sdk_files(os.dir(os.real_path(@FILE)))!
 	// Persist the development location for new terminals. The current process
 	// is also updated above so verification can continue without a restart.
 	run('setx OPENCL_SDK ${os.quoted_path(sdk_root)}')!
@@ -215,7 +216,7 @@ fn main() {
 			}
 			$if windows {
 				installed_module := os.join_path(os.vmodules_dir(), 'antono2', 'opencl')
-				copy_windows_import_library(installed_module) or {
+				copy_windows_sdk_files(installed_module) or {
 					eprintln('Could not configure the installed V module: ${err}')
 					exit(1)
 				}
