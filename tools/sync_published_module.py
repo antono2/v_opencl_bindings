@@ -35,6 +35,7 @@ SOURCE_FILES = {
     "VERSION": "VERSION",
     "REGISTRY_COMMIT": "REGISTRY_COMMIT",
     "HEADERS_COMMIT": "HEADERS_COMMIT",
+    "packaging/published_setup.vsh": "setup.vsh",
 }
 
 
