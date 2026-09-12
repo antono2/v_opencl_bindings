@@ -139,8 +139,8 @@ module opencl
 
 #flag linux -lOpenCL
 #flag windows -lOpenCL
-#flag windows -I$env('OPENCL_SDK')/include
-#flag windows -L$env('OPENCL_SDK')/lib
+#flag windows -I@VMODROOT/include
+#flag windows -L@VMODROOT/lib
 #flag darwin -framework OpenCL
 #flag darwin -I@VMODROOT/include
 #include <CL/opencl.h>

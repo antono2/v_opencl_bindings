@@ -79,6 +79,9 @@ fn install_windows() ! {
 	}
 	run('${os.quoted_path(vcpkg)} install opencl:x64-windows')!
 	sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
+	module_root := os.dir(os.real_path(@FILE))
+	os.mkdir_all(os.join_path(module_root, 'lib'))!
+	os.cp(os.join_path(sdk_root, 'lib', 'OpenCL.lib'), os.join_path(module_root, 'lib', 'OpenCL.lib'))!
 	os.setenv('OPENCL_SDK', sdk_root, true)
 	// Persist the development location for new terminals. The current process
 	// is also updated above so verification can continue without a restart.
@@ -104,7 +107,10 @@ fn find_opencl_header() string {
 		roots << sdk
 	}
 	$if macos {
-		roots << '/System/Library/Frameworks/OpenCL.framework'
+		framework := '/System/Library/Frameworks/OpenCL.framework'
+		if os.is_dir(framework) {
+			return framework
+		}
 	} $else $if !windows {
 		roots << ['/usr', '/usr/local', '/opt/homebrew']
 	}
@@ -140,11 +146,20 @@ fn check() bool {
 		ok = report_command('cc', true) && ok
 	}
 	header := find_opencl_header()
-	if header == '' {
-		println('[missing] OpenCL development headers')
-		ok = false
-	} else {
-		println('[ok]       OpenCL header: ${header}')
+	$if macos {
+		if header == '' {
+			println('[missing] macOS OpenCL framework headers')
+			ok = false
+		} else {
+			println('[ok]       OpenCL framework header: ${header}')
+		}
+	} $else {
+		if header == '' {
+			println('[missing] OpenCL development headers')
+			ok = false
+		} else {
+			println('[ok]       OpenCL header: ${header}')
+		}
 	}
 	if command_exists('clinfo') {
 		result := os.execute('clinfo -l')
