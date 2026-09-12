@@ -49,6 +49,8 @@ jobs:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL ICD development files and CPU implementation
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
+      - name: Verify the public setup diagnostics
+        run: v run packaging/published_setup.vsh --check
       - name: Generate bindings
         run: |
           test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
@@ -139,6 +141,7 @@ jobs:
           git diff --exit-code -- src/opencl.v
       - name: Compile macOS ABI probe
         run: |
+          v run packaging/published_setup.vsh --check
           install -d "$HOME/.vmodules/antono2/opencl"
           install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
           install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
@@ -221,6 +224,11 @@ jobs:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
         run: vcpkg install opencl:x64-windows
+      - name: Verify the public setup diagnostics
+        shell: pwsh
+        run: |
+          $env:OPENCL_SDK = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows'
+          v run packaging/published_setup.vsh --check
       - name: Assemble generated module and compile ABI probe
         shell: pwsh
         run: |

@@ -139,6 +139,8 @@ module opencl
 
 #flag linux -lOpenCL
 #flag windows -lOpenCL
+#flag windows -I@VMODROOT/include
+#flag windows -L@VMODROOT/lib
 #flag darwin -framework OpenCL
 #flag darwin -I@VMODROOT/include
 #include <CL/opencl.h>

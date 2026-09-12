@@ -14,6 +14,11 @@ The generated module is published as
 v install antono2.opencl
 ```
 
+Maintainers can prepare a checkout on every supported operating system with
+`v run setup.vsh`; use `v run setup.vsh --check` for read-only diagnostics.
+Each synchronized `antono2.opencl` release includes its own end-user setup
+script for installing the loader, headers, and a development runtime.
+
 The complete OpenCL 1.0 through 3.0 core constant surface, including bitfields
 and error codes, is read directly from the registry rather than maintained as
 duplicated values. Constants retain the corresponding OpenCL typedef as their
@@ -32,6 +37,16 @@ The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 `Mem` field because both C union alternatives have the same handle type.
 
 ## Generate
+
+Prepare both pinned Khronos checkouts and validate the generator with
+one cross-platform command:
+
+```sh
+v run setup.vsh
+```
+
+Use `v run setup.vsh --check` to verify tools and revisions without
+changing the checkouts or generated source.
 
 ```sh
 git clone --depth 1 https://github.com/KhronosGroup/OpenCL-Docs.git opencldocs
