@@ -52,6 +52,17 @@ fn install_macos() ! {
 	println('The OpenCL headers, loader, and implementation are provided by the macOS OpenCL framework.')
 }
 
+fn copy_windows_sdk_files(module_root string) ! {
+	sdk_root := os.getenv('OPENCL_SDK')
+	source := os.join_path(sdk_root, 'lib', 'OpenCL.lib')
+	if !os.is_file(source) {
+		return error('OpenCL import library was not installed at ${source}')
+	}
+	os.mkdir_all(os.join_path(module_root, 'lib'))!
+	os.cp(source, os.join_path(module_root, 'lib', 'OpenCL.lib'))!
+	os.cp_all(os.join_path(sdk_root, 'include'), os.join_path(module_root, 'include'), true)!
+}
+
 fn install_windows() ! {
 	if !command_exists('winget') {
 		return error('winget is required for automatic Windows setup; install Microsoft App Installer, then try again')
@@ -79,10 +90,8 @@ fn install_windows() ! {
 	}
 	run('${os.quoted_path(vcpkg)} install opencl:x64-windows')!
 	sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
-	module_root := os.dir(os.real_path(@FILE))
-	os.mkdir_all(os.join_path(module_root, 'lib'))!
-	os.cp(os.join_path(sdk_root, 'lib', 'OpenCL.lib'), os.join_path(module_root, 'lib', 'OpenCL.lib'))!
 	os.setenv('OPENCL_SDK', sdk_root, true)
+	copy_windows_sdk_files(os.dir(os.real_path(@FILE)))!
 	// Persist the development location for new terminals. The current process
 	// is also updated above so verification can continue without a restart.
 	run('setx OPENCL_SDK ${os.quoted_path(sdk_root)}')!
@@ -204,6 +213,13 @@ fn main() {
 			run('v install antono2.opencl') or {
 				eprintln('Could not install the V module: ${err}')
 				exit(1)
+			}
+			$if windows {
+				installed_module := os.join_path(os.vmodules_dir(), 'antono2', 'opencl')
+				copy_windows_sdk_files(installed_module) or {
+					eprintln('Could not configure the installed V module: ${err}')
+					exit(1)
+				}
 			}
 		}
 	}
