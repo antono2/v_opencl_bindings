@@ -224,20 +224,16 @@ jobs:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
         run: vcpkg install opencl:x64-windows
-      - name: Verify the public setup diagnostics
-        shell: pwsh
-        run: |
-          $env:OPENCL_SDK = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows'
-          v run packaging/published_setup.vsh --check
-      - name: Assemble generated module and compile ABI probe
+      - name: Assemble generated module, reuse the SDK, and compile ABI probe
         shell: pwsh
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'
           New-Item -ItemType Directory -Force $module | Out-Null
           Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, src/capabilities.v, src/external_interop.v, src/image.v, src/svm.v, v.mod -Destination $module
-          $include = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/include'
-          $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows/lib'
-          v -cc msvc -cflags "/I$include" -ldflags "/LIBPATH:$lib" -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
+          Copy-Item packaging/published_setup.vsh (Join-Path $module 'setup.vsh')
+          $env:OPENCL_SDK = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows'
+          v run (Join-Path $module 'setup.vsh') --install
+          v -cc msvc -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
 
   required-checks:
     name: required-checks
