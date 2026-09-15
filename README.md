@@ -16,6 +16,10 @@ v install antono2.opencl
 
 Maintainers can prepare a checkout on every supported operating system with
 `v run setup.vsh`; use `v run setup.vsh --check` for read-only diagnostics.
+On Windows, setup reuses a compatible `OPENCL_SDK`, `VCPKG_ROOT`, or
+`VCPKG_INSTALLATION_ROOT` checkout when one is already configured. It creates
+an isolated vcpkg checkout only when none of those locations supplies the
+required headers and import library.
 Each synchronized `antono2.opencl` release includes its own end-user setup
 script for installing the loader, headers, and a development runtime.
 

@@ -63,7 +63,39 @@ fn copy_windows_sdk_files(module_root string) ! {
 	os.cp_all(os.join_path(sdk_root, 'include'), os.join_path(module_root, 'include'), true)!
 }
 
+fn usable_windows_sdk(root string) bool {
+	return root != '' && os.is_file(os.join_path(root, 'include', 'CL', 'opencl.h'))
+		&& os.is_file(os.join_path(root, 'lib', 'OpenCL.lib'))
+}
+
+fn existing_windows_sdk() string {
+	for variable in ['VCPKG_ROOT', 'VCPKG_INSTALLATION_ROOT'] {
+		if vcpkg_root := os.getenv_opt(variable) {
+			sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
+			if usable_windows_sdk(sdk_root) {
+				return sdk_root
+			}
+		}
+	}
+	return ''
+}
+
 fn install_windows() ! {
+	mut sdk_root := ''
+	if configured_sdk := os.getenv_opt('OPENCL_SDK') {
+		if !usable_windows_sdk(configured_sdk) {
+			return error('OPENCL_SDK points to ${configured_sdk}, but that location does not contain include\\CL\\opencl.h and lib\\OpenCL.lib; leaving it unchanged')
+		}
+		sdk_root = configured_sdk
+	} else {
+		sdk_root = existing_windows_sdk()
+	}
+	if sdk_root != '' {
+		println('Reusing the existing OpenCL SDK at ${sdk_root}')
+		os.setenv('OPENCL_SDK', sdk_root, true)
+		copy_windows_sdk_files(os.dir(os.real_path(@FILE)))!
+		return
+	}
 	if !command_exists('winget') {
 		return error('winget is required for automatic Windows setup; install Microsoft App Installer, then try again')
 	}
@@ -89,12 +121,12 @@ fn install_windows() ! {
 		run(os.quoted_path(bootstrap))!
 	}
 	run('${os.quoted_path(vcpkg)} install opencl:x64-windows')!
-	sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
-	os.setenv('OPENCL_SDK', sdk_root, true)
+	managed_sdk_root := os.join_path(vcpkg_root, 'installed', 'x64-windows')
+	os.setenv('OPENCL_SDK', managed_sdk_root, true)
 	copy_windows_sdk_files(os.dir(os.real_path(@FILE)))!
 	// Persist the development location for new terminals. The current process
 	// is also updated above so verification can continue without a restart.
-	run('setx OPENCL_SDK ${os.quoted_path(sdk_root)}')!
+	run('setx OPENCL_SDK ${os.quoted_path(managed_sdk_root)}')!
 	println('\nThe Khronos loader is installed for development. Install the current GPU vendor driver to provide an OpenCL implementation.')
 }
 
@@ -210,12 +242,16 @@ fn main() {
 			exit(1)
 		}
 		if command_exists('v') {
-			run('v install antono2.opencl') or {
-				eprintln('Could not install the V module: ${err}')
-				exit(1)
+			installed_module := os.join_path(os.vmodules_dir(), 'antono2', 'opencl')
+			if os.is_file(os.join_path(installed_module, 'v.mod')) {
+				println('Reusing the existing V module at ${installed_module}')
+			} else {
+				run('v install antono2.opencl') or {
+					eprintln('Could not install the V module: ${err}')
+					exit(1)
+				}
 			}
 			$if windows {
-				installed_module := os.join_path(os.vmodules_dir(), 'antono2', 'opencl')
 				copy_windows_sdk_files(installed_module) or {
 					eprintln('Could not configure the installed V module: ${err}')
 					exit(1)
