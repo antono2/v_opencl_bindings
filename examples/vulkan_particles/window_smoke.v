@@ -138,11 +138,11 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	}
 	defer { particle_buffer.destroy(device) }
 	if particle_buffer.zero_copy {
-		mut acquire_event := memory_interop.acquire(&compute.queue, [
+		mut acquire_event := memory_interop.acquire(compute.queue, [
 			particle_buffer.cl_buffer.handle,
 		], [])!
 		compute.reset_buffer(particle_buffer.cl_buffer.handle, 1)!
-		mut release_event := memory_interop.release(&compute.queue, [
+		mut release_event := memory_interop.release(compute.queue, [
 			particle_buffer.cl_buffer.handle,
 		], [])!
 		release_event.close()!
@@ -152,7 +152,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	mut interop_sync := if particle_buffer.zero_copy {
 		create_live_interop_sync(compute, memory_interop, semaphore_interop, device, queue)!
 	} else {
-		LiveInteropSync{}
+		&LiveInteropSync{}
 	}
 	if particle_buffer.zero_copy {
 		println('Live synchronization: external Vulkan/OpenCL semaphores')
@@ -220,7 +220,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 			compute.read_particles(mut particles)!
 			particle_buffer.upload(device, particles)!
 		}
-		frame_ok := frames.draw_particles(device, queue, &swapchain, &pipeline, &particle_buffer,
+		frame_ok := frames.draw_particles(device, queue, &swapchain, &pipeline, particle_buffer,
 			particle_count, elapsed, interop_sync.cl_to_vk, interop_sync.vk_to_cl,
 			particle_buffer.zero_copy, trails)!
 		if !frame_ok {

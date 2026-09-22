@@ -1,6 +1,7 @@
 module opencl
 
 // OwnedContext owns one reference to an OpenCL context. Call close when done.
+@[nocopy]
 pub struct OwnedContext {
 pub mut:
 	handle Context
@@ -8,8 +9,24 @@ pub:
 	device DeviceId
 }
 
+// clone_ref retains the native context and returns an independently owned
+// reference. Close both wrappers when they are no longer needed.
+pub fn (context &OwnedContext) clone_ref() !&OwnedContext {
+	if isnil(context.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL context'
+			status:    invalid_context
+		}
+	}
+	check(retain_context(context.handle), 'retain OpenCL context')!
+	return &OwnedContext{
+		handle: context.handle
+		device: context.device
+	}
+}
+
 // new_context creates a context containing exactly one explicitly selected device.
-pub fn new_context(device DeviceId) !OwnedContext {
+pub fn new_context(device DeviceId) !&OwnedContext {
 	mut status := success
 	handle := create_context(unsafe { nil }, 1, &device, unsafe { nil }, unsafe { nil }, &status)
 	check(status, 'create OpenCL context')!
@@ -19,7 +36,7 @@ pub fn new_context(device DeviceId) !OwnedContext {
 			status:    out_of_host_memory
 		}
 	}
-	return OwnedContext{
+	return &OwnedContext{
 		handle: handle
 		device: device
 	}
@@ -28,7 +45,7 @@ pub fn new_context(device DeviceId) !OwnedContext {
 // command_queue creates a legacy-compatible command queue for a device in this context.
 // The properties argument accepts flags such as queue_profiling_enable.
 pub fn (context &OwnedContext) command_queue(device DeviceId,
-	properties CommandQueueProperties) !OwnedCommandQueue {
+	properties CommandQueueProperties) !&OwnedCommandQueue {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL command queue from closed context'
@@ -44,7 +61,7 @@ pub fn (context &OwnedContext) command_queue(device DeviceId,
 			status:    out_of_host_memory
 		}
 	}
-	return OwnedCommandQueue{
+	return &OwnedCommandQueue{
 		handle: handle
 	}
 }
@@ -60,9 +77,24 @@ pub fn (mut context OwnedContext) close() ! {
 }
 
 // OwnedCommandQueue owns one reference to an OpenCL command queue. Call close when done.
+@[nocopy]
 pub struct OwnedCommandQueue {
 pub mut:
 	handle CommandQueue
+}
+
+// clone_ref retains the native queue and returns an independently owned reference.
+pub fn (queue &OwnedCommandQueue) clone_ref() !&OwnedCommandQueue {
+	if isnil(queue.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL command queue'
+			status:    invalid_command_queue
+		}
+	}
+	check(retain_command_queue(queue.handle), 'retain OpenCL command queue')!
+	return &OwnedCommandQueue{
+		handle: queue.handle
+	}
 }
 
 // close releases the owned queue reference. It is safe to call more than once.
@@ -76,11 +108,28 @@ pub fn (mut queue OwnedCommandQueue) close() ! {
 
 // Buffer owns a typed OpenCL buffer containing count elements of T. T must be
 // a plain C-layout value without V-managed references.
+@[nocopy]
 pub struct Buffer[T] {
 pub mut:
 	handle Mem
 pub:
 	count int
+}
+
+// clone_ref retains the native memory object and returns an independently
+// owned buffer wrapper with the same element count.
+pub fn (buffer &Buffer[T]) clone_ref() !&Buffer[T] {
+	if isnil(buffer.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL buffer'
+			status:    invalid_mem_object
+		}
+	}
+	check(retain_mem_object(buffer.handle), 'retain OpenCL buffer')!
+	return &Buffer[T]{
+		handle: buffer.handle
+		count:  buffer.count
+	}
 }
 
 fn checked_element_bytes[T](count int, operation string) !usize {
@@ -101,7 +150,7 @@ fn checked_element_bytes[T](count int, operation string) !usize {
 }
 
 // new_buffer allocates storage for count elements of T without a host pointer.
-pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !Buffer[T] {
+pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !&Buffer[T] {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL buffer from closed context'
@@ -125,7 +174,7 @@ pub fn new_buffer[T](context &OwnedContext, flags MemFlags, count int) !Buffer[T
 			status:    mem_object_allocation_failure
 		}
 	}
-	return Buffer[T]{
+	return &Buffer[T]{
 		handle: handle
 		count:  count
 	}
@@ -147,7 +196,7 @@ pub fn (buffer &Buffer[T]) write(queue &OwnedCommandQueue, offset int, values []
 // write_async enqueues a non-blocking copy and returns its completion event.
 // values must remain allocated and unchanged until the returned event completes.
 pub fn (buffer &Buffer[T]) write_async(queue &OwnedCommandQueue, offset int, values []T,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	buffer.validate_transfer(queue, offset, values.len, 'write')!
 	if values.len == 0 {
 		return queue.marker(wait_events)
@@ -163,7 +212,7 @@ pub fn (buffer &Buffer[T]) write_async(queue &OwnedCommandQueue, offset int, val
 	check(enqueue_write_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size,
 		values.data, u32(wait_events.len), wait_pointer, &event),
 		'write OpenCL buffer asynchronously')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }
@@ -184,7 +233,7 @@ pub fn (buffer &Buffer[T]) read(queue &OwnedCommandQueue, offset int, mut destin
 // read_async enqueues a non-blocking copy and returns its completion event.
 // destination must remain allocated and must not be read until the event completes.
 pub fn (buffer &Buffer[T]) read_async(queue &OwnedCommandQueue, offset int, mut destination []T,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	buffer.validate_transfer(queue, offset, destination.len, 'read')!
 	if destination.len == 0 {
 		return queue.marker(wait_events)
@@ -200,7 +249,7 @@ pub fn (buffer &Buffer[T]) read_async(queue &OwnedCommandQueue, offset int, mut 
 	check(enqueue_read_buffer(queue.handle, buffer.handle, non_blocking, byte_offset, byte_size,
 		destination.data, u32(wait_events.len), wait_pointer, &event),
 		'read OpenCL buffer asynchronously')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }

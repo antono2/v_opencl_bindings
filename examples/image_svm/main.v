@@ -23,21 +23,21 @@ fn run() ! {
 		image_channel_order:     cl.rgba
 		image_channel_data_type: cl.unorm_int8
 	}
-	mut source_image := cl.new_image_2d[u32](&context, cl.mem_read_only, format, 2, 2)!
-	mut destination_image := cl.new_image_2d[u32](&context, cl.mem_write_only, format, 2, 2)!
-	mut sampler := cl.new_sampler(&context, false, cl.address_clamp_to_edge, cl.filter_nearest)!
-	mut image_program := cl.build_source_program(&context, device, image_source, '')!
+	mut source_image := cl.new_image_2d[u32](context, cl.mem_read_only, format, 2, 2)!
+	mut destination_image := cl.new_image_2d[u32](context, cl.mem_write_only, format, 2, 2)!
+	mut sampler := cl.new_sampler(context, false, cl.address_clamp_to_edge, cl.filter_nearest)!
+	mut image_program := cl.build_source_program(context, device, image_source, '')!
 	mut image_kernel := image_program.kernel('copy_image')!
-	source_image.set_kernel_arg(&image_kernel, 0)!
-	destination_image.set_kernel_arg(&image_kernel, 1)!
-	image_kernel.set_sampler_arg(2, &sampler)!
+	source_image.set_kernel_arg(image_kernel, 0)!
+	destination_image.set_kernel_arg(image_kernel, 1)!
+	image_kernel.set_sampler_arg(2, sampler)!
 	pixels := [u32(0xff0000ff), 0xff00ff00, 0xffff0000, 0xffffffff]
-	mut uploaded := source_image.write_async(&queue, pixels, []cl.Event{})!
-	mut copied := image_kernel.enqueue_nd_after(&queue, [usize(2), 2], []usize{}, [
+	mut uploaded := source_image.write_async(queue, pixels, []cl.Event{})!
+	mut copied := image_kernel.enqueue_nd_after(queue, [usize(2), 2], []usize{}, [
 		uploaded.handle,
 	])!
 	mut image_result := []u32{len: pixels.len}
-	mut downloaded := destination_image.read_async(&queue, mut image_result, [
+	mut downloaded := destination_image.read_async(queue, mut image_result, [
 		copied.handle,
 	])!
 	downloaded.wait()!
@@ -54,16 +54,16 @@ fn run() ! {
 
 	capabilities := cl.device_svm_support(device)!
 	if capabilities & (cl.device_svm_coarse_grain_buffer | cl.device_svm_fine_grain_buffer) != 0 {
-		mut allocation := cl.new_svm[u32](&context, cl.mem_read_write, 4, 0)!
-		mut program := cl.build_source_program(&context, device, svm_source, '')!
+		mut allocation := cl.new_svm[u32](context, cl.mem_read_write, 4, 0)!
+		mut program := cl.build_source_program(context, device, svm_source, '')!
 		mut kernel := program.kernel('brighten')!
-		allocation.set_kernel_arg(&kernel, 0)!
+		allocation.set_kernel_arg(kernel, 0)!
 		amount := u32(5)
 		kernel.set_arg(1, &amount)!
-		allocation.write(&queue, 0, [u32(1), 2, 3, 4])!
-		kernel.enqueue_1d(&queue, 4, 0)!
+		allocation.write(queue, 0, [u32(1), 2, 3, 4])!
+		kernel.enqueue_1d(queue, 4, 0)!
 		mut svm_result := []u32{len: 4}
-		allocation.read(&queue, 0, mut svm_result)!
+		allocation.read(queue, 0, mut svm_result)!
 		if svm_result != [u32(6), 7, 8, 9] {
 			return error('typed SVM kernel round trip failed: ${svm_result}')
 		}

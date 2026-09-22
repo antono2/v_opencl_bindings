@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Prevent implicit copying of every owned OpenCL wrapper with `@[nocopy]` and
+  provide explicit `clone_ref()` operations backed by the corresponding native
+  retain calls. SVM allocations remain uniquely owned because OpenCL provides
+  no retain operation for them.
+- Return owned pointers from constructors, asynchronous operations, and
+  `clone_ref()` so owners cross module boundaries without hidden copies on
+  released V and strict V3.
 - Pin Vulkan and GLFW example dependencies to immutable revisions in CI rather
   than relying on mutable, occasionally stalled VPM installs.
 - Publish ignore rules for local compiler products and Python caches so running

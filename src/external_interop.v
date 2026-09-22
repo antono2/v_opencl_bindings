@@ -23,7 +23,7 @@ pub fn load_external_memory_interop(platform PlatformId, capabilities DeviceCapa
 	if !capabilities.has_all(['cl_khr_external_memory', 'cl_khr_external_memory_opaque_fd']) {
 		return OpenCLError{
 			operation: 'load opaque-FD OpenCL external-memory interoperability'
-			status: invalid_operation
+			status:    invalid_operation
 		}
 	}
 	acquire_address := get_extension_function_address_for_platform(platform, c'clEnqueueAcquireExternalMemObjectsKHR')
@@ -31,7 +31,7 @@ pub fn load_external_memory_interop(platform PlatformId, capabilities DeviceCapa
 	if isnil(acquire_address) || isnil(release_address) {
 		return OpenCLError{
 			operation: 'resolve OpenCL external-memory entry points'
-			status: invalid_operation
+			status:    invalid_operation
 		}
 	}
 	return ExternalMemoryInterop{
@@ -43,23 +43,23 @@ pub fn load_external_memory_interop(platform PlatformId, capabilities DeviceCapa
 // import_opaque_fd_buffer imports an externally allocated buffer. The caller
 // remains responsible for the exporting API's handle-ownership requirements.
 pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &OwnedContext, fd int,
-	count int, flags MemFlags) !Buffer[T] {
+	count int, flags MemFlags) !&Buffer[T] {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'import external buffer into closed OpenCL context'
-			status: invalid_context
+			status:    invalid_context
 		}
 	}
 	if fd < 0 {
 		return OpenCLError{
 			operation: 'import OpenCL external buffer with invalid file descriptor'
-			status: invalid_property
+			status:    invalid_property
 		}
 	}
 	if count <= 0 {
 		return OpenCLError{
 			operation: 'import OpenCL external buffer with non-positive element count'
-			status: invalid_buffer_size
+			status:    invalid_buffer_size
 		}
 	}
 	byte_size := checked_element_bytes[T](count, 'import OpenCL external buffer with overflowing element count')!
@@ -72,40 +72,40 @@ pub fn (interop ExternalMemoryInterop) import_opaque_fd_buffer[T](context &Owned
 	} $else {
 		return OpenCLError{
 			operation: 'import opaque-FD OpenCL buffer on unsupported operating system'
-			status: invalid_operation
+			status:    invalid_operation
 		}
 	}
 	check(status, 'import opaque-FD OpenCL buffer')!
-	return Buffer[T]{
+	return &Buffer[T]{
 		handle: handle
-		count: count
+		count:  count
 	}
 }
 
 // acquire enqueues ownership acquisition for external memory objects.
 pub fn (interop ExternalMemoryInterop) acquire(queue &OwnedCommandQueue, objects []Mem,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return interop.enqueue_memory_command(interop.acquire_command, queue, objects, wait_events, 'acquire OpenCL external memory')
 }
 
 // release enqueues ownership release for external memory objects.
 pub fn (interop ExternalMemoryInterop) release(queue &OwnedCommandQueue, objects []Mem,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return interop.enqueue_memory_command(interop.release_command, queue, objects, wait_events, 'release OpenCL external memory')
 }
 
 fn (interop ExternalMemoryInterop) enqueue_memory_command(command ExternalMemoryCommand,
-	queue &OwnedCommandQueue, objects []Mem, wait_events []Event, operation string) !OwnedEvent {
+	queue &OwnedCommandQueue, objects []Mem, wait_events []Event, operation string) !&OwnedEvent {
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: operation
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	if objects.len == 0 {
 		return OpenCLError{
 			operation: operation
-			status: invalid_value
+			status:    invalid_value
 		}
 	}
 	mut wait_pointer := &Event(unsafe { nil })
@@ -114,7 +114,7 @@ fn (interop ExternalMemoryInterop) enqueue_memory_command(command ExternalMemory
 	}
 	mut event := Event(unsafe { nil })
 	check(command(queue.handle, u32(objects.len), objects.data, u32(wait_events.len), wait_pointer, &event), operation)!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }
@@ -122,9 +122,10 @@ fn (interop ExternalMemoryInterop) enqueue_memory_command(command ExternalMemory
 // ExternalSemaphoreInterop holds platform-specific opaque-FD semaphore entry points.
 pub struct ExternalSemaphoreInterop {
 	create_command  PFN_clCreateSemaphoreWithPropertiesKHR = unsafe { nil }
-	wait_command    ExternalSemaphoreCommand = unsafe { nil }
-	signal_command  ExternalSemaphoreCommand = unsafe { nil }
-	release_command PFN_clReleaseSemaphoreKHR = unsafe { nil }
+	wait_command    ExternalSemaphoreCommand               = unsafe { nil }
+	signal_command  ExternalSemaphoreCommand               = unsafe { nil }
+	retain_command  PFN_clRetainSemaphoreKHR               = unsafe { nil }
+	release_command PFN_clReleaseSemaphoreKHR              = unsafe { nil }
 }
 
 // load_external_semaphore_interop validates support and resolves entry points.
@@ -134,48 +135,66 @@ pub fn load_external_semaphore_interop(platform PlatformId,
 		'cl_khr_external_semaphore_opaque_fd']) {
 		return OpenCLError{
 			operation: 'load opaque-FD OpenCL external-semaphore interoperability'
-			status: invalid_operation
+			status:    invalid_operation
 		}
 	}
 	create_address := get_extension_function_address_for_platform(platform, c'clCreateSemaphoreWithPropertiesKHR')
 	wait_address := get_extension_function_address_for_platform(platform, c'clEnqueueWaitSemaphoresKHR')
 	signal_address := get_extension_function_address_for_platform(platform, c'clEnqueueSignalSemaphoresKHR')
+	retain_address := get_extension_function_address_for_platform(platform, c'clRetainSemaphoreKHR')
 	release_address := get_extension_function_address_for_platform(platform, c'clReleaseSemaphoreKHR')
 	if isnil(create_address) || isnil(wait_address) || isnil(signal_address)
-		|| isnil(release_address) {
+		|| isnil(retain_address) || isnil(release_address) {
 		return OpenCLError{
 			operation: 'resolve OpenCL external-semaphore entry points'
-			status: invalid_operation
+			status:    invalid_operation
 		}
 	}
 	return ExternalSemaphoreInterop{
-		create_command: unsafe { PFN_clCreateSemaphoreWithPropertiesKHR(create_address) }
-		wait_command: unsafe { ExternalSemaphoreCommand(wait_address) }
-		signal_command: unsafe { ExternalSemaphoreCommand(signal_address) }
+		create_command:  unsafe { PFN_clCreateSemaphoreWithPropertiesKHR(create_address) }
+		wait_command:    unsafe { ExternalSemaphoreCommand(wait_address) }
+		signal_command:  unsafe { ExternalSemaphoreCommand(signal_address) }
+		retain_command:  unsafe { PFN_clRetainSemaphoreKHR(retain_address) }
 		release_command: unsafe { PFN_clReleaseSemaphoreKHR(release_address) }
 	}
 }
 
 // OwnedExternalSemaphore owns one imported cl_semaphore_khr.
+@[nocopy]
 pub struct OwnedExternalSemaphore {
 	interop ExternalSemaphoreInterop
 pub mut:
 	handle SemaphoreKhr
 }
 
+// clone_ref retains the native semaphore and returns an independently owned reference.
+pub fn (semaphore &OwnedExternalSemaphore) clone_ref() !&OwnedExternalSemaphore {
+	if isnil(semaphore.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL external semaphore'
+			status:    invalid_semaphore_khr
+		}
+	}
+	check(semaphore.interop.retain_command(semaphore.handle), 'retain OpenCL external semaphore')!
+	return &OwnedExternalSemaphore{
+		interop: semaphore.interop
+		handle:  semaphore.handle
+	}
+}
+
 // import_opaque_fd imports a binary opaque-FD semaphore.
 pub fn (interop ExternalSemaphoreInterop) import_opaque_fd(context &OwnedContext,
-	fd int) !OwnedExternalSemaphore {
+	fd int) !&OwnedExternalSemaphore {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'import semaphore into closed OpenCL context'
-			status: invalid_context
+			status:    invalid_context
 		}
 	}
 	if fd < 0 {
 		return OpenCLError{
 			operation: 'import OpenCL semaphore with invalid file descriptor'
-			status: invalid_property
+			status:    invalid_property
 		}
 	}
 	properties := [SemaphorePropertiesKhr(semaphore_type_khr),
@@ -185,36 +204,36 @@ pub fn (interop ExternalSemaphoreInterop) import_opaque_fd(context &OwnedContext
 	mut status := success
 	handle := interop.create_command(context.handle, properties.data, &status)
 	check(status, 'import opaque-FD OpenCL semaphore')!
-	return OwnedExternalSemaphore{
+	return &OwnedExternalSemaphore{
 		interop: interop
-		handle: handle
+		handle:  handle
 	}
 }
 
 // wait enqueues a binary semaphore wait and returns its completion event.
 pub fn (semaphore &OwnedExternalSemaphore) wait(queue &OwnedCommandQueue,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return semaphore.enqueue_semaphore_command(semaphore.interop.wait_command, queue, wait_events, 'wait for OpenCL external semaphore')
 }
 
 // signal enqueues a binary semaphore signal and returns its completion event.
 pub fn (semaphore &OwnedExternalSemaphore) signal(queue &OwnedCommandQueue,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return semaphore.enqueue_semaphore_command(semaphore.interop.signal_command, queue, wait_events, 'signal OpenCL external semaphore')
 }
 
 fn (semaphore &OwnedExternalSemaphore) enqueue_semaphore_command(command ExternalSemaphoreCommand,
-	queue &OwnedCommandQueue, wait_events []Event, operation string) !OwnedEvent {
+	queue &OwnedCommandQueue, wait_events []Event, operation string) !&OwnedEvent {
 	if isnil(semaphore.handle) {
 		return OpenCLError{
 			operation: operation
-			status: invalid_semaphore_khr
+			status:    invalid_semaphore_khr
 		}
 	}
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: operation
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	mut wait_pointer := &Event(unsafe { nil })
@@ -223,7 +242,7 @@ fn (semaphore &OwnedExternalSemaphore) enqueue_semaphore_command(command Externa
 	}
 	mut event := Event(unsafe { nil })
 	check(command(queue.handle, 1, &semaphore.handle, unsafe { nil }, u32(wait_events.len), wait_pointer, &event), operation)!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }

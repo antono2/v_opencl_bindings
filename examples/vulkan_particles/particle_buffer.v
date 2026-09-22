@@ -3,16 +3,17 @@ module main
 import antono2.opencl as cl
 import antono2.vulkan as vk
 
+@[nocopy]
 struct ParticleBuffer {
 	handle    vk.Buffer
 	memory    vk.DeviceMemory
 	size      usize
 	zero_copy bool
 mut:
-	cl_buffer cl.Buffer[f32]
+	cl_buffer &cl.Buffer[f32] = unsafe { nil }
 }
 
-fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, particles []f32) !ParticleBuffer {
+fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, particles []f32) !&ParticleBuffer {
 	size := usize(particles.len) * sizeof(f32)
 	info := vk.BufferCreateInfo{ size: size, usage: u32(vk.BufferUsageFlagBits.vertex_buffer), sharingMode: .exclusive }
 	mut buffer := vk.Buffer(unsafe { nil })
@@ -29,23 +30,23 @@ fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, p
 	vk_check(vk.map_memory(device, memory, 0, size, 0, &mapped), 'map particle vertex memory')!
 	unsafe { vmemcpy(mapped, particles.data, size) }
 	vk.unmap_memory(device, memory)
-	return ParticleBuffer{
+	return &ParticleBuffer{
 		handle: buffer
 		memory: memory
-		size: size
+		size:   size
 	}
 }
 
 fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.ExternalMemoryInterop,
-	physical vk.PhysicalDevice, device vk.Device) !ParticleBuffer {
+	physical vk.PhysicalDevice, device vk.Device) !&ParticleBuffer {
 	size := compute.count * particle_stride
 	mut external_info := vk.ExternalMemoryBufferCreateInfo{
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	info := vk.BufferCreateInfo{
-		pNext: &external_info
-		size: size
-		usage: u32(vk.BufferUsageFlagBits.vertex_buffer) | u32(vk.BufferUsageFlagBits.storage_buffer)
+		pNext:       &external_info
+		size:        size
+		usage:       u32(vk.BufferUsageFlagBits.vertex_buffer) | u32(vk.BufferUsageFlagBits.storage_buffer)
 		sharingMode: .exclusive
 	}
 	mut buffer := vk.Buffer(unsafe { nil })
@@ -60,8 +61,8 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	allocate := vk.MemoryAllocateInfo{
-		pNext: &export_info
-		allocationSize: requirements.size
+		pNext:           &export_info
+		allocationSize:  requirements.size
 		memoryTypeIndex: memory_type
 	}
 	mut memory := vk.DeviceMemory(unsafe { nil })
@@ -75,7 +76,7 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		return err
 	}
 	fd_info := vk.MemoryGetFdInfoKHR{
-		memory: memory
+		memory:     memory
 		handleType: .opaque_fd
 	}
 	mut fd := -1
@@ -84,15 +85,15 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	cl_buffer := memory_interop.import_opaque_fd_buffer[f32](&compute.context, fd, int(compute.count * 8), cl.mem_read_write) or {
+	cl_buffer := memory_interop.import_opaque_fd_buffer[f32](compute.context, fd, int(compute.count * 8), cl.mem_read_write) or {
 		vk.free_memory(device, memory, unsafe { nil })
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	return ParticleBuffer{
-		handle: buffer
-		memory: memory
-		size: size
+	return &ParticleBuffer{
+		handle:    buffer
+		memory:    memory
+		size:      size
 		cl_buffer: cl_buffer
 		zero_copy: true
 	}

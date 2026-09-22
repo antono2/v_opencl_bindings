@@ -4,20 +4,21 @@ import antono2.opencl as cl
 
 const particle_stride = usize(8 * sizeof(f32))
 
+@[nocopy]
 struct Compute {
 	platform cl.PlatformId
 	device   cl.DeviceId
 	count    usize
 mut:
-	context cl.OwnedContext
-	queue   cl.OwnedCommandQueue
-	program cl.OwnedProgram
-	reset   cl.OwnedKernel
-	step    cl.OwnedKernel
-	buffer  cl.Buffer[f32]
+	context &cl.OwnedContext      = unsafe { nil }
+	queue   &cl.OwnedCommandQueue = unsafe { nil }
+	program &cl.OwnedProgram      = unsafe { nil }
+	reset   &cl.OwnedKernel       = unsafe { nil }
+	step    &cl.OwnedKernel       = unsafe { nil }
+	buffer  &cl.Buffer[f32]       = unsafe { nil }
 }
 
-fn new_compute(count usize) !Compute {
+fn new_compute(count usize) !&Compute {
 	platforms := cl.platforms()!
 	if platforms.len == 0 {
 		return error('no OpenCL platforms found')
@@ -48,7 +49,7 @@ fn new_compute(count usize) !Compute {
 		return err
 	}
 	source := $embed_file('particles.cl').to_string()
-	mut program := cl.build_source_program(&context, selected_device, source, '') or {
+	mut program := cl.build_source_program(context, selected_device, source, '') or {
 		queue.close() or {}
 		context.close() or {}
 		return err
@@ -66,7 +67,7 @@ fn new_compute(count usize) !Compute {
 		context.close() or {}
 		return err
 	}
-	mut buffer := cl.new_buffer[f32](&context, cl.mem_read_write, int(count * 8)) or {
+	mut buffer := cl.new_buffer[f32](context, cl.mem_read_write, int(count * 8)) or {
 		step.close() or {}
 		reset.close() or {}
 		program.close() or {}
@@ -74,16 +75,16 @@ fn new_compute(count usize) !Compute {
 		context.close() or {}
 		return err
 	}
-	mut compute := Compute{
+	mut compute := &Compute{
 		platform: selected_platform
-		device: selected_device
-		context: context
-		queue: queue
-		program: program
-		reset: reset
-		step: step
-		buffer: buffer
-		count: count
+		device:   selected_device
+		context:  context
+		queue:    queue
+		program:  program
+		reset:    reset
+		step:     step
+		buffer:   buffer
+		count:    count
 	}
 	compute.reset_particles(1)!
 	return compute
@@ -96,7 +97,7 @@ fn (compute &Compute) reset_particles(seed u32) ! {
 fn (compute &Compute) reset_buffer(buffer cl.Mem, seed u32) ! {
 	compute.reset.set_buffer_arg(0, buffer)!
 	compute.reset.set_arg(1, &seed)!
-	compute.reset.enqueue_1d(&compute.queue, compute.count, 0)!
+	compute.reset.enqueue_1d(compute.queue, compute.count, 0)!
 	cl.check(cl.finish(compute.queue.handle), 'finish reset kernel')!
 }
 
@@ -112,7 +113,7 @@ fn (compute &Compute) update_buffer(buffer cl.Mem, dt f32, elapsed f32, pointer_
 	compute.step.set_arg(2, &elapsed)!
 	compute.step.set_slice_arg(3, pointer)!
 	compute.step.set_arg(4, &attraction)!
-	compute.step.enqueue_1d(&compute.queue, compute.count, 0)!
+	compute.step.enqueue_1d(compute.queue, compute.count, 0)!
 }
 
 fn (compute &Compute) read_particles(mut destination []f32) ! {
@@ -120,7 +121,7 @@ fn (compute &Compute) read_particles(mut destination []f32) ! {
 	if destination.len < required {
 		return error('particle destination is too small')
 	}
-	compute.buffer.read(&compute.queue, 0, mut destination[..required])!
+	compute.buffer.read(compute.queue, 0, mut destination[..required])!
 }
 
 fn (mut compute Compute) close() {

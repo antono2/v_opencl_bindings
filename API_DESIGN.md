@@ -7,10 +7,13 @@ can continue calling the generated functions directly.
 ## Shared conventions
 
 - Preserve native result codes in typed errors and include the failed operation.
-- Return `!T` from convenience operations instead of discarding status codes.
+- Return `!&T` for owning convenience operations instead of discarding status
+  codes or copying resource wrappers across module boundaries.
 - Hide count-then-fill enumeration without hiding the returned native handles.
 - Use `close()` for reference-counted OpenCL ownership wrappers.
-- Owning wrappers are copyable V values; copying does not transfer ownership. Exactly one copy may close the native handle until a future reference-backed ownership redesign.
+- Owning wrappers are `@[nocopy]` and constructors return owned pointers.
+  `clone_ref()` is the only supported way to create another native reference;
+  SVM remains uniquely owned because OpenCL provides no retain operation.
 - Keep constructors explicit about device choice and requested capabilities.
 - Never enable an extension or feature merely because headers declare it; query runtime support.
 - Keep unsafe pointers at the low-level boundary and expose slices or strings where ownership is clear.
