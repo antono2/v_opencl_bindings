@@ -14,8 +14,8 @@ env:
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
   V_VERSION: 0.5.2
-  V3_COMMIT: 239f06c1de4b6380b2c9d03eed023996951b2c74
-  V3_VC_COMMIT: 21490f7811a2dd366c3daa39bef8e53c1e3e5727
+  V3_COMMIT: f59b886d2564e37d8626d715236fdfa928e13dda
+  V3_VC_COMMIT: 4598bc7e4894c154b27391e4442005fff2fbbd68
   V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
   VULKAN_COMMIT: ef299424a8411ee7269080545da2d15c8b25059d
   GLFW_COMMIT: 3d7c1ddacb7215a7bbeb5fef0d7a68c90ba392ed
@@ -253,6 +253,8 @@ jobs:
         run: |
           make -C .ci-v3 local=1
           .ci-v3/v version
+      - name: Install OpenCL runtime and headers
+        run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
       - name: Generate, assemble, and require strict frontend compatibility
         run: |
           set -euo pipefail
@@ -266,6 +268,15 @@ jobs:
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check test/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
+      - name: Run V3 backend smoke tests with GCC and TinyCC
+        run: |
+          set -euo pipefail
+          for compiler in gcc tcc; do
+            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+              -cc "$compiler" run test
+            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+              -cc "$compiler" run examples/vector_add
+          done
 
   windows-abi-compile:
     runs-on: windows-2022
