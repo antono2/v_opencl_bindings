@@ -11,7 +11,7 @@ The generated module is published as
 [`antono2.opencl` on VPM](https://vpm.vlang.io/packages/antono2.opencl).
 
 ```sh
-v install antono2.opencl
+v install antono2.opencl@v1.0.0
 ```
 
 Maintainers can prepare a checkout on every supported operating system with
