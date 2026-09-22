@@ -23,6 +23,40 @@ fn test_generated_error_name_covers_full_core_range() {
 	assert cl.error_code_name(cl.invalid_event_wait_list) == 'invalid_event_wait_list'
 }
 
+fn test_enqueue_1d_after_validates_handles_and_global_size_before_opencl_call() {
+	mut kernel_storage := u8(0)
+	mut queue_storage := u8(0)
+	valid_kernel := cl.OwnedKernel{
+		handle: cl.Kernel(&kernel_storage)
+	}
+	valid_queue := cl.OwnedCommandQueue{
+		handle: cl.CommandQueue(&queue_storage)
+	}
+	closed_kernel := cl.OwnedKernel{}
+	closed_queue := cl.OwnedCommandQueue{}
+
+	closed_kernel.enqueue_1d_after(&valid_queue, 1, 0, []) or {
+		assert err is cl.OpenCLError
+		if err is cl.OpenCLError {
+			assert err.status == cl.invalid_kernel
+		}
+		valid_kernel.enqueue_1d_after(&closed_queue, 1, 0, []) or {
+			assert err is cl.OpenCLError
+			if err is cl.OpenCLError {
+				assert err.status == cl.invalid_command_queue
+			}
+			valid_kernel.enqueue_1d_after(&valid_queue, 0, 0, []) or {
+				assert err is cl.OpenCLError
+				if err is cl.OpenCLError {
+					assert err.status == cl.invalid_global_work_size
+				}
+				return
+			}
+		}
+	}
+	assert false
+}
+
 fn test_typed_buffer_rejects_byte_size_overflow_before_opencl_call() {
 	element_size := usize(sizeof(u64))
 	if usize(max_int) <= ~usize(0) / element_size {
