@@ -17,37 +17,37 @@ env:
   V3_COMMIT: f59b886d2564e37d8626d715236fdfa928e13dda
   V3_VC_COMMIT: 4598bc7e4894c154b27391e4442005fff2fbbd68
   V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
-  VULKAN_COMMIT: ef299424a8411ee7269080545da2d15c8b25059d
+  VULKAN_REF: v2.0.0
   GLFW_COMMIT: 3d7c1ddacb7215a7bbeb5fef0d7a68c90ba392ed
 
 jobs:
   generate-and-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Headers
           ref: c4c8fd6f9556c92b212308880854e6294d61b314
           path: openclheaders
       - name: Check out pinned Vulkan module
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: antono2/vulkan
-          ref: ${{ env.VULKAN_COMMIT }}
+          ref: ${{ env.VULKAN_REF }}
           path: .ci-modules/vulkan
       - name: Check out pinned GLFW module
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: antono2/glfw
           ref: ${{ env.GLFW_COMMIT }}
           path: .ci-modules/glfw
-      - uses: prantlf/setup-v-action@v4
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         with:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL ICD development files and CPU implementation
@@ -84,7 +84,7 @@ jobs:
       - name: Install advanced-example dependencies
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
-          test "$(git -C .ci-modules/vulkan rev-parse HEAD)" = "$VULKAN_COMMIT"
+          test "$(git -C .ci-modules/vulkan describe --tags --exact-match)" = "$VULKAN_REF"
           test "$(git -C .ci-modules/glfw rev-parse HEAD)" = "$GLFW_COMMIT"
           install -d "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
           cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
@@ -126,13 +126,13 @@ jobs:
   macos-abi-compile:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
-      - uses: prantlf/setup-v-action@v4
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         with:
           version: ${{ env.V_VERSION }}
       - name: Generate bindings
@@ -163,8 +163,8 @@ jobs:
   linux-v-master:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
@@ -173,7 +173,7 @@ jobs:
       # commands such as `v test`. Keep the complete source build together;
       # setup-v-action@v4's reduced cache bundle omits that executable.
       - name: Check out V master
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         id: checkout_v_master
         continue-on-error: true
         with:
@@ -222,28 +222,28 @@ jobs:
     name: Strict V3 frontend
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
           ref: 5147e42c48fdab4ff61259162b9768d91842d53d
           path: opencldocs
       - name: Check out pinned V3 compiler
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: vlang/v
           ref: ${{ env.V3_COMMIT }}
           path: .ci-v3
           fetch-depth: 1
       - name: Check out matching V3 bootstrap source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: vlang/vc
           ref: ${{ env.V3_VC_COMMIT }}
           path: .ci-v3/vc
           fetch-depth: 1
       - name: Check out matching V3 TinyCC runtime
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: vlang/tccbin
           ref: ${{ env.V3_TCC_COMMIT }}
@@ -281,8 +281,8 @@ jobs:
   windows-abi-compile:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v7
-      - uses: prantlf/setup-v-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         with:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
@@ -297,6 +297,41 @@ jobs:
           $env:OPENCL_SDK = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows'
           v run (Join-Path $module 'setup.vsh') --install
           v -cc msvc -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
+
+  linux-dependency-master:
+    name: Advisory Vulkan and GLFW master
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    env:
+      VULKAN_SDK: /usr
+      GLFW_INCLUDE: /usr/include
+      GLFW_LIB: /usr/lib/x86_64-linux-gnu
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: antono2/vulkan
+          ref: master
+          path: .ci-modules/vulkan
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: antono2/glfw
+          ref: master
+          path: .ci-modules/glfw
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        with:
+          version: ${{ env.V_VERSION }}
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y ocl-icd-opencl-dev pocl-opencl-icd libvulkan-dev libvulkan-volk-dev libglfw3-dev
+      - name: Assemble modules and compile particles
+        run: |
+          mkdir -p "$HOME/.vmodules/antono2/opencl" "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
+          cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
+          cp -a .ci-modules/glfw/. "$HOME/.vmodules/antono2/glfw/"
+          cp src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/image.v src/svm.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
+          mkdir -p "$HOME/.vmodules/antono2/opencl/include/CL"
+          cp include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/"
+          v -cc gcc -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles
 
   required-checks:
     name: required-checks
@@ -323,7 +358,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Validate release version
