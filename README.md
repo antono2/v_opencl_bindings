@@ -120,6 +120,11 @@ is required. On Debian or Ubuntu, PoCL provides a suitable CPU implementation:
 sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 ```
 
+CI requires generated sources, public helpers, and ABI probes to pass both the
+supported V 0.5.2 toolchain and a pinned strict V3 frontend. The live V-master
+runtime lane remains advisory so an unrelated upstream compiler change cannot
+block a release.
+
 ## Examples
 
 [`examples/vector_add`](examples/vector_add) demonstrates the generated module's

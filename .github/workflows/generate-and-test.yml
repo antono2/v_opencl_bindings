@@ -14,6 +14,9 @@ env:
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
   V_VERSION: 0.5.2
+  V3_COMMIT: 239f06c1de4b6380b2c9d03eed023996951b2c74
+  V3_VC_COMMIT: 21490f7811a2dd366c3daa39bef8e53c1e3e5727
+  V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
   VULKAN_COMMIT: ef299424a8411ee7269080545da2d15c8b25059d
   GLFW_COMMIT: 3d7c1ddacb7215a7bbeb5fef0d7a68c90ba392ed
 
@@ -213,7 +216,56 @@ jobs:
           v -cc gcc run examples/image_svm
       - name: Report V master compatibility warning
         if: always() && (steps.checkout_v_master.outcome == 'failure' || steps.setup_v_master.outcome == 'failure' || steps.generate_v_master.outcome == 'failure' || steps.test_v_master.outcome == 'failure')
-        run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 remains authoritative."
+        run: echo "::warning::The live V master compatibility lane failed; stable V 0.5.2 and the pinned V3 frontend remain authoritative."
+
+  strict-v3-frontend:
+    name: Strict V3 frontend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: KhronosGroup/OpenCL-Docs
+          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          path: opencldocs
+      - name: Check out pinned V3 compiler
+        uses: actions/checkout@v7
+        with:
+          repository: vlang/v
+          ref: ${{ env.V3_COMMIT }}
+          path: .ci-v3
+          fetch-depth: 1
+      - name: Check out matching V3 bootstrap source
+        uses: actions/checkout@v7
+        with:
+          repository: vlang/vc
+          ref: ${{ env.V3_VC_COMMIT }}
+          path: .ci-v3/vc
+          fetch-depth: 1
+      - name: Check out matching V3 TinyCC runtime
+        uses: actions/checkout@v7
+        with:
+          repository: vlang/tccbin
+          ref: ${{ env.V3_TCC_COMMIT }}
+          path: .ci-v3/thirdparty/tcc
+          fetch-depth: 1
+      - name: Build pinned V3 compiler
+        run: |
+          make -C .ci-v3 local=1
+          .ci-v3/v version
+      - name: Generate, assemble, and require strict frontend compatibility
+        run: |
+          set -euo pipefail
+          test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
+          python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          module_root="$RUNNER_TEMP/vmodules/antono2/opencl"
+          install -d "$module_root"
+          install -m 0644 src/opencl.v src/convenience.v src/ownership.v \
+            src/program.v src/event.v src/image.v src/svm.v src/capabilities.v \
+            src/external_interop.v v.mod "$module_root/"
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check test/main.c.v
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
 
   windows-abi-compile:
     runs-on: windows-2022
@@ -238,17 +290,18 @@ jobs:
   required-checks:
     name: required-checks
     if: always()
-    needs: [generate-and-test, linux-v-master, macos-abi-compile, windows-abi-compile]
+    needs: [generate-and-test, strict-v3-frontend, linux-v-master, macos-abi-compile, windows-abi-compile]
     runs-on: ubuntu-latest
     steps:
       - name: Require every supported CI lane to pass
         env:
           GENERATE_RESULT: ${{ needs.generate-and-test.result }}
+          V3_RESULT: ${{ needs.strict-v3-frontend.result }}
           V_MASTER_RESULT: ${{ needs.linux-v-master.result }}
           MACOS_RESULT: ${{ needs.macos-abi-compile.result }}
           WINDOWS_RESULT: ${{ needs.windows-abi-compile.result }}
         run: |
-          for result in "$GENERATE_RESULT" "$V_MASTER_RESULT" "$MACOS_RESULT" "$WINDOWS_RESULT"; do
+          for result in "$GENERATE_RESULT" "$V3_RESULT" "$V_MASTER_RESULT" "$MACOS_RESULT" "$WINDOWS_RESULT"; do
             test "$result" = success
           done
 
