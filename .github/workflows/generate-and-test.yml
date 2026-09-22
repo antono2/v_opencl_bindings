@@ -187,7 +187,7 @@ jobs:
         run: |
           make -C .ci-v-master
           echo "$GITHUB_WORKSPACE/.ci-v-master" >> "$GITHUB_PATH"
-          .ci-v-master/v -V
+          .ci-v-master/v version
       - name: Install OpenCL runtime and headers
         if: steps.setup_v_master.outcome == 'success'
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
