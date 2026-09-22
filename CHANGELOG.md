@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 - 2026-09-22
 
 - Prevent implicit copying of every owned OpenCL wrapper with `@[nocopy]` and
   provide explicit `clone_ref()` operations backed by the corresponding native
