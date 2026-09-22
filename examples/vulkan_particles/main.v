@@ -28,13 +28,14 @@ fn main() {
 		panic('zero-copy required: ${interop.describe()}')
 	}
 	if interop.zero_copy_available {
-		zero_copy_memory_smoke(&compute) or { panic(err) }
+		zero_copy_memory_smoke(compute) or { panic(err) }
 	}
 	if options.window {
 		if options.force_staged {
 			println('Renderer override: staged transfer path')
 		}
-		window_device_loop(&compute, count, interop.zero_copy_available && !options.force_staged, options.frame_limit) or { panic(err) }
+		window_device_loop(compute, count, interop.zero_copy_available && !options.force_staged,
+			options.frame_limit) or { panic(err) }
 	}
 
 	// After the renderer closes, or immediately in headless mode, exercise the exact simulation

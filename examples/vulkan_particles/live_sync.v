@@ -3,17 +3,18 @@ module main
 import antono2.opencl as cl
 import antono2.vulkan as vk
 
+@[nocopy]
 struct LiveInteropSync {
 	vk_to_cl vk.Semaphore
 	cl_to_vk vk.Semaphore
 	memory   cl.ExternalMemoryInterop
 mut:
-	cl_wait   cl.OwnedExternalSemaphore
-	cl_signal cl.OwnedExternalSemaphore
+	cl_wait   &cl.OwnedExternalSemaphore = unsafe { nil }
+	cl_signal &cl.OwnedExternalSemaphore = unsafe { nil }
 }
 
 fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
-	semaphores cl.ExternalSemaphoreInterop, device vk.Device, queue vk.Queue) !LiveInteropSync {
+	semaphores cl.ExternalSemaphoreInterop, device vk.Device, queue vk.Queue) !&LiveInteropSync {
 	mut export_info := vk.ExportSemaphoreCreateInfo{
 		handleTypes: u32(vk.ExternalSemaphoreHandleTypeFlagBits.opaque_fd)
 	}
@@ -29,18 +30,18 @@ fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 	mut vk_to_cl_fd := -1
 	mut cl_to_vk_fd := -1
 	vk_wait_fd_info := vk.SemaphoreGetFdInfoKHR{
-		semaphore: vk_to_cl
+		semaphore:  vk_to_cl
 		handleType: .opaque_fd
 	}
 	cl_signal_fd_info := vk.SemaphoreGetFdInfoKHR{
-		semaphore: cl_to_vk
+		semaphore:  cl_to_vk
 		handleType: .opaque_fd
 	}
 	vk_check(vk.get_semaphore_fd_khr(device, &vk_wait_fd_info, &vk_to_cl_fd), 'export live Vulkan-to-OpenCL semaphore')!
 	vk_check(vk.get_semaphore_fd_khr(device, &cl_signal_fd_info, &cl_to_vk_fd), 'export live OpenCL-to-Vulkan semaphore')!
 
-	mut cl_wait := semaphores.import_opaque_fd(&compute.context, vk_to_cl_fd)!
-	cl_signal := semaphores.import_opaque_fd(&compute.context, cl_to_vk_fd) or {
+	mut cl_wait := semaphores.import_opaque_fd(compute.context, vk_to_cl_fd)!
+	mut cl_signal := semaphores.import_opaque_fd(compute.context, cl_to_vk_fd) or {
 		cl_wait.close() or {}
 		return err
 	}
@@ -48,21 +49,21 @@ fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 	// There is no preceding render for frame zero, so seed the binary handshake once.
 	prime := vk.SubmitInfo{
 		signalSemaphoreCount: 1
-		pSignalSemaphores: &vk_to_cl
+		pSignalSemaphores:    &vk_to_cl
 	}
 	vk_check(vk.queue_submit(queue, 1, &prime, unsafe { nil }), 'prime live interop semaphore')!
-	return LiveInteropSync{
-		vk_to_cl: vk_to_cl
-		cl_to_vk: cl_to_vk
-		memory: memory
-		cl_wait: cl_wait
+	return &LiveInteropSync{
+		vk_to_cl:  vk_to_cl
+		cl_to_vk:  cl_to_vk
+		memory:    memory
+		cl_wait:   cl_wait
 		cl_signal: cl_signal
 	}
 }
 
 fn (sync &LiveInteropSync) begin_compute(compute &Compute, buffer cl.Mem) ! {
-	mut wait_event := sync.cl_wait.wait(&compute.queue, [])!
-	mut acquire_event := sync.memory.acquire(&compute.queue, [buffer], [
+	mut wait_event := sync.cl_wait.wait(compute.queue, [])!
+	mut acquire_event := sync.memory.acquire(compute.queue, [buffer], [
 		wait_event.handle,
 	])!
 	acquire_event.close()!
@@ -70,8 +71,8 @@ fn (sync &LiveInteropSync) begin_compute(compute &Compute, buffer cl.Mem) ! {
 }
 
 fn (sync &LiveInteropSync) end_compute(compute &Compute, buffer cl.Mem) ! {
-	mut release_event := sync.memory.release(&compute.queue, [buffer], [])!
-	mut signal_event := sync.cl_signal.signal(&compute.queue, [release_event.handle])!
+	mut release_event := sync.memory.release(compute.queue, [buffer], [])!
+	mut signal_event := sync.cl_signal.signal(compute.queue, [release_event.handle])!
 	signal_event.close()!
 	release_event.close()!
 }

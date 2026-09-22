@@ -2,9 +2,24 @@ module opencl
 
 // OwnedEvent owns one OpenCL event reference. The command queue and context
 // which created it must remain valid until the event has completed.
+@[nocopy]
 pub struct OwnedEvent {
 pub mut:
 	handle Event
+}
+
+// clone_ref retains the native event and returns an independently owned reference.
+pub fn (event &OwnedEvent) clone_ref() !&OwnedEvent {
+	if isnil(event.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL event'
+			status:    invalid_event
+		}
+	}
+	check(retain_event(event.handle), 'retain OpenCL event')!
+	return &OwnedEvent{
+		handle: event.handle
+	}
 }
 
 // EventProfile contains device timestamps in nanoseconds. Values are valid for
@@ -27,7 +42,7 @@ pub fn (event &OwnedEvent) wait() ! {
 	if isnil(event.handle) {
 		return OpenCLError{
 			operation: 'wait for closed OpenCL event'
-			status: invalid_event
+			status:    invalid_event
 		}
 	}
 	check(wait_for_events(1, &event.handle), 'wait for OpenCL event')!
@@ -39,7 +54,7 @@ pub fn (event &OwnedEvent) execution_status() !i32 {
 	if isnil(event.handle) {
 		return OpenCLError{
 			operation: 'query closed OpenCL event'
-			status: invalid_event
+			status:    invalid_event
 		}
 	}
 	mut status := i32(0)
@@ -52,7 +67,7 @@ pub fn (event &OwnedEvent) profiling_timestamp(parameter ProfilingInfo) !u64 {
 	if isnil(event.handle) {
 		return OpenCLError{
 			operation: 'profile closed OpenCL event'
-			status: invalid_event
+			status:    invalid_event
 		}
 	}
 	mut timestamp := u64(0)
@@ -68,8 +83,8 @@ pub fn (event &OwnedEvent) profile() !EventProfile {
 	return EventProfile{
 		queued: event.profiling_timestamp(profiling_command_queued)!
 		submit: event.profiling_timestamp(profiling_command_submit)!
-		start: event.profiling_timestamp(profiling_command_start)!
-		end: event.profiling_timestamp(profiling_command_end)!
+		start:  event.profiling_timestamp(profiling_command_start)!
+		end:    event.profiling_timestamp(profiling_command_end)!
 	}
 }
 
@@ -84,11 +99,11 @@ pub fn (mut event OwnedEvent) close() ! {
 
 // marker enqueues a marker after every event in wait_events and returns its
 // completion event. An empty wait list depends on earlier commands in queue.
-pub fn (queue &OwnedCommandQueue) marker(wait_events []Event) !OwnedEvent {
+pub fn (queue &OwnedCommandQueue) marker(wait_events []Event) !&OwnedEvent {
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: 'enqueue marker on closed OpenCL queue'
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	mut wait_pointer := &Event(unsafe { nil })
@@ -97,18 +112,18 @@ pub fn (queue &OwnedCommandQueue) marker(wait_events []Event) !OwnedEvent {
 	}
 	mut handle := Event(unsafe { nil })
 	check(enqueue_marker_with_wait_list(queue.handle, u32(wait_events.len), wait_pointer, &handle), 'enqueue OpenCL marker')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: handle
 	}
 }
 
 // barrier enqueues a barrier after every event in wait_events and returns its
 // completion event.
-pub fn (queue &OwnedCommandQueue) barrier(wait_events []Event) !OwnedEvent {
+pub fn (queue &OwnedCommandQueue) barrier(wait_events []Event) !&OwnedEvent {
 	if isnil(queue.handle) {
 		return OpenCLError{
 			operation: 'enqueue barrier on closed OpenCL queue'
-			status: invalid_command_queue
+			status:    invalid_command_queue
 		}
 	}
 	mut wait_pointer := &Event(unsafe { nil })
@@ -117,7 +132,7 @@ pub fn (queue &OwnedCommandQueue) barrier(wait_events []Event) !OwnedEvent {
 	}
 	mut handle := Event(unsafe { nil })
 	check(enqueue_barrier_with_wait_list(queue.handle, u32(wait_events.len), wait_pointer, &handle), 'enqueue OpenCL barrier')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: handle
 	}
 }

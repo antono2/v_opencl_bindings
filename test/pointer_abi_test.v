@@ -39,12 +39,12 @@ fn test_blocking_transfers_pass_null_event_pointers() ! {
 	}
 	buffer := cl.Buffer[u32]{
 		handle: cl.Mem(&buffer_storage)
-		count: 2
+		count:  2
 	}
 	values := [u32(3), 5]
-	buffer.write(&queue, 0, values)!
+	buffer.write(queue, 0, values)!
 	mut destination := []u32{len: 2}
-	buffer.read(&queue, 0, mut destination)!
+	buffer.read(queue, 0, mut destination)!
 	assert C.opencl_pointer_shim_blocking_write_calls() == 1
 	assert C.opencl_pointer_shim_blocking_read_calls() == 1
 }
@@ -59,6 +59,6 @@ fn test_kernel_enqueue_passes_null_offset_and_event_pointers() ! {
 	kernel := cl.OwnedKernel{
 		handle: cl.Kernel(&kernel_storage)
 	}
-	kernel.enqueue_1d(&queue, 64, 0)!
+	kernel.enqueue_1d(queue, 64, 0)!
 	assert C.opencl_pointer_shim_kernel_enqueue_calls() == 1
 }

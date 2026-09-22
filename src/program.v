@@ -23,6 +23,7 @@ pub fn (err ProgramBuildError) code() int {
 }
 
 // OwnedProgram owns one compiled OpenCL program reference.
+@[nocopy]
 pub struct OwnedProgram {
 pub mut:
 	handle Program
@@ -30,9 +31,24 @@ pub:
 	device DeviceId
 }
 
+// clone_ref retains the native program and returns an independently owned reference.
+pub fn (program &OwnedProgram) clone_ref() !&OwnedProgram {
+	if isnil(program.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL program'
+			status:    invalid_program
+		}
+	}
+	check(retain_program(program.handle), 'retain OpenCL program')!
+	return &OwnedProgram{
+		handle: program.handle
+		device: program.device
+	}
+}
+
 // build_source_program creates and synchronously builds source for one device.
 pub fn build_source_program(context &OwnedContext, device DeviceId, source string,
-	options string) !OwnedProgram {
+	options string) !&OwnedProgram {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'build program from closed OpenCL context'
@@ -63,14 +79,14 @@ pub fn build_source_program(context &OwnedContext, device DeviceId, source strin
 			log:    log
 		}
 	}
-	return OwnedProgram{
+	return &OwnedProgram{
 		handle: handle
 		device: device
 	}
 }
 
 // kernel creates an owned kernel by name.
-pub fn (program &OwnedProgram) kernel(name string) !OwnedKernel {
+pub fn (program &OwnedProgram) kernel(name string) !&OwnedKernel {
 	if isnil(program.handle) {
 		return OpenCLError{
 			operation: 'create kernel from closed OpenCL program'
@@ -80,7 +96,7 @@ pub fn (program &OwnedProgram) kernel(name string) !OwnedKernel {
 	mut status := success
 	handle := create_kernel(program.handle, name.str, &status)
 	check(status, 'create OpenCL kernel `${name}`')!
-	return OwnedKernel{
+	return &OwnedKernel{
 		handle: handle
 	}
 }
@@ -95,9 +111,24 @@ pub fn (mut program OwnedProgram) close() ! {
 }
 
 // OwnedKernel owns one OpenCL kernel reference.
+@[nocopy]
 pub struct OwnedKernel {
 pub mut:
 	handle Kernel
+}
+
+// clone_ref retains the native kernel and returns an independently owned reference.
+pub fn (kernel &OwnedKernel) clone_ref() !&OwnedKernel {
+	if isnil(kernel.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL kernel'
+			status:    invalid_kernel
+		}
+	}
+	check(retain_kernel(kernel.handle), 'retain OpenCL kernel')!
+	return &OwnedKernel{
+		handle: kernel.handle
+	}
 }
 
 // set_arg copies one scalar or plain-value argument into the kernel.
@@ -180,7 +211,7 @@ pub fn (kernel &OwnedKernel) enqueue_1d(queue &OwnedCommandQueue, global_size us
 // enqueue_1d_after submits a one-dimensional kernel after wait_events and
 // returns an owned completion event. A local size of zero lets the runtime choose.
 pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_size usize,
-	local_size usize, wait_events []Event) !OwnedEvent {
+	local_size usize, wait_events []Event) !&OwnedEvent {
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'enqueue closed OpenCL kernel'
@@ -213,7 +244,7 @@ pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_s
 	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, 1, no_global_offset, &global_size,
 		local_pointer, u32(wait_events.len), wait_pointer, &event),
 		'enqueue OpenCL kernel with event')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }
@@ -222,7 +253,7 @@ pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_s
 // wait_events and returns an owned completion event. An empty local_sizes slice
 // lets the runtime select work-group dimensions.
 pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_sizes []usize,
-	local_sizes []usize, wait_events []Event) !OwnedEvent {
+	local_sizes []usize, wait_events []Event) !&OwnedEvent {
 	if isnil(kernel.handle) {
 		return OpenCLError{
 			operation: 'enqueue closed OpenCL kernel'
@@ -276,7 +307,7 @@ pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_s
 	check(enqueue_nd_range_kernel(queue.handle, kernel.handle, u32(global_sizes.len),
 		no_global_offset, global_sizes.data, local_pointer, u32(wait_events.len), wait_pointer,
 		&event), 'enqueue OpenCL kernel with event')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }

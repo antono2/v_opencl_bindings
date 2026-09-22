@@ -2,6 +2,7 @@ module opencl
 
 // Image2D owns a typed two-dimensional OpenCL image. T represents one complete
 // image element (pixel), not one channel. Its size must match format exactly.
+@[nocopy]
 pub struct Image2D[T] {
 pub mut:
 	handle Mem
@@ -12,10 +13,43 @@ pub:
 	pixel_bytes usize
 }
 
+// clone_ref retains the native image and returns an independently owned wrapper.
+pub fn (image &Image2D[T]) clone_ref() !&Image2D[T] {
+	if isnil(image.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL image'
+			status:    invalid_mem_object
+		}
+	}
+	check(retain_mem_object(image.handle), 'retain OpenCL image')!
+	return &Image2D[T]{
+		handle:      image.handle
+		width:       image.width
+		height:      image.height
+		format:      image.format
+		pixel_bytes: image.pixel_bytes
+	}
+}
+
 // OwnedSampler owns one OpenCL sampler reference.
+@[nocopy]
 pub struct OwnedSampler {
 pub mut:
 	handle Sampler
+}
+
+// clone_ref retains the native sampler and returns an independently owned reference.
+pub fn (sampler &OwnedSampler) clone_ref() !&OwnedSampler {
+	if isnil(sampler.handle) {
+		return OpenCLError{
+			operation: 'retain closed OpenCL sampler'
+			status:    invalid_sampler
+		}
+	}
+	check(retain_sampler(sampler.handle), 'retain OpenCL sampler')!
+	return &OwnedSampler{
+		handle: sampler.handle
+	}
 }
 
 // supported_image2d_formats returns every format supported for a 2D image with flags.
@@ -141,7 +175,7 @@ fn checked_image_dimensions(width int, height int, operation string) !int {
 
 // new_image_2d allocates a tightly packed 2D image without a host pointer.
 pub fn new_image_2d[T](context &OwnedContext, flags MemFlags, format ImageFormat, width int,
-	height int) !Image2D[T] {
+	height int) !&Image2D[T] {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL image from closed context'
@@ -172,7 +206,7 @@ pub fn new_image_2d[T](context &OwnedContext, flags MemFlags, format ImageFormat
 			status:    mem_object_allocation_failure
 		}
 	}
-	return Image2D[T]{
+	return &Image2D[T]{
 		handle:      handle
 		width:       width
 		height:      height
@@ -221,7 +255,7 @@ pub fn (image &Image2D[T]) write(queue &OwnedCommandQueue, values []T) ! {
 // write_async enqueues replacement of every pixel. values must remain allocated
 // and unchanged until the returned event completes.
 pub fn (image &Image2D[T]) write_async(queue &OwnedCommandQueue, values []T,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return image.write_region_async(queue, 0, 0, image.width, image.height, values, wait_events)
 }
 
@@ -239,7 +273,7 @@ pub fn (image &Image2D[T]) write_region(queue &OwnedCommandQueue, x int, y int, 
 // write_region_async enqueues a tightly packed image write. values must remain
 // allocated and unchanged until the returned event completes.
 pub fn (image &Image2D[T]) write_region_async(queue &OwnedCommandQueue, x int, y int,
-	width int, height int, values []T, wait_events []Event) !OwnedEvent {
+	width int, height int, values []T, wait_events []Event) !&OwnedEvent {
 	image.validate_region(queue, x, y, width, height, values.len, 'write')!
 	origin := [usize(x), usize(y), usize(0)]
 	region := [usize(width), usize(height), usize(1)]
@@ -251,7 +285,7 @@ pub fn (image &Image2D[T]) write_region_async(queue &OwnedCommandQueue, x int, y
 	check(enqueue_write_image(queue.handle, image.handle, non_blocking, origin.data, region.data,
 		usize(width) * image.pixel_bytes, 0, values.data, u32(wait_events.len), wait_pointer,
 		&event), 'write OpenCL image asynchronously')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }
@@ -264,7 +298,7 @@ pub fn (image &Image2D[T]) read(queue &OwnedCommandQueue, mut destination []T) !
 // read_async enqueues a copy of every pixel. destination must remain allocated
 // and unread until the returned event completes.
 pub fn (image &Image2D[T]) read_async(queue &OwnedCommandQueue, mut destination []T,
-	wait_events []Event) !OwnedEvent {
+	wait_events []Event) !&OwnedEvent {
 	return image.read_region_async(queue, 0, 0, image.width, image.height, mut destination,
 		wait_events)
 }
@@ -283,7 +317,7 @@ pub fn (image &Image2D[T]) read_region(queue &OwnedCommandQueue, x int, y int, w
 // read_region_async enqueues a tightly packed image read. destination must
 // remain allocated and unread until the returned event completes.
 pub fn (image &Image2D[T]) read_region_async(queue &OwnedCommandQueue, x int, y int,
-	width int, height int, mut destination []T, wait_events []Event) !OwnedEvent {
+	width int, height int, mut destination []T, wait_events []Event) !&OwnedEvent {
 	image.validate_region(queue, x, y, width, height, destination.len, 'read')!
 	origin := [usize(x), usize(y), usize(0)]
 	region := [usize(width), usize(height), usize(1)]
@@ -295,7 +329,7 @@ pub fn (image &Image2D[T]) read_region_async(queue &OwnedCommandQueue, x int, y 
 	check(enqueue_read_image(queue.handle, image.handle, non_blocking, origin.data, region.data,
 		usize(width) * image.pixel_bytes, 0, destination.data, u32(wait_events.len), wait_pointer,
 		&event), 'read OpenCL image asynchronously')!
-	return OwnedEvent{
+	return &OwnedEvent{
 		handle: event
 	}
 }
@@ -322,7 +356,7 @@ pub fn (image &Image2D[T]) set_kernel_arg(kernel &OwnedKernel, index u32) ! {
 
 // new_sampler creates an owned sampler for image kernel arguments.
 pub fn new_sampler(context &OwnedContext, normalized_coordinates bool,
-	addressing_mode AddressingMode, filter_mode FilterMode) !OwnedSampler {
+	addressing_mode AddressingMode, filter_mode FilterMode) !&OwnedSampler {
 	if isnil(context.handle) {
 		return OpenCLError{
 			operation: 'create OpenCL sampler from closed context'
@@ -339,7 +373,7 @@ pub fn new_sampler(context &OwnedContext, normalized_coordinates bool,
 			status:    out_of_host_memory
 		}
 	}
-	return OwnedSampler{
+	return &OwnedSampler{
 		handle: handle
 	}
 }

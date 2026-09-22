@@ -19,7 +19,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut instance := vk.Instance(unsafe { nil })
 	mut app_info := vk.ApplicationInfo{
 		pApplicationName: c'V OpenCL zero-copy smoke'
-		apiVersion: vk.api_version_1_1
+		apiVersion:       vk.api_version_1_1
 	}
 	instance_info := vk.InstanceCreateInfo{ pApplicationInfo: &app_info }
 	vk_check(vk.create_instance(&instance_info, unsafe { nil }, &instance), 'create instance')!
@@ -31,15 +31,15 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	mut priority := f32(1)
 	mut queue_info := vk.DeviceQueueCreateInfo{
 		queueFamilyIndex: queue_family
-		queueCount: 1
+		queueCount:       1
 		pQueuePriorities: &priority
 	}
 	extensions := [vk.khr_external_memory_extension_name, vk.khr_external_memory_fd_extension_name,
 		vk.khr_external_semaphore_extension_name, vk.khr_external_semaphore_fd_extension_name]
 	device_info := vk.DeviceCreateInfo{
-		queueCreateInfoCount: 1
-		pQueueCreateInfos: &queue_info
-		enabledExtensionCount: u32(extensions.len)
+		queueCreateInfoCount:    1
+		pQueueCreateInfos:       &queue_info
+		enabledExtensionCount:   u32(extensions.len)
 		ppEnabledExtensionNames: extensions.data
 	}
 	mut device := vk.Device(unsafe { nil })
@@ -53,9 +53,9 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	buffer_info := vk.BufferCreateInfo{
-		pNext: &external_info
-		size: compute.count * particle_stride
-		usage: u32(vk.BufferUsageFlagBits.vertex_buffer) | u32(vk.BufferUsageFlagBits.storage_buffer)
+		pNext:       &external_info
+		size:        compute.count * particle_stride
+		usage:       u32(vk.BufferUsageFlagBits.vertex_buffer) | u32(vk.BufferUsageFlagBits.storage_buffer)
 		sharingMode: .exclusive
 	}
 	mut buffer := vk.Buffer(unsafe { nil })
@@ -68,8 +68,8 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 		handleTypes: u32(vk.ExternalMemoryHandleTypeFlagBits.opaque_fd)
 	}
 	allocation_info := vk.MemoryAllocateInfo{
-		pNext: &export_info
-		allocationSize: requirements.size
+		pNext:           &export_info
+		allocationSize:  requirements.size
 		memoryTypeIndex: memory_type
 	}
 	mut memory := vk.DeviceMemory(unsafe { nil })
@@ -77,24 +77,24 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 	defer { vk.free_memory(device, memory, unsafe { nil }) }
 	vk_check(vk.bind_buffer_memory(device, buffer, memory, 0), 'bind exportable buffer')!
 	fd_info := vk.MemoryGetFdInfoKHR{
-		memory: memory
+		memory:     memory
 		handleType: .opaque_fd
 	}
 	mut fd := -1
 	vk_check(vk.get_memory_fd_khr(device, &fd_info, &fd), 'export memory FD')!
 
-	mut imported_buffer := memory_interop.import_opaque_fd_buffer[f32](&compute.context, fd, int(compute.count * 8), cl.mem_read_write)!
+	mut imported_buffer := memory_interop.import_opaque_fd_buffer[f32](compute.context, fd, int(compute.count * 8), cl.mem_read_write)!
 	defer { imported_buffer.close() or {} }
-	mut acquire_event := memory_interop.acquire(&compute.queue, [
+	mut acquire_event := memory_interop.acquire(compute.queue, [
 		imported_buffer.handle,
 	], [])!
 	seed := u32(7)
 	compute.reset.set_buffer_arg(0, imported_buffer.handle)!
 	compute.reset.set_arg(1, &seed)!
-	compute.reset.enqueue_1d(&compute.queue, compute.count, 0)!
+	compute.reset.enqueue_1d(compute.queue, compute.count, 0)!
 	mut sample := []f32{len: 8}
 	cl_check(cl.enqueue_read_buffer(compute.queue.handle, imported_buffer.handle, cl._true, 0, particle_stride, sample.data, 0, unsafe { nil }, unsafe { nil }), 'verify shared particle buffer')!
-	mut release_event := memory_interop.release(&compute.queue, [
+	mut release_event := memory_interop.release(compute.queue, [
 		imported_buffer.handle,
 	], [])!
 	release_event.close()!
@@ -120,36 +120,36 @@ fn zero_copy_semaphore_smoke(compute &Compute, interop cl.ExternalSemaphoreInter
 	mut vk_to_cl_fd := -1
 	mut cl_to_vk_fd := -1
 	vk_to_cl_fd_info := vk.SemaphoreGetFdInfoKHR{
-		semaphore: vk_to_cl
+		semaphore:  vk_to_cl
 		handleType: .opaque_fd
 	}
 	cl_to_vk_fd_info := vk.SemaphoreGetFdInfoKHR{
-		semaphore: cl_to_vk
+		semaphore:  cl_to_vk
 		handleType: .opaque_fd
 	}
 	vk_check(vk.get_semaphore_fd_khr(device, &vk_to_cl_fd_info, &vk_to_cl_fd), 'export Vulkan-to-OpenCL semaphore FD')!
 	vk_check(vk.get_semaphore_fd_khr(device, &cl_to_vk_fd_info, &cl_to_vk_fd), 'export OpenCL-to-Vulkan semaphore FD')!
 
-	mut cl_wait := interop.import_opaque_fd(&compute.context, vk_to_cl_fd)!
+	mut cl_wait := interop.import_opaque_fd(compute.context, vk_to_cl_fd)!
 	defer { cl_wait.close() or {} }
-	mut cl_signal := interop.import_opaque_fd(&compute.context, cl_to_vk_fd)!
+	mut cl_signal := interop.import_opaque_fd(compute.context, cl_to_vk_fd)!
 	defer { cl_signal.close() or {} }
 
 	vk_signal_submit := vk.SubmitInfo{
 		signalSemaphoreCount: 1
-		pSignalSemaphores: &vk_to_cl
+		pSignalSemaphores:    &vk_to_cl
 	}
 	vk_check(vk.queue_submit(queue, 1, &vk_signal_submit, unsafe { nil }), 'signal Vulkan-to-OpenCL semaphore')!
-	mut wait_event := cl_wait.wait(&compute.queue, [])!
-	mut signal_event := cl_signal.signal(&compute.queue, [wait_event.handle])!
+	mut wait_event := cl_wait.wait(compute.queue, [])!
+	mut signal_event := cl_signal.signal(compute.queue, [wait_event.handle])!
 	signal_event.close()!
 	wait_event.close()!
 
 	mut stage := vk.PipelineStageFlags(vk.PipelineStageFlagBits.all_commands)
 	vk_wait_submit := vk.SubmitInfo{
 		waitSemaphoreCount: 1
-		pWaitSemaphores: &cl_to_vk
-		pWaitDstStageMask: &stage
+		pWaitSemaphores:    &cl_to_vk
+		pWaitDstStageMask:  &stage
 	}
 	mut fence := vk.Fence(unsafe { nil })
 	fence_info := vk.FenceCreateInfo{}
