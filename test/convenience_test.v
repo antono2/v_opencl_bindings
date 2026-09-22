@@ -51,6 +51,27 @@ fn event_reference_count(handle cl.Event) !u32 {
 	return count
 }
 
+fn program_reference_count(handle cl.Program) !u32 {
+	mut count := u32(0)
+	cl.check(cl.get_program_info(handle, cl.program_reference_count, sizeof(count), &count,
+		unsafe { nil }), 'query OpenCL program reference count')!
+	return count
+}
+
+fn kernel_reference_count(handle cl.Kernel) !u32 {
+	mut count := u32(0)
+	cl.check(cl.get_kernel_info(handle, cl.kernel_reference_count, sizeof(count), &count,
+		unsafe { nil }), 'query OpenCL kernel reference count')!
+	return count
+}
+
+fn sampler_reference_count(handle cl.Sampler) !u32 {
+	mut count := u32(0)
+	cl.check(cl.get_sampler_info(handle, cl.sampler_reference_count, sizeof(count), &count,
+		unsafe { nil }), 'query OpenCL sampler reference count')!
+	return count
+}
+
 fn test_clone_ref_retains_independently_owned_native_references() ! {
 	available_platforms := cl.platforms()!
 	if available_platforms.len == 0 {
@@ -82,6 +103,22 @@ fn test_clone_ref_retains_independently_owned_native_references() ! {
 	retained_buffer.close()!
 	assert memory_reference_count(buffer.handle)! == buffer_refs
 
+	mut program := cl.build_source_program(context, device,
+		'__kernel void retain_test(__global uint *values) { values[get_global_id(0)] += 1; }',
+		'')!
+	program_refs := program_reference_count(program.handle)!
+	mut retained_program := program.clone_ref()!
+	assert program_reference_count(program.handle)! == program_refs + 1
+	retained_program.close()!
+	assert program_reference_count(program.handle)! == program_refs
+
+	mut kernel := program.kernel('retain_test')!
+	kernel_refs := kernel_reference_count(kernel.handle)!
+	mut retained_kernel := kernel.clone_ref()!
+	assert kernel_reference_count(kernel.handle)! == kernel_refs + 1
+	retained_kernel.close()!
+	assert kernel_reference_count(kernel.handle)! == kernel_refs
+
 	mut event := queue.marker([]cl.Event{})!
 	event_refs := event_reference_count(event.handle)!
 	mut retained_event := event.clone_ref()!
@@ -90,6 +127,8 @@ fn test_clone_ref_retains_independently_owned_native_references() ! {
 	assert event_reference_count(event.handle)! == event_refs
 
 	event.close()!
+	kernel.close()!
+	program.close()!
 	buffer.close()!
 	queue.close()!
 	context.close()!
@@ -396,6 +435,16 @@ fn test_typed_image_round_trip_and_sampler_lifecycle() ! {
 	mut source_image := cl.new_image_2d[u32](context, cl.mem_read_only, format, 2, 2)!
 	mut destination_image := cl.new_image_2d[u32](context, cl.mem_write_only, format, 2, 2)!
 	mut sampler := cl.new_sampler(context, false, cl.address_clamp_to_edge, cl.filter_nearest)!
+	image_refs := memory_reference_count(source_image.handle)!
+	mut retained_image := source_image.clone_ref()!
+	assert memory_reference_count(source_image.handle)! == image_refs + 1
+	retained_image.close()!
+	assert memory_reference_count(source_image.handle)! == image_refs
+	sampler_refs := sampler_reference_count(sampler.handle)!
+	mut retained_sampler := sampler.clone_ref()!
+	assert sampler_reference_count(sampler.handle)! == sampler_refs + 1
+	retained_sampler.close()!
+	assert sampler_reference_count(sampler.handle)! == sampler_refs
 	mut program := cl.build_source_program(context, available_devices[0],
 		'__kernel void copy_image(read_only image2d_t source, write_only image2d_t destination, sampler_t image_sampler) { int2 p = (int2)(get_global_id(0), get_global_id(1)); write_imagef(destination, p, read_imagef(source, image_sampler, p)); }', '')!
 	mut kernel := program.kernel('copy_image')!
