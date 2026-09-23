@@ -10,12 +10,12 @@ struct Compute {
 	device   cl.DeviceId
 	count    usize
 mut:
-	context &cl.OwnedContext      = unsafe { nil }
-	queue   &cl.OwnedCommandQueue = unsafe { nil }
-	program &cl.OwnedProgram      = unsafe { nil }
-	reset   &cl.OwnedKernel       = unsafe { nil }
-	step    &cl.OwnedKernel       = unsafe { nil }
-	buffer  &cl.Buffer[f32]       = unsafe { nil }
+	context &cl.OwnedContext
+	queue   &cl.OwnedCommandQueue
+	program &cl.OwnedProgram
+	reset   &cl.OwnedKernel
+	step    &cl.OwnedKernel
+	buffer  &cl.Buffer[f32]
 }
 
 fn new_compute(count usize) !&Compute {

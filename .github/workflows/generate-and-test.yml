@@ -223,6 +223,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Check out pinned Vulkan module
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: antono2/vulkan
+          ref: ${{ env.VULKAN_REF }}
+          path: .ci-modules/vulkan
+      - name: Check out pinned GLFW module
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: antono2/glfw
+          ref: ${{ env.GLFW_COMMIT }}
+          path: .ci-modules/glfw
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
@@ -265,9 +277,12 @@ jobs:
           install -m 0644 src/opencl.v src/convenience.v src/ownership.v \
             src/program.v src/event.v src/image.v src/svm.v src/capabilities.v \
             src/external_interop.v v.mod "$module_root/"
+          cp -a .ci-modules/vulkan "$RUNNER_TEMP/vmodules/antono2/vulkan"
+          cp -a .ci-modules/glfw "$RUNNER_TEMP/vmodules/antono2/glfw"
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check test/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vulkan_particles
       - name: Run V3 backend smoke tests with GCC and TinyCC
         run: |
           set -euo pipefail

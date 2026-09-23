@@ -9,8 +9,8 @@ struct LiveInteropSync {
 	cl_to_vk vk.Semaphore
 	memory   cl.ExternalMemoryInterop
 mut:
-	cl_wait   &cl.OwnedExternalSemaphore = unsafe { nil }
-	cl_signal &cl.OwnedExternalSemaphore = unsafe { nil }
+	cl_wait   &cl.OwnedExternalSemaphore
+	cl_signal &cl.OwnedExternalSemaphore
 }
 
 fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
@@ -18,11 +18,15 @@ fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 	mut export_info := vk.ExportSemaphoreCreateInfo{
 		handleTypes: u32(vk.ExternalSemaphoreHandleTypeFlagBits.opaque_fd)
 	}
-	info := vk.SemaphoreCreateInfo{ pNext: &export_info }
+	info := vk.SemaphoreCreateInfo{
+		pNext: &export_info
+	}
 	mut vk_to_cl := vk.Semaphore(unsafe { nil })
 	mut cl_to_vk := vk.Semaphore(unsafe { nil })
-	vk_check(vk.create_semaphore(device, &info, unsafe { nil }, &vk_to_cl), 'create live Vulkan-to-OpenCL semaphore')!
-	vk_check(vk.create_semaphore(device, &info, unsafe { nil }, &cl_to_vk), 'create live OpenCL-to-Vulkan semaphore') or {
+	vk_check(vk.create_semaphore(device, &info, unsafe { nil }, &vk_to_cl),
+		'create live Vulkan-to-OpenCL semaphore')!
+	vk_check(vk.create_semaphore(device, &info, unsafe { nil }, &cl_to_vk),
+		'create live OpenCL-to-Vulkan semaphore') or {
 		vk.destroy_semaphore(device, vk_to_cl, unsafe { nil })
 		return err
 	}
@@ -37,8 +41,10 @@ fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 		semaphore:  cl_to_vk
 		handleType: .opaque_fd
 	}
-	vk_check(vk.get_semaphore_fd_khr(device, &vk_wait_fd_info, &vk_to_cl_fd), 'export live Vulkan-to-OpenCL semaphore')!
-	vk_check(vk.get_semaphore_fd_khr(device, &cl_signal_fd_info, &cl_to_vk_fd), 'export live OpenCL-to-Vulkan semaphore')!
+	vk_check(vk.get_semaphore_fd_khr(device, &vk_wait_fd_info, &vk_to_cl_fd),
+		'export live Vulkan-to-OpenCL semaphore')!
+	vk_check(vk.get_semaphore_fd_khr(device, &cl_signal_fd_info, &cl_to_vk_fd),
+		'export live OpenCL-to-Vulkan semaphore')!
 
 	mut cl_wait := semaphores.import_opaque_fd(compute.context, vk_to_cl_fd)!
 	mut cl_signal := semaphores.import_opaque_fd(compute.context, cl_to_vk_fd) or {

@@ -10,30 +10,41 @@ struct ParticleBuffer {
 	size      usize
 	zero_copy bool
 mut:
-	cl_buffer &cl.Buffer[f32] = unsafe { nil }
+	cl_buffer &cl.Buffer[f32]
 }
 
 fn create_staged_particle_buffer(physical vk.PhysicalDevice, device vk.Device, particles []f32) !&ParticleBuffer {
 	size := usize(particles.len) * sizeof(f32)
-	info := vk.BufferCreateInfo{ size: size, usage: u32(vk.BufferUsageFlagBits.vertex_buffer), sharingMode: .exclusive }
+	info := vk.BufferCreateInfo{
+		size:        size
+		usage:       u32(vk.BufferUsageFlagBits.vertex_buffer)
+		sharingMode: .exclusive
+	}
 	mut buffer := vk.Buffer(unsafe { nil })
-	vk_check(vk.create_buffer(device, &info, unsafe { nil }, &buffer), 'create particle vertex buffer')!
+	vk_check(vk.create_buffer(device, &info, unsafe { nil }, &buffer),
+		'create particle vertex buffer')!
 	mut requirements := vk.MemoryRequirements{}
 	vk.get_buffer_memory_requirements(device, buffer, mut requirements)
 	wanted := u32(vk.MemoryPropertyFlagBits.host_visible) | u32(vk.MemoryPropertyFlagBits.host_coherent)
 	memory_type := find_memory_type_with_flags(physical, requirements.memoryTypeBits, wanted)!
-	allocate := vk.MemoryAllocateInfo{ allocationSize: requirements.size, memoryTypeIndex: memory_type }
+	allocate := vk.MemoryAllocateInfo{
+		allocationSize:  requirements.size
+		memoryTypeIndex: memory_type
+	}
 	mut memory := vk.DeviceMemory(unsafe { nil })
-	vk_check(vk.allocate_memory(device, &allocate, unsafe { nil }, &memory), 'allocate particle vertex memory')!
+	vk_check(vk.allocate_memory(device, &allocate, unsafe { nil }, &memory),
+		'allocate particle vertex memory')!
 	vk_check(vk.bind_buffer_memory(device, buffer, memory, 0), 'bind particle vertex memory')!
 	mut mapped := voidptr(unsafe { nil })
-	vk_check(vk.map_memory(device, memory, 0, size, 0, &mapped), 'map particle vertex memory')!
+	vk_check(vk.map_memory(device, memory, 0, vk.DeviceSize(size), 0, &mapped),
+		'map particle vertex memory')!
 	unsafe { vmemcpy(mapped, particles.data, size) }
 	vk.unmap_memory(device, memory)
 	return &ParticleBuffer{
-		handle: buffer
-		memory: memory
-		size:   size
+		handle:    buffer
+		memory:    memory
+		size:      size
+		cl_buffer: unsafe { nil }
 	}
 }
 
@@ -50,7 +61,8 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		sharingMode: .exclusive
 	}
 	mut buffer := vk.Buffer(unsafe { nil })
-	vk_check(vk.create_buffer(device, &info, unsafe { nil }, &buffer), 'create shared particle buffer')!
+	vk_check(vk.create_buffer(device, &info, unsafe { nil }, &buffer),
+		'create shared particle buffer')!
 	mut requirements := vk.MemoryRequirements{}
 	vk.get_buffer_memory_requirements(device, buffer, mut requirements)
 	memory_type := find_memory_type(physical, requirements.memoryTypeBits) or {
@@ -66,7 +78,8 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		memoryTypeIndex: memory_type
 	}
 	mut memory := vk.DeviceMemory(unsafe { nil })
-	vk_check(vk.allocate_memory(device, &allocate, unsafe { nil }, &memory), 'allocate shared particle memory') or {
+	vk_check(vk.allocate_memory(device, &allocate, unsafe { nil }, &memory),
+		'allocate shared particle memory') or {
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
@@ -85,7 +98,8 @@ fn create_zero_copy_particle_buffer(compute &Compute, memory_interop cl.External
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
 	}
-	cl_buffer := memory_interop.import_opaque_fd_buffer[f32](compute.context, fd, int(compute.count * 8), cl.mem_read_write) or {
+	cl_buffer := memory_interop.import_opaque_fd_buffer[f32](compute.context, fd,
+		int(compute.count * 8), cl.mem_read_write) or {
 		vk.free_memory(device, memory, unsafe { nil })
 		vk.destroy_buffer(device, buffer, unsafe { nil })
 		return err
@@ -105,7 +119,8 @@ fn (buffer &ParticleBuffer) upload(device vk.Device, particles []f32) ! {
 		return error('particle upload exceeds vertex buffer')
 	}
 	mut mapped := voidptr(unsafe { nil })
-	vk_check(vk.map_memory(device, buffer.memory, 0, byte_count, 0, &mapped), 'map particle upload')!
+	vk_check(vk.map_memory(device, buffer.memory, 0, vk.DeviceSize(byte_count), 0, &mapped),
+		'map particle upload')!
 	unsafe { vmemcpy(mapped, particles.data, byte_count) }
 	vk.unmap_memory(device, buffer.memory)
 }
@@ -114,7 +129,8 @@ fn find_memory_type_with_flags(device vk.PhysicalDevice, allowed u32, wanted u32
 	mut properties := vk.PhysicalDeviceMemoryProperties{}
 	vk.get_physical_device_memory_properties(device, mut properties)
 	for index in 0 .. properties.memoryTypeCount {
-		if allowed & (u32(1) << index) != 0 && properties.memoryTypes[index].propertyFlags & wanted == wanted {
+		if allowed & (u32(1) << index) != 0
+			&& properties.memoryTypes[index].propertyFlags & wanted == wanted {
 			return index
 		}
 	}
