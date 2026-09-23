@@ -152,7 +152,10 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 	mut interop_sync := if particle_buffer.zero_copy {
 		create_live_interop_sync(compute, memory_interop, semaphore_interop, device, queue)!
 	} else {
-		&LiveInteropSync{}
+		&LiveInteropSync{
+			cl_wait:   unsafe { nil }
+			cl_signal: unsafe { nil }
+		}
 	}
 	if particle_buffer.zero_copy {
 		println('Live synchronization: external Vulkan/OpenCL semaphores')
