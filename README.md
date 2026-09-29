@@ -81,8 +81,10 @@ Every Monday, `propose-khronos-input-update.yml` checks the current upstream
 OpenCL-Docs and OpenCL-Headers commits. If either changed, it opens or updates
 a pull request with new immutable pins and regenerated source. The proposal
 reports core versions beyond the link compatibility ceiling and runs the full
-generator CI; it is not merged automatically. The workflow uses the existing
-`OPENCL_PUBLISH_TOKEN` repository secret so its pull request triggers CI.
+generator CI; it is not merged automatically. The proposal workflow uses the
+repository-scoped `GITHUB_TOKEN`. Because GitHub does not trigger pull-request
+CI for pull requests created with that token, the updater dispatches the full
+generator workflow on the proposed branch explicitly.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written discovery, ownership, program, event,

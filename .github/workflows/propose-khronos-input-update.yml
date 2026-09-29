@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -20,14 +21,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+          token: ${{ github.token }}
       - name: Check upstream revisions
         id: inputs
         env:
-          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -n "$GH_TOKEN" || { echo '::error::OPENCL_PUBLISH_TOKEN is required to create a CI-triggering pull request'; exit 1; }
           registry=$(gh api repos/KhronosGroup/OpenCL-Docs/commits/main --jq .sha)
           headers=$(gh api repos/KhronosGroup/OpenCL-Headers/commits/main --jq .sha)
           echo "registry=$registry" >> "$GITHUB_OUTPUT"
@@ -73,7 +73,7 @@ jobs:
       - name: Publish update proposal
         if: always() && steps.inputs.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           REGISTRY_SHA: ${{ steps.inputs.outputs.registry }}
           HEADERS_SHA: ${{ steps.inputs.outputs.headers }}
           GENERATE_OUTCOME: ${{ steps.generate.outcome }}
@@ -116,3 +116,5 @@ jobs:
             gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$branch" \
               --title 'Update pinned Khronos OpenCL inputs' --body-file /tmp/opencl-input-update.md
           fi
+          # GITHUB_TOKEN PR creation does not trigger pull_request workflows.
+          gh workflow run generate-and-test.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
