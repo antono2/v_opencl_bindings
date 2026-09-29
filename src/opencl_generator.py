@@ -31,10 +31,10 @@ REQUIRED_COMMANDS = (
     "clFinish",
 )
 
-CORE_FEATURES = (
-    "CL_VERSION_1_0", "CL_VERSION_1_1", "CL_VERSION_1_2", "CL_VERSION_2_0",
-    "CL_VERSION_2_1", "CL_VERSION_2_2", "CL_VERSION_3_0",
-)
+# A compatibility policy rather than a list of registry feature names. Newer
+# core commands need an explicit loader/ABI review before they become link-time
+# dependencies of an existing antono2.opencl installation.
+MAX_LINKED_CORE_VERSION = (3, 0)
 
 PORTABLE_EXTENSIONS = (
     "cl_khr_il_program",
@@ -168,131 +168,8 @@ pub type ErrorCode = i32
 
 // __REGISTRY_ERROR_NAMES__
 
-fn C.clGetPlatformIDs(u32, &PlatformId, &u32) ErrorCode
-fn C.clGetPlatformInfo(PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
-fn C.clGetDeviceIDs(PlatformId, DeviceType, u32, &DeviceId, &u32) ErrorCode
-fn C.clGetDeviceInfo(DeviceId, DeviceInfo, usize, voidptr, &usize) ErrorCode
-fn C.clCreateContext(&isize, u32, &DeviceId, voidptr, voidptr, &ErrorCode) Context
-fn C.clReleaseContext(Context) ErrorCode
-fn C.clCreateCommandQueue(Context, DeviceId, CommandQueueProperties, &ErrorCode) CommandQueue
-fn C.clReleaseCommandQueue(CommandQueue) ErrorCode
-fn C.clCreateBuffer(Context, MemFlags, usize, voidptr, &ErrorCode) Mem
-fn C.clReleaseMemObject(Mem) ErrorCode
-fn C.clCreateProgramWithSource(Context, u32, &&char, &usize, &ErrorCode) Program
-fn C.clBuildProgram(Program, u32, &DeviceId, &char, voidptr, voidptr) ErrorCode
-fn C.clGetProgramBuildInfo(Program, DeviceId, ProgramBuildInfo, usize, voidptr, &usize) ErrorCode
-fn C.clReleaseProgram(Program) ErrorCode
-fn C.clCreateKernel(Program, &char, &ErrorCode) Kernel
-fn C.clSetKernelArg(Kernel, u32, usize, voidptr) ErrorCode
-fn C.clReleaseKernel(Kernel) ErrorCode
-fn C.clEnqueueNDRangeKernel(CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
-fn C.clEnqueueReadBuffer(CommandQueue, Mem, u32, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
-fn C.clFinish(CommandQueue) ErrorCode
-
-pub fn get_platform_ids(num_entries u32, platforms &PlatformId, num_platforms &u32) ErrorCode {
-	return C.clGetPlatformIDs(num_entries, platforms, num_platforms)
-}
-
-pub fn get_platform_info(platform PlatformId, param_name PlatformInfo, param_value_size usize,
-	param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetPlatformInfo(platform, param_name, param_value_size, param_value,
-		param_value_size_ret)
-}
-
-pub fn get_device_ids(platform PlatformId, device_type DeviceType, num_entries u32,
-	devices &DeviceId, num_devices &u32) ErrorCode {
-	return C.clGetDeviceIDs(platform, device_type, num_entries, devices, num_devices)
-}
-
-pub fn get_device_info(device DeviceId, param_name DeviceInfo, param_value_size usize,
-	param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetDeviceInfo(device, param_name, param_value_size, param_value,
-		param_value_size_ret)
-}
-
-pub fn create_context(properties &isize, num_devices u32, devices &DeviceId,
-	pfn_notify voidptr, user_data voidptr, errcode_ret &ErrorCode) Context {
-	return C.clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret)
-}
-
-pub fn release_context(context Context) ErrorCode {
-	return C.clReleaseContext(context)
-}
-
-pub fn create_command_queue(context Context, device DeviceId,
-	properties CommandQueueProperties, errcode_ret &ErrorCode) CommandQueue {
-	return C.clCreateCommandQueue(context, device, properties, errcode_ret)
-}
-
-pub fn release_command_queue(command_queue CommandQueue) ErrorCode {
-	return C.clReleaseCommandQueue(command_queue)
-}
-
-pub fn create_buffer(context Context, flags MemFlags, size usize, host_ptr voidptr,
-	errcode_ret &ErrorCode) Mem {
-	return C.clCreateBuffer(context, flags, size, host_ptr, errcode_ret)
-}
-
-pub fn release_mem_object(memobj Mem) ErrorCode {
-	return C.clReleaseMemObject(memobj)
-}
-
-pub fn create_program_with_source(context Context, count u32, strings &&char,
-	lengths &usize, errcode_ret &ErrorCode) Program {
-	return C.clCreateProgramWithSource(context, count, strings, lengths, errcode_ret)
-}
-
-pub fn build_program(program Program, num_devices u32, device_list &DeviceId,
-	options &char, pfn_notify voidptr, user_data voidptr) ErrorCode {
-	return C.clBuildProgram(program, num_devices, device_list, options, pfn_notify, user_data)
-}
-
-pub fn get_program_build_info(program Program, device DeviceId, param_name ProgramBuildInfo,
-	param_value_size usize, param_value voidptr, param_value_size_ret &usize) ErrorCode {
-	return C.clGetProgramBuildInfo(program, device, param_name, param_value_size, param_value,
-		param_value_size_ret)
-}
-
-pub fn release_program(program Program) ErrorCode {
-	return C.clReleaseProgram(program)
-}
-
-pub fn create_kernel(program Program, kernel_name &char, errcode_ret &ErrorCode) Kernel {
-	return C.clCreateKernel(program, kernel_name, errcode_ret)
-}
-
-pub fn set_kernel_arg(kernel Kernel, arg_index u32, arg_size usize, arg_value voidptr) ErrorCode {
-	return C.clSetKernelArg(kernel, arg_index, arg_size, arg_value)
-}
-
-pub fn release_kernel(kernel Kernel) ErrorCode {
-	return C.clReleaseKernel(kernel)
-}
-
-pub fn enqueue_nd_range_kernel(command_queue CommandQueue, kernel Kernel, work_dim u32,
-	global_work_offset &usize, global_work_size &usize, local_work_size &usize,
-	num_events_in_wait_list u32, event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueNDRangeKernel(command_queue, kernel, work_dim, global_work_offset,
-		global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event)
-}
-
-pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read u32,
-	offset usize, size usize, ptr voidptr, num_events_in_wait_list u32,
-	event_wait_list &Event, event &Event) ErrorCode {
-	return C.clEnqueueReadBuffer(command_queue, buffer, blocking_read, offset, size, ptr,
-		num_events_in_wait_list, event_wait_list, event)
-}
-
-pub fn finish(command_queue CommandQueue) ErrorCode {
-	return C.clFinish(command_queue)
-}
+// __REGISTRY_COMMANDS__
 """
-
-# Command declarations and wrappers below the type/constant preamble are
-# generated from XML. Keeping the preamble as a readable template makes the
-# emitted module easy to review while the registry remains authoritative.
-HEADER = HEADER.split("fn C.clGetPlatformIDs", 1)[0] + "// __REGISTRY_COMMANDS__\n"
-
 
 class OpenCLGenerator:
     def __init__(self, registry: Path):
@@ -328,15 +205,42 @@ class OpenCLGenerator:
 
     def registry_sections(self) -> list[ET.Element]:
         assert self.root is not None
-        names = CORE_FEATURES + PORTABLE_EXTENSIONS
-        sections = []
-        for name in names:
-            path = f"feature[@name='{name}']" if name.startswith("CL_VERSION_") else f"extensions/extension[@name='{name}']"
-            section = self.root.find(path)
+        sections = self.core_features()
+        for name in PORTABLE_EXTENSIONS:
+            section = self.root.find(f"extensions/extension[@name='{name}']")
             if section is None:
                 raise RuntimeError(f"Registry is missing API section {name}")
             sections.append(section)
         return sections
+
+    def core_features(self) -> list[ET.Element]:
+        assert self.root is not None
+        features = []
+        for feature in self.root.findall("feature"):
+            if feature.get("api") != "opencl":
+                continue
+            number = feature.get("number")
+            if number is None or not re.fullmatch(r"\d+\.\d+", number):
+                raise RuntimeError(f"Invalid OpenCL feature version: {feature.get('name')}: {number}")
+            major, minor = map(int, number.split("."))
+            if (major, minor) <= MAX_LINKED_CORE_VERSION:
+                features.append(feature)
+        if not features:
+            raise RuntimeError("Registry has no supported OpenCL core features")
+        return features
+
+    def later_core_features(self) -> list[str]:
+        assert self.root is not None
+        names = []
+        for feature in self.root.findall("feature"):
+            if feature.get("api") != "opencl":
+                continue
+            number = feature.get("number", "")
+            if re.fullmatch(r"\d+\.\d+", number):
+                major, minor = map(int, number.split("."))
+                if (major, minor) > MAX_LINKED_CORE_VERSION:
+                    names.append(feature.get("name", number))
+        return names
 
     @staticmethod
     def v_name(c_name: str) -> str:
@@ -591,8 +495,8 @@ class OpenCLGenerator:
         wrappers = []
         core_command_names = {
             node.attrib["name"]
-            for feature_name in CORE_FEATURES
-            for node in self.root.find(f"feature[@name='{feature_name}']").findall(".//command")
+            for feature in self.core_features()
+            for node in feature.findall(".//command")
         }
         command_names = list(dict.fromkeys(
             node.attrib["name"]

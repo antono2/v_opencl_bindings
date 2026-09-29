@@ -1,0 +1,118 @@
+name: Propose Khronos OpenCL input update
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: propose-khronos-opencl-inputs
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+      - name: Check upstream revisions
+        id: inputs
+        env:
+          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo '::error::OPENCL_PUBLISH_TOKEN is required to create a CI-triggering pull request'; exit 1; }
+          registry=$(gh api repos/KhronosGroup/OpenCL-Docs/commits/main --jq .sha)
+          headers=$(gh api repos/KhronosGroup/OpenCL-Headers/commits/main --jq .sha)
+          echo "registry=$registry" >> "$GITHUB_OUTPUT"
+          echo "headers=$headers" >> "$GITHUB_OUTPUT"
+          if test "$registry" = "$(cat REGISTRY_COMMIT)" && test "$headers" = "$(cat HEADERS_COMMIT)"; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'Pinned Khronos inputs are current.'
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare proposal branch and upstream inputs
+        if: steps.inputs.outputs.changed == 'true'
+        env:
+          REGISTRY_SHA: ${{ steps.inputs.outputs.registry }}
+          HEADERS_SHA: ${{ steps.inputs.outputs.headers }}
+        run: |
+          set -euo pipefail
+          git checkout -B automation/update-khronos-inputs origin/master
+          printf '%s\n' "$REGISTRY_SHA" > REGISTRY_COMMIT
+          printf '%s\n' "$HEADERS_SHA" > HEADERS_COMMIT
+          git init -q opencldocs
+          git -C opencldocs remote add origin https://github.com/KhronosGroup/OpenCL-Docs.git
+          git -C opencldocs fetch -q --depth 1 origin "$REGISTRY_SHA"
+          git -C opencldocs checkout -q --detach FETCH_HEAD
+          git init -q openclheaders
+          git -C openclheaders remote add origin https://github.com/KhronosGroup/OpenCL-Headers.git
+          git -C openclheaders fetch -q --depth 1 origin "$HEADERS_SHA"
+          git -C openclheaders checkout -q --detach FETCH_HEAD
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        if: steps.inputs.outputs.changed == 'true'
+        with:
+          version: 0.5.2
+      - name: Generate and review new registry surface
+        id: generate
+        if: steps.inputs.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 test/test_generator.py
+          python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          v fmt -w src/opencl.v
+          git diff --check
+      - name: Publish update proposal
+        if: always() && steps.inputs.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+          REGISTRY_SHA: ${{ steps.inputs.outputs.registry }}
+          HEADERS_SHA: ${{ steps.inputs.outputs.headers }}
+          GENERATE_OUTCOME: ${{ steps.generate.outcome }}
+        run: |
+          set -euo pipefail
+          branch=automation/update-khronos-inputs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add REGISTRY_COMMIT HEADERS_COMMIT src/opencl.v
+          git commit -m 'Update pinned Khronos OpenCL inputs'
+          git fetch origin "$branch" || true
+          git push --force-with-lease origin "HEAD:refs/heads/$branch"
+          later_core=$(python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'src')
+          from opencl_generator import OpenCLGenerator
+          generator = OpenCLGenerator(Path('opencldocs/xml/cl.xml'))
+          try:
+              generator.validate_registry()
+              print(', '.join(generator.later_core_features()) or 'none')
+          except Exception as error:
+              print(f'unavailable: {error}')
+          PY
+          )
+          cat > /tmp/opencl-input-update.md <<EOF
+          Weekly proposal to refresh immutable Khronos inputs.
+
+          - OpenCL-Docs: \`$REGISTRY_SHA\`
+          - OpenCL-Headers: \`$HEADERS_SHA\`
+          - Generation outcome: **$GENERATE_OUTCOME** ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID))
+          - Core registry features beyond the current link compatibility ceiling: $later_core
+
+          Review generated ABI changes and CI before merging. If generation failed, fix the generator on this branch before merging. New core commands require a loader compatibility review before the ceiling can advance.
+          EOF
+          number=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$branch" --json number --jq '.[0].number // empty')
+          if test -n "$number"; then
+            gh pr edit "$number" --repo "$GITHUB_REPOSITORY" --body-file /tmp/opencl-input-update.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$branch" \
+              --title 'Update pinned Khronos OpenCL inputs' --body-file /tmp/opencl-input-update.md
+          fi
