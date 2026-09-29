@@ -81,7 +81,7 @@ fn zero_copy_memory_smoke(compute &Compute) ! {
 		handleType: .opaque_fd
 	}
 	mut fd := -1
-	vk_check(vk.get_memory_fd_khr(device, &fd_info, &fd), 'export memory FD')!
+	vk_check(export_vk_memory_fd(device, &fd_info, &fd), 'export memory FD')!
 
 	mut imported_buffer := memory_interop.import_opaque_fd_buffer[f32](compute.context, fd, int(compute.count * 8), cl.mem_read_write)!
 	defer { imported_buffer.close() or {} }
@@ -127,8 +127,8 @@ fn zero_copy_semaphore_smoke(compute &Compute, interop cl.ExternalSemaphoreInter
 		semaphore:  cl_to_vk
 		handleType: .opaque_fd
 	}
-	vk_check(vk.get_semaphore_fd_khr(device, &vk_to_cl_fd_info, &vk_to_cl_fd), 'export Vulkan-to-OpenCL semaphore FD')!
-	vk_check(vk.get_semaphore_fd_khr(device, &cl_to_vk_fd_info, &cl_to_vk_fd), 'export OpenCL-to-Vulkan semaphore FD')!
+	vk_check(export_vk_semaphore_fd(device, &vk_to_cl_fd_info, &vk_to_cl_fd), 'export Vulkan-to-OpenCL semaphore FD')!
+	vk_check(export_vk_semaphore_fd(device, &cl_to_vk_fd_info, &cl_to_vk_fd), 'export OpenCL-to-Vulkan semaphore FD')!
 
 	mut cl_wait := interop.import_opaque_fd(compute.context, vk_to_cl_fd)!
 	defer { cl_wait.close() or {} }

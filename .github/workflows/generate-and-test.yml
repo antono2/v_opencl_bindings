@@ -360,7 +360,7 @@ jobs:
           cp src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/image.v src/svm.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
           mkdir -p "$HOME/.vmodules/antono2/opencl/include/CL"
           cp include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/"
-          v -cc gcc -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles
+          v -cc gcc -d vulkan_fd_i32 -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles
 
   required-checks:
     name: required-checks
