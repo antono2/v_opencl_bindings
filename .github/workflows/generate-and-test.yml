@@ -25,15 +25,20 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read pinned Khronos revisions
+        id: pins
+        run: |
+          echo "registry=$(cat REGISTRY_COMMIT)" >> "$GITHUB_OUTPUT"
+          echo "headers=$(cat HEADERS_COMMIT)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
-          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          ref: ${{ steps.pins.outputs.registry }}
           path: opencldocs
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Headers
-          ref: c4c8fd6f9556c92b212308880854e6294d61b314
+          ref: ${{ steps.pins.outputs.headers }}
           path: openclheaders
       - name: Check out pinned Vulkan module
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -127,10 +132,13 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read pinned Khronos revision
+        id: pins
+        run: echo "registry=$(cat REGISTRY_COMMIT)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
-          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          ref: ${{ steps.pins.outputs.registry }}
           path: opencldocs
       - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         with:
@@ -164,10 +172,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read pinned Khronos revision
+        id: pins
+        run: echo "registry=$(cat REGISTRY_COMMIT)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
-          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          ref: ${{ steps.pins.outputs.registry }}
           path: opencldocs
       # V master currently builds a separate v1_fallback executable for tool
       # commands such as `v test`. Keep the complete source build together;
@@ -223,6 +234,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read pinned Khronos revision
+        id: pins
+        run: echo "registry=$(cat REGISTRY_COMMIT)" >> "$GITHUB_OUTPUT"
       - name: Check out pinned Vulkan module
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -238,7 +252,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: KhronosGroup/OpenCL-Docs
-          ref: 5147e42c48fdab4ff61259162b9768d91842d53d
+          ref: ${{ steps.pins.outputs.registry }}
           path: opencldocs
       - name: Check out pinned V3 compiler
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

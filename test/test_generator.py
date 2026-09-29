@@ -88,6 +88,16 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_output_is_deterministic(self) -> None:
         self.assertEqual(self.generate(), self.generate())
 
+    def test_core_features_follow_registry_metadata_and_report_new_versions(self) -> None:
+        generator = OpenCLGenerator(self.registry)
+        generator.validate_registry()
+        self.assertEqual(
+            [feature.get("number") for feature in generator.core_features()],
+            ["1.0", "1.1", "1.2", "2.0", "2.1", "2.2", "3.0"],
+        )
+        self.assertIn("CL_VERSION_3_1", generator.later_core_features())
+        self.assertNotIn("fn C.clGetKernelSuggestedLocalWorkSize(", self.generate())
+
     def test_opencl_1_0_commands_are_generated_from_xml(self) -> None:
         generated = self.generate()
         self.assertIn("fn C.clCreateContext(&ContextProperties, u32, &DeviceId, ContextNotifyCallback", generated)

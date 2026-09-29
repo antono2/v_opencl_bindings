@@ -36,7 +36,11 @@ callbacks, return types, and acronym-aware snake-case function names.
 The seven distinct callback ABIs used by core commands are exposed as named V
 function types rather than untyped pointers.
 `REGISTRY_COMMIT` and `HEADERS_COMMIT` record the immutable Khronos inputs used
-for generation and ABI validation.
+for generation and ABI validation. Core feature sections are discovered from
+the registry's `api` and `number` metadata. `MAX_LINKED_CORE_VERSION` deliberately
+limits directly linked commands to OpenCL 3.0: raising it requires checking
+older loader compatibility and the new command ABI. The registry already
+contains OpenCL 3.1; its newer core commands are not directly linked yet.
 The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 `Mem` field because both C union alternatives have the same handle type.
 
@@ -72,6 +76,13 @@ successful generator release then creates the matching annotated `antono2/opencl
 tag; rerunning the release is safe when that tag already targets the same commit.
 The published `DISTRIBUTION_FILES` manifest records every synchronized path so
 the publisher can detect and remove files retired from the canonical source.
+
+Every Monday, `propose-khronos-input-update.yml` checks the current upstream
+OpenCL-Docs and OpenCL-Headers commits. If either changed, it opens or updates
+a pull request with new immutable pins and regenerated source. The proposal
+reports core versions beyond the link compatibility ceiling and runs the full
+generator CI; it is not merged automatically. The workflow uses the existing
+`OPENCL_PUBLISH_TOKEN` repository secret so its pull request triggers CI.
 
 The generated `src/opencl.v` is copied to the separately published `opencl`
 V module together with the hand-written discovery, ownership, program, event,
