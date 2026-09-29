@@ -41,9 +41,9 @@ fn create_live_interop_sync(compute &Compute, memory cl.ExternalMemoryInterop,
 		semaphore:  cl_to_vk
 		handleType: .opaque_fd
 	}
-	vk_check(vk.get_semaphore_fd_khr(device, &vk_wait_fd_info, &vk_to_cl_fd),
+	vk_check(export_vk_semaphore_fd(device, &vk_wait_fd_info, &vk_to_cl_fd),
 		'export live Vulkan-to-OpenCL semaphore')!
-	vk_check(vk.get_semaphore_fd_khr(device, &cl_signal_fd_info, &cl_to_vk_fd),
+	vk_check(export_vk_semaphore_fd(device, &cl_signal_fd_info, &cl_to_vk_fd),
 		'export live OpenCL-to-Vulkan semaphore')!
 
 	mut cl_wait := semaphores.import_opaque_fd(compute.context, vk_to_cl_fd)!
