@@ -2,6 +2,7 @@ module main
 
 import antono2.glfw
 import antono2.vulkan as vk
+import antono2.vulkan.ergonomic as vke
 
 struct SwapchainBundle {
 	handle      vk.SwapchainKHR
@@ -18,14 +19,19 @@ fn create_swapchain(physical vk.PhysicalDevice, device vk.Device, surface vk.Sur
 	vk_check(vk.get_physical_device_surface_capabilities_khr(physical, surface, mut capabilities), 'query surface capabilities')!
 	formats := surface_formats(physical, surface)!
 	present_modes := surface_present_modes(physical, surface)!
-	selected_format := choose_surface_format(formats)
-	present_mode := choose_present_mode(present_modes)
-	extent := choose_extent(capabilities, window)
-	mut image_count := capabilities.minImageCount + 1
-	if capabilities.maxImageCount > 0 && image_count > capabilities.maxImageCount {
-		image_count = capabilities.maxImageCount
-	}
-	composite_alpha := choose_composite_alpha(capabilities.supportedCompositeAlpha)
+	selected_format := vke.select_surface_format(formats, [vk.SurfaceFormatKHR{
+		format:     .b8g8r8a8_srgb
+		colorSpace: .srgb_nonlinear
+	}])!
+	present_mode := vke.select_present_mode(present_modes, [.mailbox, .fifo])!
+	framebuffer := glfw.framebuffer_size(window)
+	extent := vke.select_surface_extent(capabilities, vk.Extent2D{
+		width:  u32(framebuffer.width)
+		height: u32(framebuffer.height)
+	})
+	image_count := vke.select_surface_image_count(capabilities, 1)
+	composite_alpha := vke.select_composite_alpha(capabilities.supportedCompositeAlpha,
+		[.opaque, .pre_multiplied, .post_multiplied, .inherit])!
 	create_info := vk.SwapchainCreateInfoKHR{
 		surface: surface
 		minImageCount: image_count
@@ -98,48 +104,4 @@ fn surface_present_modes(device vk.PhysicalDevice, surface vk.SurfaceKHR) ![]vk.
 		vk_check(vk.get_physical_device_surface_present_modes_khr(device, surface, &count, modes[0]), 'get present modes')!
 	}
 	return modes
-}
-
-fn choose_surface_format(formats []vk.SurfaceFormatKHR) vk.SurfaceFormatKHR {
-	for format in formats {
-		if format.format == .b8g8r8a8_srgb && format.colorSpace == .srgb_nonlinear {
-			return format
-		}
-	}
-	return formats[0]
-}
-
-fn choose_present_mode(modes []vk.PresentModeKHR) vk.PresentModeKHR {
-	for mode in modes {
-		if mode == .mailbox {
-			return mode
-		}
-	}
-	return .fifo
-}
-
-fn choose_extent(capabilities vk.SurfaceCapabilitiesKHR, window &glfw.Window) vk.Extent2D {
-	if capabilities.currentExtent.width != max_u32 {
-		return capabilities.currentExtent
-	}
-	framebuffer := glfw.framebuffer_size(window)
-	return vk.Extent2D{
-		width: clamp_u32(u32(framebuffer.width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width)
-		height: clamp_u32(u32(framebuffer.height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-	}
-}
-
-fn clamp_u32(value u32, minimum u32, maximum u32) u32 {
-	return if value < minimum {
-		minimum
-	} else if value > maximum { maximum } else { value }
-}
-
-fn choose_composite_alpha(flags vk.CompositeAlphaFlagsKHR) vk.CompositeAlphaFlagBitsKHR {
-	for choice in [vk.CompositeAlphaFlagBitsKHR.opaque, .pre_multiplied, .post_multiplied, .inherit] {
-		if flags & u32(choice) != 0 {
-			return choice
-		}
-	}
-	return .opaque
 }
