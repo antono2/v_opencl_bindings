@@ -17,8 +17,8 @@ env:
   V3_COMMIT: f59b886d2564e37d8626d715236fdfa928e13dda
   V3_VC_COMMIT: 4598bc7e4894c154b27391e4442005fff2fbbd68
   V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
-  VULKAN_REF: v2.0.0
-  GLFW_COMMIT: 3d7c1ddacb7215a7bbeb5fef0d7a68c90ba392ed
+  VULKAN_REF: v3.2.0
+  GLFW_REF: v2.0.0
 
 jobs:
   generate-and-test:
@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: antono2/glfw
-          ref: ${{ env.GLFW_COMMIT }}
+          ref: ${{ env.GLFW_REF }}
           path: .ci-modules/glfw
       - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         with:
@@ -90,7 +90,7 @@ jobs:
         run: |
           sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
           test "$(git -C .ci-modules/vulkan describe --tags --exact-match)" = "$VULKAN_REF"
-          test "$(git -C .ci-modules/glfw rev-parse HEAD)" = "$GLFW_COMMIT"
+          test "$(git -C .ci-modules/glfw describe --tags --exact-match)" = "$GLFW_REF"
           install -d "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
           cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
           cp -a .ci-modules/glfw/. "$HOME/.vmodules/antono2/glfw/"
@@ -247,7 +247,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: antono2/glfw
-          ref: ${{ env.GLFW_COMMIT }}
+          ref: ${{ env.GLFW_REF }}
           path: .ci-modules/glfw
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -360,7 +360,7 @@ jobs:
           cp src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/image.v src/svm.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
           mkdir -p "$HOME/.vmodules/antono2/opencl/include/CL"
           cp include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/"
-          v -cc gcc -d vulkan_fd_i32 -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles
+          v -cc gcc -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles
 
   required-checks:
     name: required-checks

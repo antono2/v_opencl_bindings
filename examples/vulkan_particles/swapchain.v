@@ -122,12 +122,10 @@ fn choose_extent(capabilities vk.SurfaceCapabilitiesKHR, window &glfw.Window) vk
 	if capabilities.currentExtent.width != max_u32 {
 		return capabilities.currentExtent
 	}
-	mut width := i32(0)
-	mut height := i32(0)
-	glfw.get_framebuffer_size(window, &width, &height)
+	framebuffer := glfw.framebuffer_size(window)
 	return vk.Extent2D{
-		width: clamp_u32(u32(width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width)
-		height: clamp_u32(u32(height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+		width: clamp_u32(u32(framebuffer.width), capabilities.minImageExtent.width, capabilities.maxImageExtent.width)
+		height: clamp_u32(u32(framebuffer.height), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
 	}
 }
 
