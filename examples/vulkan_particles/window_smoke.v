@@ -33,11 +33,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		return error('GLFW cannot find a Vulkan loader')
 	}
 	glfw.window_hint(glfw.client_api, glfw.no_api)
-	window := glfw.create_window(960, 640, 'Vulkan + OpenCL particles', unsafe { nil },
-		unsafe { nil })
-	if isnil(window) {
-		return error('GLFW window creation failed')
-	}
+	window := glfw.create_windowed(960, 640, 'Vulkan + OpenCL particles')!
 	defer { glfw.destroy_window(window) }
 
 	if vk.initialize_loader() != vk.Result.success {
@@ -231,14 +227,13 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 			pipeline.destroy(device)
 			frames.destroy(device)
 			swapchain.destroy(device)
-			mut width := i32(0)
-			mut height := i32(0)
-			for width == 0 || height == 0 {
-				glfw.get_framebuffer_size(window, &width, &height)
-				if width == 0 || height == 0 {
+			for {
+				framebuffer := glfw.framebuffer_size(window)
+				if framebuffer.width > 0 && framebuffer.height > 0 {
+					break
+				}
 					glfw.poll_events()
 					time.sleep(16 * time.millisecond)
-				}
 			}
 			swapchain = create_swapchain(physical, device, surface, window)!
 			frames = create_frame_resources(device, queue_family, &swapchain)!

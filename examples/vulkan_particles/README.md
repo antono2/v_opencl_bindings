@@ -28,9 +28,9 @@ checked-in SPIR-V after editing GLSL with `./compile_shaders.sh`.
 Install the example-only V modules and Linux development packages before building from source:
 
 ```sh
-v install antono2.opencl@v1.0.0
-v install antono2.vulkan@v2.0.0
-v install antono2.glfw
+v install antono2.opencl@v1.0.1
+v install antono2.vulkan@v3.2.0
+v install antono2.glfw@v2.0.0
 sudo apt install ocl-icd-opencl-dev libvulkan-dev libglfw3-dev
 ```
 
@@ -52,7 +52,7 @@ v -cc gcc run examples/vulkan_particles --particles=4096
 v -cc tcc run examples/vulkan_particles --particles=4096
 ```
 
-TinyCC requires `antono2.vulkan` v2.0.0 for its deep-bound Volk loader.
+The pinned Vulkan release provides the deep-bound Volk loader used by TinyCC.
 
 ## Tested hardware
 
