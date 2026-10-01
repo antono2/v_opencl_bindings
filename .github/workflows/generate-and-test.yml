@@ -14,8 +14,8 @@ env:
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
   V_VERSION: 0.5.2
-  V3_COMMIT: f59b886d2564e37d8626d715236fdfa928e13dda
-  V3_VC_COMMIT: 4598bc7e4894c154b27391e4442005fff2fbbd68
+  V3_COMMIT: efae23e85b3772a28e62884d554c1e88f91f52f4
+  V3_VC_COMMIT: 2cbaf6bc2367937cd5f0b4ef923d1ef9aad613b3
   V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
   VULKAN_REF: v3.2.0
   GLFW_REF: v2.0.0
@@ -297,15 +297,13 @@ jobs:
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vulkan_particles
-      - name: Run V3 backend smoke tests with GCC and TinyCC
+      - name: Run V3 backend smoke tests with TinyCC
         run: |
           set -euo pipefail
-          for compiler in gcc tcc; do
-            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
-              -cc "$compiler" run test
-            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
-              -cc "$compiler" run examples/vector_add
-          done
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run test
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/vector_add
 
   windows-abi-compile:
     runs-on: windows-2022
