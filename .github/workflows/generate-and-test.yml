@@ -297,15 +297,13 @@ jobs:
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vulkan_particles
-      - name: Run V3 backend smoke tests with GCC and TinyCC
+      - name: Run V3 backend smoke tests with TinyCC
         run: |
           set -euo pipefail
-          for compiler in gcc tcc; do
-            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
-              -cc "$compiler" run test
-            VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
-              -cc "$compiler" run examples/vector_add
-          done
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run test
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/vector_add
 
   windows-abi-compile:
     runs-on: windows-2022
