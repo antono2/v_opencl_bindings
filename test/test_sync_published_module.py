@@ -6,6 +6,7 @@ import io
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -45,6 +46,11 @@ class SyncPublishedModuleTests(unittest.TestCase):
             self.assertEqual((target / "VERSION").read_text().strip(), version)
             manifest = (target / sync_published_module.MANIFEST_FILE).read_text()
             self.assertIn(".gitignore\n", manifest)
+            self.assertIn("README.md\n", manifest)
+            self.assertIn(
+                f"v install antono2.opencl@v{version}",
+                (target / "README.md").read_text(),
+            )
             self.assertIn("examples/vulkan_particles/README.md\n", manifest)
             self.assertEqual(
                 (target / ".gitignore").read_bytes(), (ROOT / ".gitignore").read_bytes()
@@ -87,6 +93,56 @@ class SyncPublishedModuleTests(unittest.TestCase):
                     target, check=True, generator_commit="a" * 40
                 )
             self.assertEqual(result, 1)
+
+    def test_readme_tracks_a_future_release_version(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = self.make_target(directory)
+            with patch.object(
+                sync_published_module, "resolve_distribution_version", return_value="2.3.4"
+            ):
+                with redirect_stdout(io.StringIO()):
+                    sync_published_module.sync(
+                        target, check=False, generator_commit="a" * 40
+                    )
+            readme = (target / "README.md").read_text()
+            self.assertIn("v install antono2.opencl@v2.3.4", readme)
+            self.assertIn("releases/tag/v2.3.4", readme)
+            self.assertNotIn("@VERSION@", readme)
+
+    def test_check_detects_and_sync_repairs_readme_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = self.make_target(directory)
+            with redirect_stdout(io.StringIO()):
+                sync_published_module.sync(
+                    target, check=False, generator_commit="a" * 40
+                )
+            expected = (target / "README.md").read_bytes()
+            (target / "README.md").write_text("Stale installation instructions\n")
+            with redirect_stdout(io.StringIO()):
+                result = sync_published_module.sync(
+                    target, check=True, generator_commit="a" * 40
+                )
+            self.assertEqual(result, 1)
+            self.assertEqual(
+                (target / "README.md").read_text(), "Stale installation instructions\n"
+            )
+            with redirect_stdout(io.StringIO()):
+                sync_published_module.sync(
+                    target, check=False, generator_commit="a" * 40
+                )
+                result = sync_published_module.sync(
+                    target, check=True, generator_commit="a" * 40
+                )
+            self.assertEqual(result, 0)
+            self.assertEqual((target / "README.md").read_bytes(), expected)
+
+    def test_readme_rejects_missing_and_unknown_placeholders(self) -> None:
+        with patch.object(Path, "read_text", return_value="No release placeholder"):
+            with self.assertRaisesRegex(ValueError, "must contain @VERSION@"):
+                sync_published_module.published_readme("2.3.4")
+        with patch.object(Path, "read_text", return_value="@VERSION@ @UNKNOWN@"):
+            with self.assertRaisesRegex(ValueError, "unknown published README placeholders"):
+                sync_published_module.published_readme("2.3.4")
 
     def test_sync_removes_files_from_the_previous_distribution_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

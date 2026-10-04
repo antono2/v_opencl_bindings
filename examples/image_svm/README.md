@@ -1,8 +1,9 @@
 # Typed images and SVM
 
-This example exercises the OpenCL `0.4` memory APIs on the first available
-device. It copies a 2×2 RGBA image through an OpenCL image kernel and owned
-sampler. When the device advertises buffer shared virtual memory, it also binds
+This example exercises the typed image and shared virtual memory helpers on
+the first available OpenCL device. It copies a 2×2 RGBA image through an OpenCL
+image kernel and owned sampler. When the device advertises buffer shared virtual
+memory, it also binds
 an owned typed SVM allocation directly to a second kernel.
 
 ```sh
