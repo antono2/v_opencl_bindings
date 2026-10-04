@@ -114,8 +114,20 @@ def published_module_file(target: Path, version: str) -> bytes:
     return updated.encode()
 
 
+def published_readme(version: str) -> bytes:
+    template = (ROOT / "packaging/published_README.md").read_text()
+    if "@VERSION@" not in template:
+        raise ValueError("published README template must contain @VERSION@")
+    rendered = template.replace("@VERSION@", version)
+    unresolved = re.findall(r"@[A-Z_]+@", rendered)
+    if unresolved:
+        raise ValueError(f"unknown published README placeholders: {', '.join(unresolved)}")
+    return rendered.encode()
+
+
 def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> int:
     validate_target(target)
+    version = resolve_distribution_version()
     mappings = SOURCE_FILES | tracked_distribution_files()
     contents = {
         target_name: (ROOT / source_name).read_bytes()
@@ -124,9 +136,8 @@ def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> i
     contents["GENERATOR_COMMIT"] = (
         resolve_generator_commit(generator_commit) + "\n"
     ).encode()
-    contents["v.mod"] = published_module_file(
-        target, resolve_distribution_version()
-    )
+    contents["v.mod"] = published_module_file(target, version)
+    contents["README.md"] = published_readme(version)
     managed_paths = set(contents)
     stale_paths = previous_distribution_files(target) - managed_paths
     contents[MANIFEST_FILE] = distribution_manifest(managed_paths)

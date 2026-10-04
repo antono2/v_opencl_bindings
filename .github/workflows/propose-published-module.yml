@@ -11,6 +11,7 @@ on:
       - 'examples/**'
       - 'include/**'
       - 'packaging/published_setup.vsh'
+      - 'packaging/published_README.md'
       - 'API_DESIGN.md'
       - 'OWNERSHIP.md'
       - 'REGISTRY_COMMIT'

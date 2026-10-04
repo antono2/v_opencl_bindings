@@ -1,4 +1,5 @@
-# v_opencl_bindings
+# OpenCL binding generator for V
+
 [Project portfolio](https://oreskin.de/projects_en.php)
 
 [![Generate and test OpenCL bindings](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml/badge.svg)](https://github.com/antono2/v_opencl_bindings/actions/workflows/generate-and-test.yml)
@@ -7,21 +8,11 @@ Generates V bindings for OpenCL from the canonical Khronos
 [`cl.xml`](https://github.com/KhronosGroup/OpenCL-Docs/blob/main/xml/cl.xml)
 registry.
 
-The generated module is published as
-[`antono2.opencl` on VPM](https://vpm.vlang.io/packages/antono2.opencl).
-
-```sh
-v install antono2.opencl@v1.0.1
-```
-
-Maintainers can prepare a checkout on every supported operating system with
-`v run setup.vsh`; use `v run setup.vsh --check` for read-only diagnostics.
-On Windows, setup reuses a compatible `OPENCL_SDK`, `VCPKG_ROOT`, or
-`VCPKG_INSTALLATION_ROOT` checkout when one is already configured. It creates
-an isolated vcpkg checkout only when none of those locations supplies the
-required headers and import library.
-Each synchronized `antono2.opencl` release includes its own end-user setup
-script for installing the loader, headers, and a development runtime.
+For application development, use the published
+[`antono2.opencl` module](https://github.com/antono2/opencl#install-and-setup).
+Its installation instructions and [releases](https://github.com/antono2/opencl/releases)
+identify the available package versions. This repository is for maintaining
+the generator, helpers, and examples.
 
 The complete OpenCL 1.0 through 3.0 core constant surface, including bitfields
 and error codes, is read directly from the registry rather than maintained as
@@ -33,7 +24,7 @@ chains to V ABI types.
 OpenCL 1.0 through 3.0 command declarations and inline V wrappers are generated
 from cumulative feature requirements, including pointer depth, opaque handles,
 callbacks, return types, and acronym-aware snake-case function names.
-The seven distinct callback ABIs used by core commands are exposed as named V
+The callback ABIs used by core commands are exposed as named V
 function types rather than untyped pointers.
 `REGISTRY_COMMIT` and `HEADERS_COMMIT` record the immutable Khronos inputs used
 for generation and ABI validation. Core feature sections are discovered from
@@ -46,21 +37,31 @@ The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 
 ## Generate
 
-Prepare both pinned Khronos checkouts and validate the generator with
-one cross-platform command:
+Requirements: Git, Python 3, and V on `PATH`. Clone this repository, enter its
+root, and prepare the pinned Khronos inputs:
 
 ```sh
+git clone https://github.com/antono2/v_opencl_bindings.git
+cd v_opencl_bindings
 v run setup.vsh
 ```
 
-Use `v run setup.vsh --check` to verify tools and revisions without
-changing the checkouts or generated source.
+The cross-platform setup script checks out the commits in `REGISTRY_COMMIT`
+and `HEADERS_COMMIT` and runs the generator tests. It refuses to overwrite existing
+checkouts with local changes. Use `v run setup.vsh --check` to verify tools
+and revisions without changing them.
+
+Generate and format the bindings from those prepared inputs:
 
 ```sh
-git clone --depth 1 https://github.com/KhronosGroup/OpenCL-Docs.git opencldocs
 python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
 v fmt -w src/opencl.v
 ```
+
+Use your platform's Python command (`python` or `py -3` on Windows if
+`python3` is unavailable). Generated output is written to `src/opencl.v`.
+
+## Publishing and documentation
 
 `v_opencl_bindings` is the canonical source for generated bindings,
 hand-written convenience code, ABI probes, and examples. Run
@@ -71,7 +72,15 @@ omit `--check` to synchronize a checkout. The publication workflow opens an
 The published module's `GENERATOR_COMMIT` records the exact commit synchronized
 by that workflow so a release can be traced back to its canonical source.
 `VERSION`, the published module's `v.mod` version, and `LICENSE` are synchronized
-as well. Merge the publication pull request before tagging this repository. A
+as well. The end-user README is rendered from
+[`packaging/published_README.md`](packaging/published_README.md), with its
+`@VERSION@` placeholders filled from `VERSION`. Edit that template for user
+documentation; the publisher includes README drift in its normal `--check`.
+Keep changing version and toolchain details in their metadata or workflows
+and link to those sources instead of repeating them in prose. Example
+dependency installation uses each example's `v.mod` for the same reason.
+
+Merge the publication pull request before tagging this repository. A
 successful generator release then creates the matching annotated `antono2/opencl`
 tag; rerunning the release is safe when that tag already targets the same commit.
 The published `DISTRIBUTION_FILES` manifest records every synchronized path so
@@ -119,11 +128,11 @@ and cleanup rules of owning value wrappers.
 
 ## Test
 
-The smoke test uses the official OpenCL headers and the system ICD loader:
+After preparing the pinned inputs with `setup.vsh`, run the smoke test using
+the official OpenCL headers and the system ICD loader (POSIX shell):
 
 ```sh
-git clone --depth 1 https://github.com/KhronosGroup/OpenCL-Headers.git openclheaders
-OPENCL_HEADERS=$PWD/openclheaders v -cc gcc run test
+OPENCL_HEADERS="$PWD/openclheaders" v -cc gcc run test
 ```
 
 The smoke test builds and executes a small kernel, so an OpenCL implementation
@@ -133,10 +142,13 @@ is required. On Debian or Ubuntu, PoCL provides a suitable CPU implementation:
 sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 ```
 
-CI requires generated sources, public helpers, and ABI probes to pass both the
-supported V 0.5.2 toolchain and a pinned strict V3 frontend. The live V-master
-runtime lane remains advisory so an unrelated upstream compiler change cannot
-block a release.
+CI requires generated sources, public helpers, and ABI probes to pass the
+pinned release compiler and strict V3 frontend. The pinned V3 backend also runs
+module and vector-add smoke tests with TinyCC. Exact compiler, dependency, and
+runner pins are recorded in
+[the CI workflow](.github/workflows/generate-and-test.yml). Current V-master
+and Vulkan/GLFW-master lanes remain advisory so an unrelated upstream change
+cannot block a release.
 
 ## Examples
 

@@ -25,13 +25,23 @@ The Vulkan shaders consume each `Particle` directly as two `vec4` vertex attribu
 soft circular point sprites with additive blending and color derived from velocity. Rebuild the
 checked-in SPIR-V after editing GLSL with `./compile_shaders.sh`.
 
-Install the example-only V modules and Linux development packages before building from source:
+Install the dependency releases recorded in this example's [`v.mod`](v.mod).
+From the repository root:
 
 ```sh
-v install antono2.opencl@v1.0.1
-v install antono2.vulkan@v3.2.0
-v install antono2.glfw@v2.0.0
-sudo apt install ocl-icd-opencl-dev libvulkan-dev libglfw3-dev
+(cd examples/vulkan_particles && v install)
+```
+
+For PowerShell, run `Push-Location examples/vulkan_particles`, `v install`,
+then `Pop-Location`. This keeps the README aligned with the manifest when
+OpenCL, Vulkan, or GLFW dependency versions change.
+
+On Debian or Ubuntu, install the OpenCL loader/development headers and GLFW
+development files before building. The Vulkan module bundles its own headers
+and Volk, and still needs a Vulkan runtime and driver:
+
+```sh
+sudo apt install ocl-icd-opencl-dev libglfw3-dev
 ```
 
 The source imports the published modules through their VPM names, so no manual
