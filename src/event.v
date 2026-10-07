@@ -1,3 +1,5 @@
+// Owns OpenCL event references and exposes completion and profiling queries.
+// Close each owned reference after dependent work no longer needs it.
 module opencl
 
 // OwnedEvent owns one OpenCL event reference. The command queue and context

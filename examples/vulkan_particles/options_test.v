@@ -1,3 +1,4 @@
+// Checks option precedence, invalid combinations, and cursor-to-particle coordinate mapping.
 module main
 
 fn test_command_line_options_override_defaults() {

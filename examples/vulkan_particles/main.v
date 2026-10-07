@@ -1,3 +1,4 @@
+// Particle-demo entry point selecting headless, staged, or zero-copy execution from options.
 module main
 
 import os

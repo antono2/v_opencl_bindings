@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Regression tests for deterministic registry translation and generated ABI declarations.
 
 from pathlib import Path
 import sys

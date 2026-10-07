@@ -317,3 +317,12 @@ The publisher fills this README's package metadata from `VERSION` and checks
 documentation drift together with the other distribution files. The primary
 installation command remains unpinned; release tags are an optional choice
 for reproducible builds.
+
+## Source navigation
+
+`opencl.v` is generated; its introduction and declarations belong to the
+[canonical generator](https://github.com/antono2/v_opencl_bindings).
+Handwritten discovery, ownership, event, image and interoperability files have
+purpose comments describing their role. Make shared source and example changes
+in that repository, then run its publisher; direct edits here can be overwritten.
+Keep vendored OpenCL headers and their upstream license notices intact.

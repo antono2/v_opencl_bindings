@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# Compiles the particle and trail GLSL shaders to the SPIR-V files used by the demo.
 set -eu
 
 : "${VULKAN_SDK:?Set VULKAN_SDK to the Vulkan SDK directory}"

@@ -1,3 +1,4 @@
+// OpenCL kernels for deterministic particle initialization and time-step updates.
 typedef struct {
 	float4 position;
 	float4 velocity;

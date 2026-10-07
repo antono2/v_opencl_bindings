@@ -1,3 +1,5 @@
+// Owns per-frame Vulkan command and synchronization resources for particle drawing.
+// Coordinates graphics completion with external compute handoffs.
 module main
 
 import antono2.vulkan as vk

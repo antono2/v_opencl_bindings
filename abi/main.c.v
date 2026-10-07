@@ -1,3 +1,4 @@
+// Compiles representative OpenCL declarations to check C/V ABI compatibility.
 module main
 
 import antono2.opencl as cl

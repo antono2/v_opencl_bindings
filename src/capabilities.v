@@ -1,3 +1,4 @@
+// Collects optional device extensions and identity information for capability-gated operations.
 module opencl
 
 // DeviceCapabilities is a snapshot of optional extension support advertised by

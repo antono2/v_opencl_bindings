@@ -1,3 +1,5 @@
+// Runs the GLFW/Vulkan particle presentation loop with staged or shared compute buffers.
+// Maps pointer input into simulation coordinates and selects a graphics/present queue.
 module main
 
 import antono2.glfw

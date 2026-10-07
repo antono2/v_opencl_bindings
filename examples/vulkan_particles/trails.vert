@@ -1,3 +1,4 @@
+// Transforms trail vertices for the particle demo's history rendering.
 #version 450
 
 layout(location = 0) in vec4 in_position;

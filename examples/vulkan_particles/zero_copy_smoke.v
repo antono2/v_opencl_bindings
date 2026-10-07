@@ -1,3 +1,4 @@
+// Probes external-memory and semaphore sharing between UUID-matched OpenCL/Vulkan devices.
 module main
 
 import antono2.opencl as cl

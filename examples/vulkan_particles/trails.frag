@@ -1,3 +1,4 @@
+// Shades trail fragments using the interpolated trail color.
 #version 450
 
 layout(location = 0) in vec3 color;

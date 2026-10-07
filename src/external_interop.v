@@ -1,3 +1,5 @@
+// Loads optional external-memory and semaphore entry points for a selected platform.
+// Imports native handles and coordinates ownership across API boundaries.
 module opencl
 
 $if windows {

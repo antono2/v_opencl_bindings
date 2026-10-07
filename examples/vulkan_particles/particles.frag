@@ -1,3 +1,4 @@
+// Shades particle fragments using interpolated particle color.
 #version 450
 
 layout(location = 0) in vec3 color;

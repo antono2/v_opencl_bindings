@@ -1,3 +1,4 @@
+// Checks the exact pointers passed from V wrappers to instrumented C entry points.
 module main
 
 import antono2.opencl as cl

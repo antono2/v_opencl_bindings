@@ -1,3 +1,4 @@
+// Checks typed errors, resource reference counts, ownership, and convenience operations.
 module main
 
 import antono2.opencl as cl
@@ -104,8 +105,7 @@ fn test_clone_ref_retains_independently_owned_native_references() ! {
 	assert memory_reference_count(buffer.handle)! == buffer_refs
 
 	mut program := cl.build_source_program(context, device,
-		'__kernel void retain_test(__global uint *values) { values[get_global_id(0)] += 1; }',
-		'')!
+		'__kernel void retain_test(__global uint *values) { values[get_global_id(0)] += 1; }', '')!
 	program_refs := program_reference_count(program.handle)!
 	mut retained_program := program.clone_ref()!
 	assert program_reference_count(program.handle)! == program_refs + 1
@@ -119,13 +119,20 @@ fn test_clone_ref_retains_independently_owned_native_references() ! {
 	retained_kernel.close()!
 	assert kernel_reference_count(kernel.handle)! == kernel_refs
 
-	mut event := queue.marker([]cl.Event{})!
+	// A queued marker may lose runtime-owned references as it completes. Use an
+	// unqueued user event so these counts measure only our retain/release calls.
+	mut event_status := cl.ErrorCode(0)
+	mut event := &cl.OwnedEvent{
+		handle: cl.create_user_event(context.handle, &event_status)
+	}
+	cl.check(event_status, 'create user event for reference-count test')!
 	event_refs := event_reference_count(event.handle)!
 	mut retained_event := event.clone_ref()!
 	assert event_reference_count(event.handle)! == event_refs + 1
 	retained_event.close()!
 	assert event_reference_count(event.handle)! == event_refs
 
+	cl.check(cl.set_user_event_status(event.handle, cl.complete), 'complete reference-count event')!
 	event.close()!
 	kernel.close()!
 	program.close()!

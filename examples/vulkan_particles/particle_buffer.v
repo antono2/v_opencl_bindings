@@ -1,3 +1,5 @@
+// Creates particle buffers for staged uploads or shared external-memory access.
+// Owns the Vulkan allocation and any OpenCL import until explicit destruction.
 module main
 
 import antono2.opencl as cl

@@ -1,3 +1,4 @@
+// Checks committed shader binaries for valid SPIR-V structure using available tooling.
 module main
 
 import os

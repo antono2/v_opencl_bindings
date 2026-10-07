@@ -1,3 +1,4 @@
+// Capability-gated shared virtual memory allocation, mapping, and kernel argument helpers.
 module opencl
 
 fn platform_svm_alloc(context Context, flags SvmMemFlags, size usize, alignment u32) voidptr {
