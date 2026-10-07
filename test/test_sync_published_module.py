@@ -48,9 +48,14 @@ class SyncPublishedModuleTests(unittest.TestCase):
             self.assertIn(".gitignore\n", manifest)
             self.assertIn("README.md\n", manifest)
             self.assertIn(
-                f"v install antono2.opencl@v{version}",
+                "```sh\nv install antono2.opencl\n```",
                 (target / "README.md").read_text(),
             )
+            self.assertIn(
+                f"This checkout's package version is `{version}`",
+                (target / "README.md").read_text(),
+            )
+            self.assertNotIn("v install antono2.opencl@", (target / "README.md").read_text())
             self.assertIn("examples/vulkan_particles/README.md\n", manifest)
             self.assertEqual(
                 (target / ".gitignore").read_bytes(), (ROOT / ".gitignore").read_bytes()
@@ -94,7 +99,7 @@ class SyncPublishedModuleTests(unittest.TestCase):
                 )
             self.assertEqual(result, 1)
 
-    def test_readme_tracks_a_future_release_version(self) -> None:
+    def test_readme_tracks_package_metadata_without_pinning_installation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = self.make_target(directory)
             with patch.object(
@@ -105,8 +110,11 @@ class SyncPublishedModuleTests(unittest.TestCase):
                         target, check=False, generator_commit="a" * 40
                     )
             readme = (target / "README.md").read_text()
-            self.assertIn("v install antono2.opencl@v2.3.4", readme)
-            self.assertIn("releases/tag/v2.3.4", readme)
+            self.assertIn("```sh\nv install antono2.opencl\n```", readme)
+            self.assertIn("This checkout's package version is `2.3.4`", readme)
+            self.assertNotIn("v install antono2.opencl@", readme)
+            self.assertNotIn("releases/tag/v2.3.4", readme)
+            self.assertIn("append `@<tag>`", readme)
             self.assertNotIn("@VERSION@", readme)
 
     def test_check_detects_and_sync_repairs_readme_drift(self) -> None:

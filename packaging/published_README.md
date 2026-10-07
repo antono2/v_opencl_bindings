@@ -8,16 +8,22 @@ complete OpenCL 1.0 through 3.0 core API, selected Khronos extensions, and
 optional helpers for device discovery and explicit resource ownership.
 
 [Available on VPM](https://vpm.vlang.io/packages/antono2.opencl) ·
-[Release notes](https://github.com/antono2/opencl/releases/tag/v@VERSION@) ·
+[Release notes](https://github.com/antono2/opencl/releases) ·
 [Project portfolio](https://oreskin.de/projects_en.php)
 
 ## Install and setup
 
-Install the release described by this README:
+Install the current bindings in your V module directory:
 
 ```sh
-v install antono2.opencl@v@VERSION@
+v install antono2.opencl
 ```
+
+This installs the repository's current default branch, not a fixed release.
+For reproducible builds, select a published package tag from the
+[releases](https://github.com/antono2/opencl/releases) and append `@<tag>` to
+the module name in your install command or `v.mod`. A release pin is optional;
+it is not required to use the API described by this checkout's README.
 
 Then install or verify native prerequisites using the setup script in the
 installed module. At the default V module location:
@@ -36,8 +42,10 @@ vcpkg; the GPU vendor driver supplies the OpenCL implementation. macOS uses
 its built-in OpenCL framework. Device and optional-feature availability is
 always determined by the installed implementation at runtime.
 
-For other package versions, see the [releases](https://github.com/antono2/opencl/releases).
-The package version is separate from the OpenCL API versions it exposes.
+This checkout's package version is `@VERSION@`, as recorded in `v.mod` and
+`VERSION`. The package version is separate from the OpenCL API versions it
+exposes. When using a pinned release, consult that tag's README for its API
+and setup instructions.
 
 ## First program
 
@@ -305,5 +313,7 @@ Submit changes there; its publication workflow updates this module.
 Bindings are generated from Khronos' OpenCL XML registry. `REGISTRY_COMMIT` and
 `HEADERS_COMMIT` identify the immutable Khronos inputs, `GENERATOR_COMMIT`
 identifies the generator revision, and `VERSION` records the package version.
-The publisher fills this README's installation command from `VERSION` and
-checks documentation drift together with the other distribution files.
+The publisher fills this README's package metadata from `VERSION` and checks
+documentation drift together with the other distribution files. The primary
+installation command remains unpinned; release tags are an optional choice
+for reproducible builds.
