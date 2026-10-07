@@ -1,3 +1,5 @@
+// Checks matching device UUIDs and external-memory/semaphore capabilities.
+// Reports whether zero-copy presentation is available before choosing the runtime path.
 module main
 
 import antono2.opencl as cl

@@ -1,3 +1,4 @@
+// Checks typed errors, resource reference counts, ownership, and convenience operations.
 module main
 
 import antono2.opencl as cl

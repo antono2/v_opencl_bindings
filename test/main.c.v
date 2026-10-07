@@ -1,3 +1,4 @@
+// Raw OpenCL example that discovers a device and compiles/runs a sample kernel.
 module main
 
 import antono2.opencl as cl

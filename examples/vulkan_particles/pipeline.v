@@ -1,3 +1,4 @@
+// Creates shader modules and Vulkan pipelines for particle and trail rendering.
 module main
 
 import antono2.vulkan as vk

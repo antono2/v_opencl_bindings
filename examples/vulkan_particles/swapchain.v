@@ -1,3 +1,5 @@
+// Creates presentation images, views, and framebuffers for the particle window.
+// Queries surface support and destroys the associated swapchain resources.
 module main
 
 import antono2.glfw

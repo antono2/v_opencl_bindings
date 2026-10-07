@@ -1,3 +1,4 @@
+// Adapts Vulkan external-memory and semaphore file-descriptor output pointers to the C ABI.
 module main
 
 import antono2.vulkan as vk

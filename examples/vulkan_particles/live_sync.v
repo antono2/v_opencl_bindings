@@ -1,3 +1,5 @@
+// Coordinates live OpenCL/Vulkan access through imported external semaphores.
+// Pairs compute acquire/release operations with graphics ownership handoffs.
 module main
 
 import antono2.opencl as cl

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Checks publication manifests, metadata, and synchronization into the distribution repository.
 
 from pathlib import Path
 from contextlib import redirect_stdout

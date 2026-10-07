@@ -1,3 +1,4 @@
+// Checks complete extension-token matching and device UUID comparisons.
 module main
 
 import antono2.opencl as cl

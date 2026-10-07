@@ -167,3 +167,16 @@ example built around OpenCL compute and Vulkan presentation. Its display-indepen
 runner exercises the particle kernel on CPU or GPU OpenCL devices; the Vulkan renderer
 prefers UUID-matched external-memory interop and falls back to host staging. On qualifying
 hardware, OpenCL updates the same exported allocation that Vulkan consumes as a vertex buffer.
+
+## Source navigation
+
+[`src/opencl_generator.py`](src/opencl_generator.py) owns the generated file's
+introduction as well as its declarations. The other V files under `src/` are
+handwritten layers for resource ownership, discovery and optional features;
+read their file introductions before extending an API. [`test/`](test/) checks
+the generator and publisher, while [`abi/`](abi/) checks the C boundary.
+Examples include kernels and presentation shaders, not just their V launchers.
+
+Keep upstream OpenCL headers unchanged. Edit published-user documentation in
+[`packaging/published_README.md`](packaging/published_README.md), then synchronize
+the distribution so handwritten comments and generated provenance travel together.

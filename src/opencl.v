@@ -1,4 +1,6 @@
 // Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
+// Raw OpenCL constants, types, and entry points; resource lifetimes follow the C API.
+// Regenerate in antono2/v_opencl_bindings with python3 src/main.py.
 module opencl
 
 #flag linux -lOpenCL

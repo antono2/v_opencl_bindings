@@ -1,3 +1,4 @@
+// Builds source programs with diagnostic logs and owns kernels and their arguments.
 module opencl
 
 // ProgramBuildError includes the compiler log returned for the selected device.

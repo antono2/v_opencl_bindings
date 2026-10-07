@@ -1,3 +1,4 @@
+// Transforms particle positions and supplies per-particle color to the fragment stage.
 #version 450
 
 layout(location = 0) in vec4 in_position;

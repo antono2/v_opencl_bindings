@@ -1,3 +1,4 @@
+// Builds and executes a vector-add kernel using owned OpenCL resource helpers.
 module main
 
 import antono2.opencl as cl

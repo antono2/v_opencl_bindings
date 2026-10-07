@@ -1,3 +1,4 @@
+// Converts OpenCL status codes to contextual V errors and copies platform/device query results.
 module opencl
 
 // OpenCLError preserves the native OpenCL status code and the operation that failed.

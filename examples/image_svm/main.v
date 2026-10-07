@@ -1,3 +1,4 @@
+// Demonstrates typed images and shared virtual memory where the device supports them.
 module main
 
 import antono2.opencl as cl

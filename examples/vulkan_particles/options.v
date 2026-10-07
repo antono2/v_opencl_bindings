@@ -1,3 +1,5 @@
+// Parses particle-demo environment settings and command-line overrides.
+// Rejects incompatible runtime modes before allocating device resources.
 module main
 
 import os
