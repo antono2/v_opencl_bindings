@@ -250,7 +250,7 @@ pub fn (kernel &OwnedKernel) enqueue_1d_after(queue &OwnedCommandQueue, global_s
 	}
 }
 
-// enqueue_nd_after submits a one-, two-, or three-dimensional kernel after
+// enqueue_nd_after submits a one-, two- or three-dimensional kernel after
 // wait_events and returns an owned completion event. An empty local_sizes slice
 // lets the runtime select work-group dimensions.
 pub fn (kernel &OwnedKernel) enqueue_nd_after(queue &OwnedCommandQueue, global_sizes []usize,

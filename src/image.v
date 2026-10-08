@@ -1,4 +1,4 @@
-// Typed image and sampler ownership with checked dimensions, formats, and transfers.
+// Typed image and sampler ownership with checked dimensions, formats and transfers.
 module opencl
 
 // Image2D owns a typed two-dimensional OpenCL image. T represents one complete

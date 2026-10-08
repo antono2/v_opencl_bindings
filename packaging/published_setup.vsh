@@ -6,7 +6,7 @@
 
 import os
 
-const usage = 'Usage: v run setup.vsh [--install|--check]\n\n' + '  --install  Install the OpenCL loader, headers, a development runtime, and this V module (default).\n' + '  --check    Only report whether the compiler, headers, loader, and an OpenCL platform work.\n'
+const usage = 'Usage: v run setup.vsh [--install|--check]\n\n' + '  --install  Install the OpenCL loader, headers, a development runtime and this V module (default).\n' + '  --check    Only report whether the compiler, headers, loader and an OpenCL platform work.\n'
 
 fn command_exists(name string) bool {
 	os.find_abs_path_of_executable(name) or { return false }
@@ -42,14 +42,14 @@ fn install_linux() ! {
 		run('sudo zypper --non-interactive install -y gcc gcc-c++ clinfo ocl-icd-devel opencl-headers pocl')!
 		return
 	}
-	return error('unsupported Linux package manager; install OpenCL headers, an ICD loader, clinfo, and an ICD such as PoCL, then rerun with --check')
+	return error('unsupported Linux package manager; install OpenCL headers, an ICD loader, clinfo and an ICD such as PoCL, then rerun with --check')
 }
 
 fn install_macos() ! {
 	if !command_exists('xcode-select') || os.execute('xcode-select -p').exit_code != 0 {
 		return error('Apple Command Line Tools are required; run `xcode-select --install`, then retry')
 	}
-	println('The OpenCL headers, loader, and implementation are provided by the macOS OpenCL framework.')
+	println('The OpenCL headers, loader and implementation are provided by the macOS OpenCL framework.')
 }
 
 fn copy_windows_sdk_files(module_root string) ! {

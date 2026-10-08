@@ -1,4 +1,4 @@
-// C-side instrumentation for null pointers, handle arrays, and transfer callback ABI tests.
+// C-side instrumentation for null pointers, handle arrays and transfer callback ABI tests.
 #include <CL/opencl.h>
 #include <stddef.h>
 #include <stdint.h>

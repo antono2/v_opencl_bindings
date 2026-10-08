@@ -63,7 +63,7 @@ fn main() {
 	project_dir := os.dir(os.real_path(@FILE))
 	python := python_command()
 	if python == '' || !os.exists_in_system_path('git') || !os.exists_in_system_path('v') {
-		eprintln('Git, Python 3, and V must be available on PATH.')
+		eprintln('Git, Python 3 and V must be available on PATH.')
 		exit(1)
 	}
 	registry_commit := os.read_file(os.join_path(project_dir, 'REGISTRY_COMMIT')) or { panic(err) }

@@ -4,7 +4,7 @@
 [![Test OpenCL module and advanced example](https://github.com/antono2/opencl/actions/workflows/test.yml/badge.svg)](https://github.com/antono2/opencl/actions/workflows/test.yml)
 
 OpenCL bindings for the [V programming language](https://vlang.io/), with the
-complete OpenCL 1.0 through 3.0 core API, selected Khronos extensions, and
+complete OpenCL 1.0 through 3.0 core API, selected Khronos extensions and
 optional helpers for device discovery and explicit resource ownership.
 
 [Available on VPM](https://vpm.vlang.io/packages/antono2.opencl) ·
@@ -33,10 +33,10 @@ v run "$HOME/.vmodules/antono2/opencl/setup.vsh"
 ```
 
 From a source checkout, use `v run setup.vsh`. The script supports Ubuntu and
-Debian, Fedora, Arch, openSUSE, macOS, and Windows. It reuses an existing V module.
+Debian, Fedora, Arch, openSUSE, macOS and Windows. It reuses an existing V module.
 For diagnostics without installing packages, add `--check` to either invocation.
 
-On Linux, setup installs OpenCL headers, the ICD loader, and PoCL for CPU-based
+On Linux, setup installs OpenCL headers, the ICD loader and PoCL for CPU-based
 development. On Windows, it installs headers and the Khronos loader through
 vcpkg; the GPU vendor driver supplies the OpenCL implementation. macOS uses
 its built-in OpenCL framework. Device and optional-feature availability is
@@ -67,7 +67,7 @@ fn main() {
 ## Convenience API
 
 The generated functions expose the complete raw API. Optional helpers add typed
-errors, device discovery, and explicit resource ownership. The snippets below
+errors, device discovery and explicit resource ownership. The snippets below
 show individual operations; see the [examples](#examples) for complete programs.
 
 ### Platform and device discovery
@@ -81,7 +81,7 @@ for platform in cl.platforms()! {
 }
 ```
 
-### Contexts, queues, and buffers
+### Contexts, queues and buffers
 
 Contexts and queues use explicit, idempotent cleanup:
 
@@ -96,9 +96,9 @@ defer { buffer.close() or {} }
 buffer.write(queue, 0, []f32{len: 1024, init: f32(index)})!
 ```
 
-The element type used by `Buffer[T]`, typed transfers, and kernel arguments
+The element type used by `Buffer[T]`, typed transfers and kernel arguments
 must be a plain C-layout value without V-managed references such as strings,
-maps, or slices. Element-count multiplication is checked for overflow before
+maps or slices. Element-count multiplication is checked for overflow before
 an OpenCL allocation or transfer call.
 
 ### Programs and kernels
@@ -135,7 +135,7 @@ uploaded.close()!
 
 ### Ownership and cleanup
 
-Owned contexts, queues, buffers, images, samplers, programs, kernels, events,
+Owned contexts, queues, buffers, images, samplers, programs, kernels, events
 and external semaphores are `@[nocopy]`, preventing accidental double release.
 Constructors return owned pointers; pass them directly without adding another
 `&`. When two independently closable owners are required,
@@ -149,7 +149,7 @@ implementation-selected work-group size.
 ### Images and shared virtual memory
 
 Typed 2D images validate that `T` represents one complete pixel, provide checked
-full-image and region transfers, and bind directly to kernels alongside owned
+full-image and region transfers and bind directly to kernels alongside owned
 samplers:
 
 ```v
@@ -235,7 +235,7 @@ See [`OWNERSHIP.md`](OWNERSHIP.md) for the current ownership and cleanup rules.
 
 [`examples/vector_add`](examples/vector_add) is a compact introduction to the
 owned convenience API. It runs asynchronous buffer uploads, a kernel, profiled
-readback, and explicit cleanup.
+readback and explicit cleanup.
 
 [`examples/image_svm`](examples/image_svm) copies a typed RGBA image through an
 image kernel and owned sampler, then executes a second kernel directly over a
@@ -245,7 +245,7 @@ typed SVM allocation when the selected device advertises buffer SVM support.
 example that combines OpenCL compute with Vulkan presentation. On UUID-matched devices it imports
 one exported Vulkan allocation into OpenCL and synchronizes access with reusable opaque-FD
 semaphores. It also includes a portable host-staged fallback, swapchain recreation, velocity
-trails, interactive controls, and display-independent interoperability smoke tests.
+trails, interactive controls and display-independent interoperability smoke tests.
 
 The example is a separate nested V module, so its `vulkan` and `glfw` dependencies are not
 dependencies of applications that only import `opencl`.
@@ -255,43 +255,43 @@ dependencies of applications that only import `opencl`.
 The module exposes the complete OpenCL 1.0 through 3.0 core API and selected
 portable Khronos extensions with V-style snake-case wrappers,
 including platform and device discovery, contexts, queues, memory and images,
-programs, kernels, events, profiling, synchronization, and object lifecycle.
-The bindings generator reads command prototypes, types, pointer depth, and all
+programs, kernels, events, profiling, synchronization and object lifecycle.
+The bindings generator reads command prototypes, types, pointer depth and all
 OpenCL 1.0 through 3.0 core constants from Khronos' XML registry. Constants are
 exposed using their corresponding OpenCL typedefs.
 Core command callbacks use named V function types, allowing callback signatures
 to be checked at compile time while optional callbacks still accept `unsafe { nil }`.
 The initial extension set covers `cl_khr_il_program`,
-`cl_khr_create_command_queue`, `cl_khr_subgroups`, and
+`cl_khr_create_command_queue`, `cl_khr_subgroups` and
 `cl_khr_suggested_local_work_size`.
 Zero-copy synchronization support covers `cl_khr_semaphore`,
-`cl_khr_external_semaphore`, and `cl_khr_external_memory`, including opaque-FD,
-DMA-BUF, and sync-file handle variants.
-`cl_khr_device_uuid` provides UUID, LUID, and node-mask device queries for
+`cl_khr_external_semaphore` and `cl_khr_external_memory`, including opaque-FD,
+DMA-BUF and sync-file handle variants.
+`cl_khr_device_uuid` provides UUID, LUID and node-mask device queries for
 matching an OpenCL device with another compute or graphics API.
 Optional extension commands are resolved through the ICD at runtime instead of
 being required linker symbols, so applications that do not use them can still
 build against older OpenCL loaders.
 
-CI exercises complete typed buffer, image/sampler, and SVM kernel paths, OpenCL
+CI exercises complete typed buffer, image/sampler and SVM kernel paths, OpenCL
 1.1 user events, an OpenCL 1.2 marker-with-wait-list dependency, and OpenCL 2.0
 property-list queue creation and SVM allocation on PoCL.
 OpenCL 2.1 coverage additionally checks synchronized device and host timer
-queries; IL programs, kernel cloning, subgroup queries, and SVM migration are
+queries; IL programs, kernel cloning, subgroup queries and SVM migration are
 present in the generated API.
 OpenCL 2.2 adds program specialization constants and program-release callbacks.
 OpenCL 3.0 adds numeric version helpers, `NameVersion`, context destructor
-callbacks, and property-based buffer and image creation.
+callbacks and property-based buffer and image creation.
 
 ## Supported toolchains
 
 CI pins the release compiler and a V3 compiler revision. The exact compiler,
-runner, and dependency versions are recorded in
+runner and dependency versions are recorded in
 [the test workflow](.github/workflows/test.yml).
 
 | Platform | Compiler lane | Validation |
 | --- | --- | --- |
-| Linux | Pinned release V, GCC | Kernels, images, SVM, and Vulkan-particle validation smoke tests |
+| Linux | Pinned release V, GCC | Kernels, images, SVM and Vulkan-particle validation smoke tests |
 | Linux | Pinned release V, TinyCC | Vulkan-particle compile and headless smoke test |
 | Linux | Pinned V3, TinyCC | Required frontend checks and module/vector-add runtime smoke tests |
 | macOS | Pinned release V, Clang | OpenCL framework ABI compilation |
@@ -306,7 +306,7 @@ releases on an unrelated upstream change.
 
 ## Maintenance and release provenance
 
-The canonical sources, helpers, examples, and this README are maintained in
+The canonical sources, helpers, examples and this README are maintained in
 [`antono2/v_opencl_bindings`](https://github.com/antono2/v_opencl_bindings).
 Submit changes there; its publication workflow updates this module.
 
