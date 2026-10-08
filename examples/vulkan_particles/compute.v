@@ -1,5 +1,5 @@
 // Owns OpenCL particle kernels and their compute buffers.
-// Supports reset, simulation updates, and readback for staged presentation.
+// Supports reset, simulation updates and readback for staged presentation.
 module main
 
 import antono2.opencl as cl

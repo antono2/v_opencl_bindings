@@ -1,10 +1,10 @@
 # Ownership model
 
 The convenience API uses explicit `close()` methods. Close events, kernels,
-programs, memory objects, and queues before their parent context.
+programs, memory objects and queues before their parent context.
 
 `OwnedContext`, `OwnedCommandQueue`, `Buffer`, `Image2D`, `OwnedSampler`,
-`SvmAllocation`, `OwnedProgram`, `OwnedKernel`, `OwnedEvent`, and
+`SvmAllocation`, `OwnedProgram`, `OwnedKernel`, `OwnedEvent` and
 `OwnedExternalSemaphore` are `@[nocopy]`. Constructors return owned pointers so
 resources cross module boundaries without copying. Pass those pointers directly
 to convenience functions; do not add another `&`.

@@ -1,4 +1,4 @@
-// Creates presentation images, views, and framebuffers for the particle window.
+// Creates presentation images, views and framebuffers for the particle window.
 // Queries surface support and destroys the associated swapchain resources.
 module main
 

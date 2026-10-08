@@ -281,7 +281,7 @@ jobs:
           .ci-v3/v version
       - name: Install OpenCL runtime and headers
         run: sudo apt-get update && sudo apt-get install --yes ocl-icd-opencl-dev pocl-opencl-icd
-      - name: Generate, assemble, and require strict frontend compatibility
+      - name: Generate, assemble and require strict frontend compatibility
         run: |
           set -euo pipefail
           test "$(git -C opencldocs rev-parse HEAD)" = "$(cat REGISTRY_COMMIT)"
@@ -314,7 +314,7 @@ jobs:
           version: ${{ env.V_VERSION }}
       - name: Install OpenCL SDK
         run: vcpkg install opencl:x64-windows
-      - name: Assemble generated module, reuse the SDK, and compile ABI probe
+      - name: Assemble generated module, reuse the SDK and compile ABI probe
         shell: pwsh
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'

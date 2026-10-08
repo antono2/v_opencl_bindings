@@ -1,4 +1,4 @@
-// Owned context, queue, and buffer helpers with explicit retain/close operations.
+// Owned context, queue and buffer helpers with explicit retain/close operations.
 // Raw handles remain available for operations outside the convenience layer.
 module opencl
 

@@ -6,7 +6,7 @@
   provide explicit `clone_ref()` operations backed by the corresponding native
   retain calls. SVM allocations remain uniquely owned because OpenCL provides
   no retain operation for them.
-- Return owned pointers from constructors, asynchronous operations, and
+- Return owned pointers from constructors, asynchronous operations and
   `clone_ref()` so owners cross module boundaries without hidden copies on
   released V and strict V3.
 - Pin Vulkan and GLFW example dependencies to immutable revisions in CI rather
@@ -27,9 +27,9 @@
 
 ## 0.4.0
 
-- Add owned typed 2D images with format-size validation, bounds-checked blocking and asynchronous transfers, supported-format discovery, and typed kernel arguments.
+- Add owned typed 2D images with format-size validation, bounds-checked blocking and asynchronous transfers, supported-format discovery and typed kernel arguments.
 - Add owned samplers and typed sampler kernel arguments.
-- Add owned typed shared virtual memory with capability discovery, checked allocation and transfers, coarse-grained map/unmap operations, and typed kernel arguments.
+- Add owned typed shared virtual memory with capability discovery, checked allocation and transfers, coarse-grained map/unmap operations and typed kernel arguments.
 - Add an image and SVM example that executes both memory models through real OpenCL kernels.
 - Map particle-example cursor coordinates to Vulkan's downward-positive viewport and use logical window dimensions on HiDPI displays.
 - Reuse acquire semaphores only after their submission fence signals and keep one presentation semaphore per swapchain image in the Vulkan particle renderer.
@@ -72,9 +72,9 @@
 
 - Generate the complete cumulative OpenCL 1.0 through 3.0 API.
 - Add ergonomic ownership, error, discovery, buffer, program, kernel, event,
-  profiling, and multidimensional-dispatch layers to generated packages.
-- Generate external-memory, external-semaphore, and device UUID extensions.
-- Add automated Linux runtime, macOS ABI, and Windows ABI validation.
+  profiling and multidimensional-dispatch layers to generated packages.
+- Generate external-memory, external-semaphore and device UUID extensions.
+- Add automated Linux runtime, macOS ABI and Windows ABI validation.
 - Add portable and Vulkan/OpenCL interoperability examples.
 
 ## 0.1.3
