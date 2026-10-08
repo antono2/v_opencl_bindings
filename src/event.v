@@ -50,7 +50,7 @@ pub fn (event &OwnedEvent) wait() ! {
 	check(wait_for_events(1, &event.handle), 'wait for OpenCL event')!
 }
 
-// execution_status returns CL_QUEUED, CL_SUBMITTED, CL_RUNNING, CL_COMPLETE,
+// execution_status returns CL_QUEUED, CL_SUBMITTED, CL_RUNNING, CL_COMPLETE
 // or a negative command execution error code.
 pub fn (event &OwnedEvent) execution_status() !i32 {
 	if isnil(event.handle) {
@@ -77,7 +77,7 @@ pub fn (event &OwnedEvent) profiling_timestamp(parameter ProfilingInfo) !u64 {
 	return timestamp
 }
 
-// profile waits for completion and returns the portable queued, submit, start,
+// profile waits for completion and returns the portable queued, submit, start
 // and end timestamps. It returns profiling_info_not_available for queues which
 // were not created with queue_profiling_enable.
 pub fn (event &OwnedEvent) profile() !EventProfile {
