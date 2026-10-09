@@ -78,7 +78,7 @@ jobs:
           fi
           git -C published config user.name github-actions[bot]
           git -C published config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C published commit -m "Update generated OpenCL bindings"
+          git -C published commit -m "Synchronize published OpenCL module"
           remote_ref="refs/heads/$branch"
           remote_sha=$(git -C published ls-remote origin "$remote_ref" | awk '{print $1}')
           git -C published push --force-with-lease="$remote_ref:$remote_sha" origin "HEAD:$remote_ref"
@@ -91,6 +91,6 @@ jobs:
               --body "$body"
           else
             gh pr create --repo antono2/opencl --base master --head "$branch" \
-              --title "Update generated OpenCL bindings" \
+              --title "Synchronize published OpenCL module" \
               --body "$body"
           fi

@@ -19,7 +19,7 @@ env:
   V3_VC_COMMIT: 2cbaf6bc2367937cd5f0b4ef923d1ef9aad613b3
   V3_TCC_COMMIT: d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74
   VULKAN_REF: v3.2.2
-  GLFW_REF: v2.0.0
+  GLFW_REF: v2.0.1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
