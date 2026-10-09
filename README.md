@@ -69,8 +69,8 @@ hand-written convenience code, ABI probes and examples. Run
 omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
-The published module's `GENERATOR_COMMIT` records the canonical commit that
-last changed its distributed content. Generator-only maintenance retains the
+The published module's `GENERATOR_COMMIT` records the canonical commit used
+for the last publication that changed distributed content. Generator-only maintenance retains the
 existing valid marker and does not open a publication PR. Missing or invalid
 provenance is repaired automatically.
 `VERSION`, the published module's `v.mod` version and `LICENSE` are synchronized

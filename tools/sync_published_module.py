@@ -147,7 +147,7 @@ def sync(
     managed_paths = set(contents)
     stale_paths = previous_distribution_files(target) - managed_paths
     contents[MANIFEST_FILE] = distribution_manifest(managed_paths)
-    # Provenance identifies the last commit that changed the distributed payload.
+    # Provenance records content-changing synchronizations.
     # Generator-only maintenance should not create a publication PR of its own.
     provenance = target / "GENERATOR_COMMIT"
     payload_changed = bool(stale_paths) or any(
