@@ -40,6 +40,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Queued automatic runs publish the latest reviewed source, avoiding
+          # proposals that rewind content after a newer commit has landed.
+          ref: ${{ github.event_name == 'push' && 'master' || github.ref }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: antono2/opencl
@@ -47,9 +51,10 @@ jobs:
           token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
       - name: Synchronize canonical distribution files
         env:
-          GENERATOR_COMMIT: ${{ github.sha }}
           REFRESH_PROVENANCE: ${{ inputs.refresh_provenance || false }}
         run: |
+          GENERATOR_COMMIT=$(git rev-parse HEAD)
+          echo "GENERATOR_COMMIT=$GENERATOR_COMMIT" >> "$GITHUB_ENV"
           args=()
           if [[ "$REFRESH_PROVENANCE" == true ]]; then
             args+=(--refresh-provenance)
@@ -78,12 +83,12 @@ jobs:
           fi
           git -C published config user.name github-actions[bot]
           git -C published config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C published commit -m "Update generated OpenCL bindings"
+          git -C published commit -m "Synchronize published OpenCL module"
           remote_ref="refs/heads/$branch"
           remote_sha=$(git -C published ls-remote origin "$remote_ref" | awk '{print $1}')
           git -C published push --force-with-lease="$remote_ref:$remote_sha" origin "HEAD:$remote_ref"
           cd published
-          body="Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
+          body="Automated synchronization from antono2/v_opencl_bindings at $GENERATOR_COMMIT. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
           pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
             --json number --jq '.[0].number // empty')
           if test -n "$pr_number"; then
@@ -91,6 +96,6 @@ jobs:
               --body "$body"
           else
             gh pr create --repo antono2/opencl --base master --head "$branch" \
-              --title "Update generated OpenCL bindings" \
+              --title "Synchronize published OpenCL module" \
               --body "$body"
           fi
