@@ -69,8 +69,10 @@ hand-written convenience code, ABI probes and examples. Run
 omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
-The published module's `GENERATOR_COMMIT` records the exact commit synchronized
-by that workflow so a release can be traced back to its canonical source.
+The published module's `GENERATOR_COMMIT` records the canonical commit that
+last changed its distributed content. Generator-only maintenance retains the
+existing valid marker and does not open a publication PR. Missing or invalid
+provenance is repaired automatically.
 `VERSION`, the published module's `v.mod` version and `LICENSE` are synchronized
 as well. The end-user README is rendered from
 [`packaging/published_README.md`](packaging/published_README.md), with its
@@ -79,6 +81,16 @@ documentation; the publisher includes README drift in its normal `--check`.
 Keep changing version and toolchain details in their metadata or workflows
 and link to those sources instead of repeating them in prose. Example
 dependency installation uses each example's `v.mod` for the same reason.
+
+For releases, provenance must match the exact generator commit being tagged.
+A version bump updates it automatically. If you release a later commit whose
+distributed content is unchanged, dispatch the publication workflow with
+`refresh_provenance` enabled, or run:
+
+```sh
+python3 tools/sync_published_module.py ../opencl --refresh-provenance
+python3 tools/sync_published_module.py ../opencl --check --refresh-provenance
+```
 
 Merge the publication pull request before tagging this repository. A
 successful generator release then creates the matching annotated `antono2/opencl`

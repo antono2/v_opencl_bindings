@@ -125,7 +125,13 @@ def published_readme(version: str) -> bytes:
     return rendered.encode()
 
 
-def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> int:
+def sync(
+    target: Path,
+    *,
+    check: bool,
+    generator_commit: str | None = None,
+    refresh_provenance: bool = False,
+) -> int:
     validate_target(target)
     version = resolve_distribution_version()
     mappings = SOURCE_FILES | tracked_distribution_files()
@@ -141,6 +147,18 @@ def sync(target: Path, *, check: bool, generator_commit: str | None = None) -> i
     managed_paths = set(contents)
     stale_paths = previous_distribution_files(target) - managed_paths
     contents[MANIFEST_FILE] = distribution_manifest(managed_paths)
+    # Provenance identifies the last commit that changed the distributed payload.
+    # Generator-only maintenance should not create a publication PR of its own.
+    provenance = target / "GENERATOR_COMMIT"
+    payload_changed = bool(stale_paths) or any(
+        not (target / name).is_file() or (target / name).read_bytes() != data
+        for name, data in contents.items()
+        if name != "GENERATOR_COMMIT"
+    )
+    if not refresh_provenance and not payload_changed and provenance.is_file():
+        previous = provenance.read_bytes()
+        if re.fullmatch(rb"[0-9a-f]{40}\n", previous):
+            contents["GENERATOR_COMMIT"] = previous
     changed = []
     for target_name in sorted(stale_paths):
         changed.append(f"{target_name} (remove)")
@@ -174,12 +192,18 @@ def main() -> None:
         "--generator-commit",
         help="full generator commit SHA (defaults to this checkout's HEAD)",
     )
+    parser.add_argument(
+        "--refresh-provenance",
+        action="store_true",
+        help="record the exact generator HEAD even without payload changes (release preparation)",
+    )
     args = parser.parse_args()
     try:
         result = sync(
             args.target.resolve(),
             check=args.check,
             generator_commit=args.generator_commit,
+            refresh_provenance=args.refresh_provenance,
         )
     except ValueError as error:
         parser.error(str(error))

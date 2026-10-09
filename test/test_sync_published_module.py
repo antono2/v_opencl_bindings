@@ -75,7 +75,53 @@ class SyncPublishedModuleTests(unittest.TestCase):
                     target, check=True, generator_commit="b" * 40
                 )
             self.assertEqual(check_result, 0)
-            self.assertEqual(drift_result, 1)
+            self.assertEqual(drift_result, 0)
+
+    def test_release_can_refresh_exact_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = self.make_target(directory)
+            sync_published_module.sync(target, check=False, generator_commit="a" * 40)
+            self.assertEqual(sync_published_module.sync(
+                target, check=True, generator_commit="b" * 40,
+                refresh_provenance=True,
+            ), 1)
+            self.assertEqual((target / "GENERATOR_COMMIT").read_text(), "a" * 40 + "\n")
+            sync_published_module.sync(
+                target, check=False, generator_commit="b" * 40,
+                refresh_provenance=True,
+            )
+            self.assertEqual((target / "GENERATOR_COMMIT").read_text(), "b" * 40 + "\n")
+            self.assertEqual(sync_published_module.sync(
+                target, check=True, generator_commit="b" * 40,
+                refresh_provenance=True,
+            ), 0)
+
+    def test_payload_changes_advance_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = self.make_target(directory)
+            sync_published_module.sync(target, check=False, generator_commit="a" * 40)
+            (target / "README.md").write_text("stale\n")
+            self.assertEqual(sync_published_module.sync(
+                target, check=True, generator_commit="b" * 40,
+            ), 1)
+            sync_published_module.sync(target, check=False, generator_commit="b" * 40)
+            self.assertEqual((target / "GENERATOR_COMMIT").read_text(), "b" * 40 + "\n")
+
+    def test_missing_or_invalid_provenance_is_repaired(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = self.make_target(directory)
+            sync_published_module.sync(target, check=False, generator_commit="a" * 40)
+            for value in [None, "invalid\n"]:
+                marker = target / "GENERATOR_COMMIT"
+                if value is None:
+                    marker.unlink()
+                else:
+                    marker.write_text(value)
+                self.assertEqual(sync_published_module.sync(
+                    target, check=True, generator_commit="b" * 40,
+                ), 1)
+                sync_published_module.sync(target, check=False, generator_commit="b" * 40)
+                self.assertEqual(marker.read_text(), "b" * 40 + "\n")
 
     def test_generator_commit_must_be_a_full_sha(self) -> None:
         with self.assertRaisesRegex(ValueError, "full 40-character Git SHA"):

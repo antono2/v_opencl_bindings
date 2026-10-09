@@ -22,13 +22,18 @@ on:
       - 'tools/sync_published_module.py'
       - '.github/workflows/propose-published-module.yml'
   workflow_dispatch:
+    inputs:
+      refresh_provenance:
+        description: Record the exact generator commit for release preparation
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
   group: publish-opencl-module
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   propose:
@@ -43,7 +48,13 @@ jobs:
       - name: Synchronize canonical distribution files
         env:
           GENERATOR_COMMIT: ${{ github.sha }}
-        run: python3 tools/sync_published_module.py published --generator-commit "$GENERATOR_COMMIT"
+          REFRESH_PROVENANCE: ${{ inputs.refresh_provenance || false }}
+        run: |
+          args=()
+          if [[ "$REFRESH_PROVENANCE" == true ]]; then
+            args+=(--refresh-provenance)
+          fi
+          python3 tools/sync_published_module.py published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
       - name: Create or update the publication pull request
         env:
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
@@ -54,12 +65,23 @@ jobs:
           git -C published add --all
           if git -C published diff --cached --quiet; then
             echo "The published module is already synchronized"
+            pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
+              --json number --jq '.[0].number // empty')
+            if test -n "$pr_number"; then
+              files=$(gh pr view "$pr_number" --repo antono2/opencl \
+                --json files --jq '.files[].path')
+              if [[ "$files" == GENERATOR_COMMIT ]]; then
+                gh pr close "$pr_number" --repo antono2/opencl --delete-branch
+              fi
+            fi
             exit 0
           fi
           git -C published config user.name github-actions[bot]
           git -C published config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git -C published commit -m "Update generated OpenCL bindings"
-          git -C published push --force origin "HEAD:refs/heads/$branch"
+          remote_ref="refs/heads/$branch"
+          remote_sha=$(git -C published ls-remote origin "$remote_ref" | awk '{print $1}')
+          git -C published push --force-with-lease="$remote_ref:$remote_sha" origin "HEAD:$remote_ref"
           cd published
           body="Automated synchronization from antono2/v_opencl_bindings at $GITHUB_SHA. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
           pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
