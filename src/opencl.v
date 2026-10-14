@@ -11,7 +11,6 @@ $if opencl_dynamic ? {
 	#flag windows -lOpenCL
 	#flag darwin -framework OpenCL
 }
-
 #flag windows -I@VMODROOT/include
 #flag windows -L@VMODROOT/lib
 #flag darwin -I@VMODROOT/include
@@ -119,26 +118,40 @@ pub type ExternalMemoryHandleTypeKhr = u32
 $if windows {
 	@[callconv: stdcall]
 	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type ContextDestructorCallback = fn (context Context, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type MemObjectDestructorCallback = fn (memobj Mem, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type ProgramCallback = fn (program Program, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)
+
 	@[callconv: stdcall]
 	pub type NativeKernelCallback = fn (args voidptr)
+
 } $else {
 	pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)
+
 	pub type ContextDestructorCallback = fn (context Context, user_data voidptr)
+
 	pub type MemObjectDestructorCallback = fn (memobj Mem, user_data voidptr)
+
 	pub type ProgramCallback = fn (program Program, user_data voidptr)
+
 	pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)
+
 	pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)
+
 	pub type NativeKernelCallback = fn (args voidptr)
+
 }
 
 pub struct ImageFormat {
@@ -879,389 +892,645 @@ fn C.clCreateImageWithProperties(Context, &MemProperties, MemFlags, &ImageFormat
 $if windows {
 	@[callconv: stdcall]
 	pub type PFN_clGetPlatformIDs = fn (u32, &PlatformId, &u32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetPlatformInfo = fn (PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetDeviceIDs = fn (PlatformId, DeviceType, u32, &DeviceId, &u32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetDeviceInfo = fn (DeviceId, DeviceInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateContext = fn (&ContextProperties, u32, &DeviceId, ContextNotifyCallback, voidptr, &ErrorCode) Context
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateContextFromType = fn (&ContextProperties, DeviceType, ContextNotifyCallback, voidptr, &ErrorCode) Context
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainContext = fn (Context) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseContext = fn (Context) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetContextInfo = fn (Context, ContextInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainCommandQueue = fn (CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseCommandQueue = fn (CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetCommandQueueInfo = fn (CommandQueue, CommandQueueInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateBuffer = fn (Context, MemFlags, usize, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainMemObject = fn (Mem) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseMemObject = fn (Mem) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetSupportedImageFormats = fn (Context, MemFlags, MemObjectType, u32, &ImageFormat, &u32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetMemObjectInfo = fn (Mem, MemInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetImageInfo = fn (Mem, ImageInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainSampler = fn (Sampler) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseSampler = fn (Sampler) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetSamplerInfo = fn (Sampler, SamplerInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateProgramWithSource = fn (Context, u32, &&char, &usize, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateProgramWithBinary = fn (Context, u32, &DeviceId, &usize, &&u8, &i32, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainProgram = fn (Program) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseProgram = fn (Program) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clBuildProgram = fn (Program, u32, &DeviceId, &char, ProgramCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetProgramInfo = fn (Program, ProgramInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetProgramBuildInfo = fn (Program, DeviceId, ProgramBuildInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateKernel = fn (Program, &char, &ErrorCode) Kernel
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateKernelsInProgram = fn (Program, u32, &Kernel, &u32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainKernel = fn (Kernel) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseKernel = fn (Kernel) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetKernelArg = fn (Kernel, u32, usize, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelInfo = fn (Kernel, KernelInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelWorkGroupInfo = fn (Kernel, DeviceId, KernelWorkGroupInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clWaitForEvents = fn (u32, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetEventInfo = fn (Event, EventInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainEvent = fn (Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseEvent = fn (Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetEventProfilingInfo = fn (Event, ProfilingInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clFlush = fn (CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clFinish = fn (CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueReadBuffer = fn (CommandQueue, Mem, Bool, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueWriteBuffer = fn (CommandQueue, Mem, Bool, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueCopyBuffer = fn (CommandQueue, Mem, Mem, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueReadImage = fn (CommandQueue, Mem, Bool, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueWriteImage = fn (CommandQueue, Mem, Bool, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueCopyImage = fn (CommandQueue, Mem, Mem, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueCopyImageToBuffer = fn (CommandQueue, Mem, Mem, &usize, &usize, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueCopyBufferToImage = fn (CommandQueue, Mem, Mem, usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueMapBuffer = fn (CommandQueue, Mem, Bool, MapFlags, usize, usize, u32, &Event, &Event, &ErrorCode) voidptr
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueMapImage = fn (CommandQueue, Mem, Bool, MapFlags, &usize, &usize, &usize, &usize, u32, &Event, &Event, &ErrorCode) voidptr
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueUnmapMemObject = fn (CommandQueue, Mem, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueNDRangeKernel = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueNativeKernel = fn (CommandQueue, NativeKernelCallback, voidptr, usize, u32, &Mem, &voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetCommandQueueProperty = fn (CommandQueue, CommandQueueProperties, Bool, &CommandQueueProperties) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateImage2D = fn (Context, MemFlags, &ImageFormat, usize, usize, usize, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateImage3D = fn (Context, MemFlags, &ImageFormat, usize, usize, usize, usize, usize, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueMarker = fn (CommandQueue, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueWaitForEvents = fn (CommandQueue, u32, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueBarrier = fn (CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clUnloadCompiler = fn () ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetExtensionFunctionAddress = fn (&char) voidptr
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateCommandQueue = fn (Context, DeviceId, CommandQueueProperties, &ErrorCode) CommandQueue
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateSampler = fn (Context, Bool, AddressingMode, FilterMode, &ErrorCode) Sampler
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueTask = fn (CommandQueue, Kernel, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateSubBuffer = fn (Mem, MemFlags, BufferCreateType, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clSetMemObjectDestructorCallback = fn (Mem, MemObjectDestructorCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateUserEvent = fn (Context, &ErrorCode) Event
+
 	@[callconv: stdcall]
 	pub type PFN_clSetUserEventStatus = fn (Event, i32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetEventCallback = fn (Event, i32, EventCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueReadBufferRect = fn (CommandQueue, Mem, Bool, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueWriteBufferRect = fn (CommandQueue, Mem, Bool, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueCopyBufferRect = fn (CommandQueue, Mem, Mem, &usize, &usize, &usize, usize, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateSubDevices = fn (DeviceId, &DevicePartitionProperty, u32, &DeviceId, &u32) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainDevice = fn (DeviceId) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseDevice = fn (DeviceId) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateImage = fn (Context, MemFlags, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateProgramWithBuiltInKernels = fn (Context, u32, &DeviceId, &char, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clCompileProgram = fn (Program, u32, &DeviceId, &char, u32, &Program, &&char, ProgramCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clLinkProgram = fn (Context, u32, &DeviceId, &char, u32, &Program, ProgramCallback, voidptr, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clUnloadPlatformCompiler = fn (PlatformId) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelArgInfo = fn (Kernel, u32, KernelArgInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueFillBuffer = fn (CommandQueue, Mem, voidptr, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueFillImage = fn (CommandQueue, Mem, voidptr, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueMigrateMemObjects = fn (CommandQueue, u32, &Mem, MemMigrationFlags, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueMarkerWithWaitList = fn (CommandQueue, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueBarrierWithWaitList = fn (CommandQueue, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetExtensionFunctionAddressForPlatform = fn (PlatformId, &char) voidptr
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateCommandQueueWithProperties = fn (Context, DeviceId, &QueueProperties, &ErrorCode) CommandQueue
+
 	@[callconv: stdcall]
 	pub type PFN_clCreatePipe = fn (Context, MemFlags, u32, u32, &PipeProperties, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clGetPipeInfo = fn (Mem, PipeInfo, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSVMAlloc = fn (Context, SvmMemFlags, usize, u32) voidptr
+
 	@[callconv: stdcall]
 	pub type PFN_clSVMFree = fn (Context, voidptr)
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateSamplerWithProperties = fn (Context, &SamplerProperties, &ErrorCode) Sampler
+
 	@[callconv: stdcall]
 	pub type PFN_clSetKernelArgSVMPointer = fn (Kernel, u32, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetKernelExecInfo = fn (Kernel, KernelExecInfo, usize, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMFree = fn (CommandQueue, u32, &voidptr, SvmFreeCallback, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMMemcpy = fn (CommandQueue, Bool, voidptr, voidptr, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMMemFill = fn (CommandQueue, voidptr, voidptr, usize, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMMap = fn (CommandQueue, Bool, MapFlags, voidptr, usize, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMUnmap = fn (CommandQueue, voidptr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetDefaultDeviceCommandQueue = fn (Context, DeviceId, CommandQueue) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetDeviceAndHostTimer = fn (DeviceId, &u64, &u64) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetHostTimer = fn (DeviceId, &u64) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateProgramWithIL = fn (Context, voidptr, usize, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clCloneKernel = fn (Kernel, &ErrorCode) Kernel
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelSubGroupInfo = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSVMMigrateMem = fn (CommandQueue, u32, &voidptr, &usize, MemMigrationFlags, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetProgramSpecializationConstant = fn (Program, u32, usize, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetProgramReleaseCallback = fn (Program, ProgramCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clSetContextDestructorCallback = fn (Context, ContextDestructorCallback, voidptr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateBufferWithProperties = fn (Context, &MemProperties, MemFlags, usize, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateImageWithProperties = fn (Context, &MemProperties, MemFlags, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateProgramWithILKHR = fn (Context, voidptr, usize, &ErrorCode) Program
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateCommandQueueWithPropertiesKHR = fn (Context, DeviceId, &QueuePropertiesKhr, &ErrorCode) CommandQueue
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelSubGroupInfoKHR = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetKernelSuggestedLocalWorkSizeKHR = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clCreateSemaphoreWithPropertiesKHR = fn (Context, &SemaphorePropertiesKhr, &ErrorCode) SemaphoreKhr
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueWaitSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueSignalSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetSemaphoreInfoKHR = fn (SemaphoreKhr, SemaphoreInfoKhr, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReleaseSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clRetainSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clGetSemaphoreHandleForTypeKHR = fn (SemaphoreKhr, DeviceId, ExternalSemaphoreHandleTypeKhr, usize, voidptr, &usize) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clReImportSemaphoreSyncFdKHR = fn (SemaphoreKhr, &SemaphoreReimportPropertiesKhr, int) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueAcquireExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+
 	@[callconv: stdcall]
 	pub type PFN_clEnqueueReleaseExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+
 } $else {
 	pub type PFN_clGetPlatformIDs = fn (u32, &PlatformId, &u32) ErrorCode
+
 	pub type PFN_clGetPlatformInfo = fn (PlatformId, PlatformInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clGetDeviceIDs = fn (PlatformId, DeviceType, u32, &DeviceId, &u32) ErrorCode
+
 	pub type PFN_clGetDeviceInfo = fn (DeviceId, DeviceInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clCreateContext = fn (&ContextProperties, u32, &DeviceId, ContextNotifyCallback, voidptr, &ErrorCode) Context
+
 	pub type PFN_clCreateContextFromType = fn (&ContextProperties, DeviceType, ContextNotifyCallback, voidptr, &ErrorCode) Context
+
 	pub type PFN_clRetainContext = fn (Context) ErrorCode
+
 	pub type PFN_clReleaseContext = fn (Context) ErrorCode
+
 	pub type PFN_clGetContextInfo = fn (Context, ContextInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clRetainCommandQueue = fn (CommandQueue) ErrorCode
+
 	pub type PFN_clReleaseCommandQueue = fn (CommandQueue) ErrorCode
+
 	pub type PFN_clGetCommandQueueInfo = fn (CommandQueue, CommandQueueInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clCreateBuffer = fn (Context, MemFlags, usize, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clRetainMemObject = fn (Mem) ErrorCode
+
 	pub type PFN_clReleaseMemObject = fn (Mem) ErrorCode
+
 	pub type PFN_clGetSupportedImageFormats = fn (Context, MemFlags, MemObjectType, u32, &ImageFormat, &u32) ErrorCode
+
 	pub type PFN_clGetMemObjectInfo = fn (Mem, MemInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clGetImageInfo = fn (Mem, ImageInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clRetainSampler = fn (Sampler) ErrorCode
+
 	pub type PFN_clReleaseSampler = fn (Sampler) ErrorCode
+
 	pub type PFN_clGetSamplerInfo = fn (Sampler, SamplerInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clCreateProgramWithSource = fn (Context, u32, &&char, &usize, &ErrorCode) Program
+
 	pub type PFN_clCreateProgramWithBinary = fn (Context, u32, &DeviceId, &usize, &&u8, &i32, &ErrorCode) Program
+
 	pub type PFN_clRetainProgram = fn (Program) ErrorCode
+
 	pub type PFN_clReleaseProgram = fn (Program) ErrorCode
+
 	pub type PFN_clBuildProgram = fn (Program, u32, &DeviceId, &char, ProgramCallback, voidptr) ErrorCode
+
 	pub type PFN_clGetProgramInfo = fn (Program, ProgramInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clGetProgramBuildInfo = fn (Program, DeviceId, ProgramBuildInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clCreateKernel = fn (Program, &char, &ErrorCode) Kernel
+
 	pub type PFN_clCreateKernelsInProgram = fn (Program, u32, &Kernel, &u32) ErrorCode
+
 	pub type PFN_clRetainKernel = fn (Kernel) ErrorCode
+
 	pub type PFN_clReleaseKernel = fn (Kernel) ErrorCode
+
 	pub type PFN_clSetKernelArg = fn (Kernel, u32, usize, voidptr) ErrorCode
+
 	pub type PFN_clGetKernelInfo = fn (Kernel, KernelInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clGetKernelWorkGroupInfo = fn (Kernel, DeviceId, KernelWorkGroupInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clWaitForEvents = fn (u32, &Event) ErrorCode
+
 	pub type PFN_clGetEventInfo = fn (Event, EventInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clRetainEvent = fn (Event) ErrorCode
+
 	pub type PFN_clReleaseEvent = fn (Event) ErrorCode
+
 	pub type PFN_clGetEventProfilingInfo = fn (Event, ProfilingInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clFlush = fn (CommandQueue) ErrorCode
+
 	pub type PFN_clFinish = fn (CommandQueue) ErrorCode
+
 	pub type PFN_clEnqueueReadBuffer = fn (CommandQueue, Mem, Bool, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueWriteBuffer = fn (CommandQueue, Mem, Bool, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueCopyBuffer = fn (CommandQueue, Mem, Mem, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueReadImage = fn (CommandQueue, Mem, Bool, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueWriteImage = fn (CommandQueue, Mem, Bool, &usize, &usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueCopyImage = fn (CommandQueue, Mem, Mem, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueCopyImageToBuffer = fn (CommandQueue, Mem, Mem, &usize, &usize, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueCopyBufferToImage = fn (CommandQueue, Mem, Mem, usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueMapBuffer = fn (CommandQueue, Mem, Bool, MapFlags, usize, usize, u32, &Event, &Event, &ErrorCode) voidptr
+
 	pub type PFN_clEnqueueMapImage = fn (CommandQueue, Mem, Bool, MapFlags, &usize, &usize, &usize, &usize, u32, &Event, &Event, &ErrorCode) voidptr
+
 	pub type PFN_clEnqueueUnmapMemObject = fn (CommandQueue, Mem, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueNDRangeKernel = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueNativeKernel = fn (CommandQueue, NativeKernelCallback, voidptr, usize, u32, &Mem, &voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clSetCommandQueueProperty = fn (CommandQueue, CommandQueueProperties, Bool, &CommandQueueProperties) ErrorCode
+
 	pub type PFN_clCreateImage2D = fn (Context, MemFlags, &ImageFormat, usize, usize, usize, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clCreateImage3D = fn (Context, MemFlags, &ImageFormat, usize, usize, usize, usize, usize, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clEnqueueMarker = fn (CommandQueue, &Event) ErrorCode
+
 	pub type PFN_clEnqueueWaitForEvents = fn (CommandQueue, u32, &Event) ErrorCode
+
 	pub type PFN_clEnqueueBarrier = fn (CommandQueue) ErrorCode
+
 	pub type PFN_clUnloadCompiler = fn () ErrorCode
+
 	pub type PFN_clGetExtensionFunctionAddress = fn (&char) voidptr
+
 	pub type PFN_clCreateCommandQueue = fn (Context, DeviceId, CommandQueueProperties, &ErrorCode) CommandQueue
+
 	pub type PFN_clCreateSampler = fn (Context, Bool, AddressingMode, FilterMode, &ErrorCode) Sampler
+
 	pub type PFN_clEnqueueTask = fn (CommandQueue, Kernel, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clCreateSubBuffer = fn (Mem, MemFlags, BufferCreateType, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clSetMemObjectDestructorCallback = fn (Mem, MemObjectDestructorCallback, voidptr) ErrorCode
+
 	pub type PFN_clCreateUserEvent = fn (Context, &ErrorCode) Event
+
 	pub type PFN_clSetUserEventStatus = fn (Event, i32) ErrorCode
+
 	pub type PFN_clSetEventCallback = fn (Event, i32, EventCallback, voidptr) ErrorCode
+
 	pub type PFN_clEnqueueReadBufferRect = fn (CommandQueue, Mem, Bool, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueWriteBufferRect = fn (CommandQueue, Mem, Bool, &usize, &usize, &usize, usize, usize, usize, usize, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueCopyBufferRect = fn (CommandQueue, Mem, Mem, &usize, &usize, &usize, usize, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clCreateSubDevices = fn (DeviceId, &DevicePartitionProperty, u32, &DeviceId, &u32) ErrorCode
+
 	pub type PFN_clRetainDevice = fn (DeviceId) ErrorCode
+
 	pub type PFN_clReleaseDevice = fn (DeviceId) ErrorCode
+
 	pub type PFN_clCreateImage = fn (Context, MemFlags, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clCreateProgramWithBuiltInKernels = fn (Context, u32, &DeviceId, &char, &ErrorCode) Program
+
 	pub type PFN_clCompileProgram = fn (Program, u32, &DeviceId, &char, u32, &Program, &&char, ProgramCallback, voidptr) ErrorCode
+
 	pub type PFN_clLinkProgram = fn (Context, u32, &DeviceId, &char, u32, &Program, ProgramCallback, voidptr, &ErrorCode) Program
+
 	pub type PFN_clUnloadPlatformCompiler = fn (PlatformId) ErrorCode
+
 	pub type PFN_clGetKernelArgInfo = fn (Kernel, u32, KernelArgInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clEnqueueFillBuffer = fn (CommandQueue, Mem, voidptr, usize, usize, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueFillImage = fn (CommandQueue, Mem, voidptr, &usize, &usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueMigrateMemObjects = fn (CommandQueue, u32, &Mem, MemMigrationFlags, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueMarkerWithWaitList = fn (CommandQueue, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueBarrierWithWaitList = fn (CommandQueue, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clGetExtensionFunctionAddressForPlatform = fn (PlatformId, &char) voidptr
+
 	pub type PFN_clCreateCommandQueueWithProperties = fn (Context, DeviceId, &QueueProperties, &ErrorCode) CommandQueue
+
 	pub type PFN_clCreatePipe = fn (Context, MemFlags, u32, u32, &PipeProperties, &ErrorCode) Mem
+
 	pub type PFN_clGetPipeInfo = fn (Mem, PipeInfo, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clSVMAlloc = fn (Context, SvmMemFlags, usize, u32) voidptr
+
 	pub type PFN_clSVMFree = fn (Context, voidptr)
+
 	pub type PFN_clCreateSamplerWithProperties = fn (Context, &SamplerProperties, &ErrorCode) Sampler
+
 	pub type PFN_clSetKernelArgSVMPointer = fn (Kernel, u32, voidptr) ErrorCode
+
 	pub type PFN_clSetKernelExecInfo = fn (Kernel, KernelExecInfo, usize, voidptr) ErrorCode
+
 	pub type PFN_clEnqueueSVMFree = fn (CommandQueue, u32, &voidptr, SvmFreeCallback, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueSVMMemcpy = fn (CommandQueue, Bool, voidptr, voidptr, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueSVMMemFill = fn (CommandQueue, voidptr, voidptr, usize, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueSVMMap = fn (CommandQueue, Bool, MapFlags, voidptr, usize, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueSVMUnmap = fn (CommandQueue, voidptr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clSetDefaultDeviceCommandQueue = fn (Context, DeviceId, CommandQueue) ErrorCode
+
 	pub type PFN_clGetDeviceAndHostTimer = fn (DeviceId, &u64, &u64) ErrorCode
+
 	pub type PFN_clGetHostTimer = fn (DeviceId, &u64) ErrorCode
+
 	pub type PFN_clCreateProgramWithIL = fn (Context, voidptr, usize, &ErrorCode) Program
+
 	pub type PFN_clCloneKernel = fn (Kernel, &ErrorCode) Kernel
+
 	pub type PFN_clGetKernelSubGroupInfo = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clEnqueueSVMMigrateMem = fn (CommandQueue, u32, &voidptr, &usize, MemMigrationFlags, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clSetProgramSpecializationConstant = fn (Program, u32, usize, voidptr) ErrorCode
+
 	pub type PFN_clSetProgramReleaseCallback = fn (Program, ProgramCallback, voidptr) ErrorCode
+
 	pub type PFN_clSetContextDestructorCallback = fn (Context, ContextDestructorCallback, voidptr) ErrorCode
+
 	pub type PFN_clCreateBufferWithProperties = fn (Context, &MemProperties, MemFlags, usize, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clCreateImageWithProperties = fn (Context, &MemProperties, MemFlags, &ImageFormat, &ImageDesc, voidptr, &ErrorCode) Mem
+
 	pub type PFN_clCreateProgramWithILKHR = fn (Context, voidptr, usize, &ErrorCode) Program
+
 	pub type PFN_clCreateCommandQueueWithPropertiesKHR = fn (Context, DeviceId, &QueuePropertiesKhr, &ErrorCode) CommandQueue
+
 	pub type PFN_clGetKernelSubGroupInfoKHR = fn (Kernel, DeviceId, KernelSubGroupInfo, usize, voidptr, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clGetKernelSuggestedLocalWorkSizeKHR = fn (CommandQueue, Kernel, u32, &usize, &usize, &usize) ErrorCode
+
 	pub type PFN_clCreateSemaphoreWithPropertiesKHR = fn (Context, &SemaphorePropertiesKhr, &ErrorCode) SemaphoreKhr
+
 	pub type PFN_clEnqueueWaitSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueSignalSemaphoresKHR = fn (CommandQueue, u32, &SemaphoreKhr, &SemaphorePayloadKhr, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clGetSemaphoreInfoKHR = fn (SemaphoreKhr, SemaphoreInfoKhr, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clReleaseSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+
 	pub type PFN_clRetainSemaphoreKHR = fn (SemaphoreKhr) ErrorCode
+
 	pub type PFN_clGetSemaphoreHandleForTypeKHR = fn (SemaphoreKhr, DeviceId, ExternalSemaphoreHandleTypeKhr, usize, voidptr, &usize) ErrorCode
+
 	pub type PFN_clReImportSemaphoreSyncFdKHR = fn (SemaphoreKhr, &SemaphoreReimportPropertiesKhr, int) ErrorCode
+
 	pub type PFN_clEnqueueAcquireExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+
 	pub type PFN_clEnqueueReleaseExternalMemObjectsKHR = fn (CommandQueue, u32, &Mem, u32, &Event, &Event) ErrorCode
+
 }
 
 @[inline]
@@ -1286,7 +1555,8 @@ pub fn get_platform_info(platform PlatformId, param_name PlatformInfo, param_val
 		}
 		return command(platform, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetPlatformInfo(platform, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetPlatformInfo(platform, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1297,9 +1567,11 @@ pub fn get_device_ids(platform PlatformId, device_type DeviceType, num_entries u
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(platform, device_type, num_entries, unsafe { &DeviceId(devices) }, num_devices)
+		return command(platform, device_type, num_entries, unsafe { &DeviceId(devices) },
+			num_devices)
 	} $else {
-		return C.clGetDeviceIDs(platform, device_type, num_entries, unsafe { &DeviceId(devices) }, num_devices)
+		return C.clGetDeviceIDs(platform, device_type, num_entries, unsafe { &DeviceId(devices) },
+			num_devices)
 	}
 }
 
@@ -1312,7 +1584,8 @@ pub fn get_device_info(device DeviceId, param_name DeviceInfo, param_value_size 
 		}
 		return command(device, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetDeviceInfo(device, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetDeviceInfo(device, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1322,13 +1595,17 @@ pub fn create_context(properties &ContextProperties, num_devices u32, devices vo
 		command := unsafe { PFN_clCreateContext(C.vcl_symbol(c'clCreateContext')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Context(unsafe { nil })
 		}
-		return command(properties, num_devices, unsafe { &DeviceId(devices) }, pfn_notify, user_data, errcode_ret)
+		return command(properties, num_devices, unsafe { &DeviceId(devices) }, pfn_notify,
+			user_data, errcode_ret)
 	} $else {
-		return C.clCreateContext(properties, num_devices, unsafe { &DeviceId(devices) }, pfn_notify, user_data, errcode_ret)
+		return C.clCreateContext(properties, num_devices, unsafe { &DeviceId(devices) },
+			pfn_notify, user_data, errcode_ret)
 	}
 }
 
@@ -1338,13 +1615,16 @@ pub fn create_context_from_type(properties &ContextProperties, device_type Devic
 		command := unsafe { PFN_clCreateContextFromType(C.vcl_symbol(c'clCreateContextFromType')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Context(unsafe { nil })
 		}
 		return command(properties, device_type, pfn_notify, user_data, errcode_ret)
 	} $else {
-		return C.clCreateContextFromType(properties, device_type, pfn_notify, user_data, errcode_ret)
+		return C.clCreateContextFromType(properties, device_type, pfn_notify, user_data,
+			errcode_ret)
 	}
 }
 
@@ -1383,7 +1663,8 @@ pub fn get_context_info(context Context, param_name ContextInfo, param_value_siz
 		}
 		return command(context, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetContextInfo(context, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetContextInfo(context, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1420,9 +1701,11 @@ pub fn get_command_queue_info(command_queue CommandQueue, param_name CommandQueu
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, param_name, param_value_size, param_value, param_value_size_ret)
+		return command(command_queue, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	} $else {
-		return C.clGetCommandQueueInfo(command_queue, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetCommandQueueInfo(command_queue, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1432,7 +1715,9 @@ pub fn create_buffer(context Context, flags MemFlags, size usize, host_ptr voidp
 		command := unsafe { PFN_clCreateBuffer(C.vcl_symbol(c'clCreateBuffer')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
@@ -1477,7 +1762,8 @@ pub fn get_supported_image_formats(context Context, flags MemFlags, image_type M
 		}
 		return command(context, flags, image_type, num_entries, image_formats, num_image_formats)
 	} $else {
-		return C.clGetSupportedImageFormats(context, flags, image_type, num_entries, image_formats, num_image_formats)
+		return C.clGetSupportedImageFormats(context, flags, image_type, num_entries, image_formats,
+			num_image_formats)
 	}
 }
 
@@ -1490,7 +1776,8 @@ pub fn get_mem_object_info(memobj Mem, param_name MemInfo, param_value_size usiz
 		}
 		return command(memobj, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetMemObjectInfo(memobj, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetMemObjectInfo(memobj, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1503,7 +1790,8 @@ pub fn get_image_info(image Mem, param_name ImageInfo, param_value_size usize, p
 		}
 		return command(image, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetImageInfo(image, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetImageInfo(image, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1542,7 +1830,8 @@ pub fn get_sampler_info(sampler Sampler, param_name SamplerInfo, param_value_siz
 		}
 		return command(sampler, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetSamplerInfo(sampler, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetSamplerInfo(sampler, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1552,7 +1841,9 @@ pub fn create_program_with_source(context Context, count u32, strings &&char, le
 		command := unsafe { PFN_clCreateProgramWithSource(C.vcl_symbol(c'clCreateProgramWithSource')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Program(unsafe { nil })
 		}
@@ -1568,13 +1859,17 @@ pub fn create_program_with_binary(context Context, num_devices u32, device_list 
 		command := unsafe { PFN_clCreateProgramWithBinary(C.vcl_symbol(c'clCreateProgramWithBinary')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Program(unsafe { nil })
 		}
-		return command(context, num_devices, unsafe { &DeviceId(device_list) }, lengths, binaries, binary_status, errcode_ret)
+		return command(context, num_devices, unsafe { &DeviceId(device_list) }, lengths, binaries,
+			binary_status, errcode_ret)
 	} $else {
-		return C.clCreateProgramWithBinary(context, num_devices, unsafe { &DeviceId(device_list) }, lengths, binaries, binary_status, errcode_ret)
+		return C.clCreateProgramWithBinary(context, num_devices, unsafe { &DeviceId(device_list) },
+			lengths, binaries, binary_status, errcode_ret)
 	}
 }
 
@@ -1611,9 +1906,11 @@ pub fn build_program(program Program, num_devices u32, device_list voidptr, opti
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(program, num_devices, unsafe { &DeviceId(device_list) }, options, pfn_notify, user_data)
+		return command(program, num_devices, unsafe { &DeviceId(device_list) }, options,
+			pfn_notify, user_data)
 	} $else {
-		return C.clBuildProgram(program, num_devices, unsafe { &DeviceId(device_list) }, options, pfn_notify, user_data)
+		return C.clBuildProgram(program, num_devices, unsafe { &DeviceId(device_list) }, options,
+			pfn_notify, user_data)
 	}
 }
 
@@ -1626,7 +1923,8 @@ pub fn get_program_info(program Program, param_name ProgramInfo, param_value_siz
 		}
 		return command(program, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetProgramInfo(program, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetProgramInfo(program, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1637,9 +1935,11 @@ pub fn get_program_build_info(program Program, device DeviceId, param_name Progr
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(program, device, param_name, param_value_size, param_value, param_value_size_ret)
+		return command(program, device, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	} $else {
-		return C.clGetProgramBuildInfo(program, device, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetProgramBuildInfo(program, device, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1649,7 +1949,9 @@ pub fn create_kernel(program Program, kernel_name &char, errcode_ret &ErrorCode)
 		command := unsafe { PFN_clCreateKernel(C.vcl_symbol(c'clCreateKernel')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Kernel(unsafe { nil })
 		}
@@ -1668,7 +1970,8 @@ pub fn create_kernels_in_program(program Program, num_kernels u32, kernels voidp
 		}
 		return command(program, num_kernels, unsafe { &Kernel(kernels) }, num_kernels_ret)
 	} $else {
-		return C.clCreateKernelsInProgram(program, num_kernels, unsafe { &Kernel(kernels) }, num_kernels_ret)
+		return C.clCreateKernelsInProgram(program, num_kernels, unsafe { &Kernel(kernels) },
+			num_kernels_ret)
 	}
 }
 
@@ -1720,7 +2023,8 @@ pub fn get_kernel_info(kernel Kernel, param_name KernelInfo, param_value_size us
 		}
 		return command(kernel, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetKernelInfo(kernel, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetKernelInfo(kernel, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1731,9 +2035,11 @@ pub fn get_kernel_work_group_info(kernel Kernel, device DeviceId, param_name Ker
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(kernel, device, param_name, param_value_size, param_value, param_value_size_ret)
+		return command(kernel, device, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	} $else {
-		return C.clGetKernelWorkGroupInfo(kernel, device, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetKernelWorkGroupInfo(kernel, device, param_name, param_value_size,
+			param_value, param_value_size_ret)
 	}
 }
 
@@ -1759,7 +2065,8 @@ pub fn get_event_info(event Event, param_name EventInfo, param_value_size usize,
 		}
 		return command(event, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetEventInfo(event, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetEventInfo(event, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1798,7 +2105,8 @@ pub fn get_event_profiling_info(event Event, param_name ProfilingInfo, param_val
 		}
 		return command(event, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetEventProfilingInfo(event, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetEventProfilingInfo(event, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -1835,9 +2143,11 @@ pub fn enqueue_read_buffer(command_queue CommandQueue, buffer Mem, blocking_read
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, buffer, blocking_read, offset, size, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, buffer, blocking_read, offset, size, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueReadBuffer(command_queue, buffer, blocking_read, offset, size, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueReadBuffer(command_queue, buffer, blocking_read, offset, size, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -1848,9 +2158,11 @@ pub fn enqueue_write_buffer(command_queue CommandQueue, buffer Mem, blocking_wri
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, buffer, blocking_write, offset, size, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, buffer, blocking_write, offset, size, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueWriteBuffer(command_queue, buffer, blocking_write, offset, size, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueWriteBuffer(command_queue, buffer, blocking_write, offset, size, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -1861,9 +2173,12 @@ pub fn enqueue_copy_buffer(command_queue CommandQueue, src_buffer Mem, dst_buffe
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, src_buffer, dst_buffer, src_offset, dst_offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, src_buffer, dst_buffer, src_offset, dst_offset, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueCopyBuffer(command_queue, src_buffer, dst_buffer, src_offset, dst_offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueCopyBuffer(command_queue, src_buffer, dst_buffer, src_offset, dst_offset,
+			size, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -1874,9 +2189,13 @@ pub fn enqueue_read_image(command_queue CommandQueue, image Mem, blocking_read B
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, image, blocking_read, origin, region, row_pitch, slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, image, blocking_read, origin, region, row_pitch, slice_pitch,
+			ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueReadImage(command_queue, image, blocking_read, origin, region, row_pitch, slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueReadImage(command_queue, image, blocking_read, origin, region, row_pitch,
+			slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -1887,9 +2206,13 @@ pub fn enqueue_write_image(command_queue CommandQueue, image Mem, blocking_write
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, image, blocking_write, origin, region, input_row_pitch, input_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, image, blocking_write, origin, region, input_row_pitch,
+			input_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueWriteImage(command_queue, image, blocking_write, origin, region, input_row_pitch, input_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueWriteImage(command_queue, image, blocking_write, origin, region,
+			input_row_pitch, input_slice_pitch, ptr, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -1900,9 +2223,12 @@ pub fn enqueue_copy_image(command_queue CommandQueue, src_image Mem, dst_image M
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, src_image, dst_image, src_origin, dst_origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, src_image, dst_image, src_origin, dst_origin, region,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueCopyImage(command_queue, src_image, dst_image, src_origin, dst_origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueCopyImage(command_queue, src_image, dst_image, src_origin, dst_origin,
+			region, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -1913,9 +2239,12 @@ pub fn enqueue_copy_image_to_buffer(command_queue CommandQueue, src_image Mem, d
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, src_image, dst_buffer, src_origin, region, dst_offset, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, src_image, dst_buffer, src_origin, region, dst_offset,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueCopyImageToBuffer(command_queue, src_image, dst_buffer, src_origin, region, dst_offset, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueCopyImageToBuffer(command_queue, src_image, dst_buffer, src_origin,
+			region, dst_offset, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -1926,9 +2255,12 @@ pub fn enqueue_copy_buffer_to_image(command_queue CommandQueue, src_buffer Mem, 
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, src_buffer, dst_image, src_offset, dst_origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, src_buffer, dst_image, src_offset, dst_origin, region,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueCopyBufferToImage(command_queue, src_buffer, dst_image, src_offset, dst_origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueCopyBufferToImage(command_queue, src_buffer, dst_image, src_offset,
+			dst_origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -1938,13 +2270,19 @@ pub fn enqueue_map_buffer(command_queue CommandQueue, buffer Mem, blocking_map B
 		command := unsafe { PFN_clEnqueueMapBuffer(C.vcl_symbol(c'clEnqueueMapBuffer')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return voidptr(unsafe { nil })
 		}
-		return command(command_queue, buffer, blocking_map, map_flags, offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
+		return command(command_queue, buffer, blocking_map, map_flags, offset, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) },
+			errcode_ret)
 	} $else {
-		return C.clEnqueueMapBuffer(command_queue, buffer, blocking_map, map_flags, offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
+		return C.clEnqueueMapBuffer(command_queue, buffer, blocking_map, map_flags, offset, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) },
+			errcode_ret)
 	}
 }
 
@@ -1954,13 +2292,19 @@ pub fn enqueue_map_image(command_queue CommandQueue, image Mem, blocking_map Boo
 		command := unsafe { PFN_clEnqueueMapImage(C.vcl_symbol(c'clEnqueueMapImage')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return voidptr(unsafe { nil })
 		}
-		return command(command_queue, image, blocking_map, map_flags, origin, region, image_row_pitch, image_slice_pitch, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
+		return command(command_queue, image, blocking_map, map_flags, origin, region,
+			image_row_pitch, image_slice_pitch, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
 	} $else {
-		return C.clEnqueueMapImage(command_queue, image, blocking_map, map_flags, origin, region, image_row_pitch, image_slice_pitch, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
+		return C.clEnqueueMapImage(command_queue, image, blocking_map, map_flags, origin, region,
+			image_row_pitch, image_slice_pitch, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) }, errcode_ret)
 	}
 }
 
@@ -1971,9 +2315,11 @@ pub fn enqueue_unmap_mem_object(command_queue CommandQueue, memobj Mem, mapped_p
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, memobj, mapped_ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, memobj, mapped_ptr, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueUnmapMemObject(command_queue, memobj, mapped_ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueUnmapMemObject(command_queue, memobj, mapped_ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -1984,9 +2330,13 @@ pub fn enqueue_nd_range_kernel(command_queue CommandQueue, kernel Kernel, work_d
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, kernel, work_dim, global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, kernel, work_dim, global_work_offset, global_work_size,
+			local_work_size, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueNDRangeKernel(command_queue, kernel, work_dim, global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueNDRangeKernel(command_queue, kernel, work_dim, global_work_offset,
+			global_work_size, local_work_size, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -1997,9 +2347,13 @@ pub fn enqueue_native_kernel(command_queue CommandQueue, user_func NativeKernelC
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, user_func, args, cb_args, num_mem_objects, unsafe { &Mem(mem_list) }, unsafe { &voidptr(args_mem_loc) }, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, user_func, args, cb_args, num_mem_objects,
+			unsafe { &Mem(mem_list) }, unsafe { &voidptr(args_mem_loc) }, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueNativeKernel(command_queue, user_func, args, cb_args, num_mem_objects, unsafe { &Mem(mem_list) }, unsafe { &voidptr(args_mem_loc) }, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueNativeKernel(command_queue, user_func, args, cb_args, num_mem_objects,
+			unsafe { &Mem(mem_list) }, unsafe { &voidptr(args_mem_loc) }, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2022,13 +2376,17 @@ pub fn create_image2d(context Context, flags MemFlags, image_format &ImageFormat
 		command := unsafe { PFN_clCreateImage2D(C.vcl_symbol(c'clCreateImage2D')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
-		return command(context, flags, image_format, image_width, image_height, image_row_pitch, host_ptr, errcode_ret)
+		return command(context, flags, image_format, image_width, image_height, image_row_pitch,
+			host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateImage2D(context, flags, image_format, image_width, image_height, image_row_pitch, host_ptr, errcode_ret)
+		return C.clCreateImage2D(context, flags, image_format, image_width, image_height,
+			image_row_pitch, host_ptr, errcode_ret)
 	}
 }
 
@@ -2038,13 +2396,17 @@ pub fn create_image3d(context Context, flags MemFlags, image_format &ImageFormat
 		command := unsafe { PFN_clCreateImage3D(C.vcl_symbol(c'clCreateImage3D')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
-		return command(context, flags, image_format, image_width, image_height, image_depth, image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
+		return command(context, flags, image_format, image_width, image_height, image_depth,
+			image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateImage3D(context, flags, image_format, image_width, image_height, image_depth, image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
+		return C.clCreateImage3D(context, flags, image_format, image_width, image_height,
+			image_depth, image_row_pitch, image_slice_pitch, host_ptr, errcode_ret)
 	}
 }
 
@@ -2119,7 +2481,9 @@ pub fn create_command_queue(context Context, device DeviceId, properties Command
 		command := unsafe { PFN_clCreateCommandQueue(C.vcl_symbol(c'clCreateCommandQueue')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return CommandQueue(unsafe { nil })
 		}
@@ -2135,13 +2499,16 @@ pub fn create_sampler(context Context, normalized_coords Bool, addressing_mode A
 		command := unsafe { PFN_clCreateSampler(C.vcl_symbol(c'clCreateSampler')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Sampler(unsafe { nil })
 		}
 		return command(context, normalized_coords, addressing_mode, filter_mode, errcode_ret)
 	} $else {
-		return C.clCreateSampler(context, normalized_coords, addressing_mode, filter_mode, errcode_ret)
+		return C.clCreateSampler(context, normalized_coords, addressing_mode, filter_mode,
+			errcode_ret)
 	}
 }
 
@@ -2152,9 +2519,11 @@ pub fn enqueue_task(command_queue CommandQueue, kernel Kernel, num_events_in_wai
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, kernel, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, kernel, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueTask(command_queue, kernel, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueTask(command_queue, kernel, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2164,13 +2533,16 @@ pub fn create_sub_buffer(buffer Mem, flags MemFlags, buffer_create_type BufferCr
 		command := unsafe { PFN_clCreateSubBuffer(C.vcl_symbol(c'clCreateSubBuffer')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
 		return command(buffer, flags, buffer_create_type, buffer_create_info, errcode_ret)
 	} $else {
-		return C.clCreateSubBuffer(buffer, flags, buffer_create_type, buffer_create_info, errcode_ret)
+		return C.clCreateSubBuffer(buffer, flags, buffer_create_type, buffer_create_info,
+			errcode_ret)
 	}
 }
 
@@ -2193,7 +2565,9 @@ pub fn create_user_event(context Context, errcode_ret &ErrorCode) Event {
 		command := unsafe { PFN_clCreateUserEvent(C.vcl_symbol(c'clCreateUserEvent')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Event(unsafe { nil })
 		}
@@ -2236,9 +2610,14 @@ pub fn enqueue_read_buffer_rect(command_queue CommandQueue, buffer Mem, blocking
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, buffer, blocking_read, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, buffer, blocking_read, buffer_origin, host_origin, region,
+			buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueReadBufferRect(command_queue, buffer, blocking_read, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueReadBufferRect(command_queue, buffer, blocking_read, buffer_origin,
+			host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch,
+			host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -2249,9 +2628,14 @@ pub fn enqueue_write_buffer_rect(command_queue CommandQueue, buffer Mem, blockin
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, buffer, blocking_write, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, buffer, blocking_write, buffer_origin, host_origin, region,
+			buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueWriteBufferRect(command_queue, buffer, blocking_write, buffer_origin, host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch, host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueWriteBufferRect(command_queue, buffer, blocking_write, buffer_origin,
+			host_origin, region, buffer_row_pitch, buffer_slice_pitch, host_row_pitch,
+			host_slice_pitch, ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	}
 }
 
@@ -2262,9 +2646,13 @@ pub fn enqueue_copy_buffer_rect(command_queue CommandQueue, src_buffer Mem, dst_
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, src_buffer, dst_buffer, src_origin, dst_origin, region, src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, src_buffer, dst_buffer, src_origin, dst_origin, region,
+			src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueCopyBufferRect(command_queue, src_buffer, dst_buffer, src_origin, dst_origin, region, src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueCopyBufferRect(command_queue, src_buffer, dst_buffer, src_origin,
+			dst_origin, region, src_row_pitch, src_slice_pitch, dst_row_pitch, dst_slice_pitch,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2275,9 +2663,11 @@ pub fn create_sub_devices(in_device DeviceId, properties &DevicePartitionPropert
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(in_device, properties, num_devices, unsafe { &DeviceId(out_devices) }, num_devices_ret)
+		return command(in_device, properties, num_devices, unsafe { &DeviceId(out_devices) },
+			num_devices_ret)
 	} $else {
-		return C.clCreateSubDevices(in_device, properties, num_devices, unsafe { &DeviceId(out_devices) }, num_devices_ret)
+		return C.clCreateSubDevices(in_device, properties, num_devices,
+			unsafe { &DeviceId(out_devices) }, num_devices_ret)
 	}
 }
 
@@ -2313,7 +2703,9 @@ pub fn create_image(context Context, flags MemFlags, image_format &ImageFormat, 
 		command := unsafe { PFN_clCreateImage(C.vcl_symbol(c'clCreateImage')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
@@ -2329,13 +2721,17 @@ pub fn create_program_with_built_in_kernels(context Context, num_devices u32, de
 		command := unsafe { PFN_clCreateProgramWithBuiltInKernels(C.vcl_symbol(c'clCreateProgramWithBuiltInKernels')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Program(unsafe { nil })
 		}
-		return command(context, num_devices, unsafe { &DeviceId(device_list) }, kernel_names, errcode_ret)
+		return command(context, num_devices, unsafe { &DeviceId(device_list) }, kernel_names,
+			errcode_ret)
 	} $else {
-		return C.clCreateProgramWithBuiltInKernels(context, num_devices, unsafe { &DeviceId(device_list) }, kernel_names, errcode_ret)
+		return C.clCreateProgramWithBuiltInKernels(context, num_devices,
+			unsafe { &DeviceId(device_list) }, kernel_names, errcode_ret)
 	}
 }
 
@@ -2346,9 +2742,13 @@ pub fn compile_program(program Program, num_devices u32, device_list voidptr, op
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(program, num_devices, unsafe { &DeviceId(device_list) }, options, num_input_headers, unsafe { &Program(input_headers) }, header_include_names, pfn_notify, user_data)
+		return command(program, num_devices, unsafe { &DeviceId(device_list) }, options,
+			num_input_headers, unsafe { &Program(input_headers) }, header_include_names,
+			pfn_notify, user_data)
 	} $else {
-		return C.clCompileProgram(program, num_devices, unsafe { &DeviceId(device_list) }, options, num_input_headers, unsafe { &Program(input_headers) }, header_include_names, pfn_notify, user_data)
+		return C.clCompileProgram(program, num_devices, unsafe { &DeviceId(device_list) }, options,
+			num_input_headers, unsafe { &Program(input_headers) }, header_include_names,
+			pfn_notify, user_data)
 	}
 }
 
@@ -2358,13 +2758,19 @@ pub fn link_program(context Context, num_devices u32, device_list voidptr, optio
 		command := unsafe { PFN_clLinkProgram(C.vcl_symbol(c'clLinkProgram')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Program(unsafe { nil })
 		}
-		return command(context, num_devices, unsafe { &DeviceId(device_list) }, options, num_input_programs, unsafe { &Program(input_programs) }, pfn_notify, user_data, errcode_ret)
+		return command(context, num_devices, unsafe { &DeviceId(device_list) }, options,
+			num_input_programs, unsafe { &Program(input_programs) }, pfn_notify, user_data,
+			errcode_ret)
 	} $else {
-		return C.clLinkProgram(context, num_devices, unsafe { &DeviceId(device_list) }, options, num_input_programs, unsafe { &Program(input_programs) }, pfn_notify, user_data, errcode_ret)
+		return C.clLinkProgram(context, num_devices, unsafe { &DeviceId(device_list) }, options,
+			num_input_programs, unsafe { &Program(input_programs) }, pfn_notify, user_data,
+			errcode_ret)
 	}
 }
 
@@ -2388,9 +2794,11 @@ pub fn get_kernel_arg_info(kernel Kernel, arg_index u32, param_name KernelArgInf
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(kernel, arg_index, param_name, param_value_size, param_value, param_value_size_ret)
+		return command(kernel, arg_index, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	} $else {
-		return C.clGetKernelArgInfo(kernel, arg_index, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetKernelArgInfo(kernel, arg_index, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -2401,9 +2809,11 @@ pub fn enqueue_fill_buffer(command_queue CommandQueue, buffer Mem, pattern voidp
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, buffer, pattern, pattern_size, offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, buffer, pattern, pattern_size, offset, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueFillBuffer(command_queue, buffer, pattern, pattern_size, offset, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueFillBuffer(command_queue, buffer, pattern, pattern_size, offset, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2414,9 +2824,11 @@ pub fn enqueue_fill_image(command_queue CommandQueue, image Mem, fill_color void
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, image, fill_color, origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, image, fill_color, origin, region, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueFillImage(command_queue, image, fill_color, origin, region, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueFillImage(command_queue, image, fill_color, origin, region,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2427,9 +2839,12 @@ pub fn enqueue_migrate_mem_objects(command_queue CommandQueue, num_mem_objects u
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) }, flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) }, flags,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueMigrateMemObjects(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) }, flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueMigrateMemObjects(command_queue, num_mem_objects,
+			unsafe { &Mem(mem_objects) }, flags, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2440,9 +2855,11 @@ pub fn enqueue_marker_with_wait_list(command_queue CommandQueue, num_events_in_w
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueMarkerWithWaitList(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueMarkerWithWaitList(command_queue, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2453,9 +2870,11 @@ pub fn enqueue_barrier_with_wait_list(command_queue CommandQueue, num_events_in_
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueBarrierWithWaitList(command_queue, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueBarrierWithWaitList(command_queue, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2478,7 +2897,9 @@ pub fn create_command_queue_with_properties(context Context, device DeviceId, pr
 		command := unsafe { PFN_clCreateCommandQueueWithProperties(C.vcl_symbol(c'clCreateCommandQueueWithProperties')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return CommandQueue(unsafe { nil })
 		}
@@ -2494,13 +2915,16 @@ pub fn create_pipe(context Context, flags MemFlags, pipe_packet_size u32, pipe_m
 		command := unsafe { PFN_clCreatePipe(C.vcl_symbol(c'clCreatePipe')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
 		return command(context, flags, pipe_packet_size, pipe_max_packets, properties, errcode_ret)
 	} $else {
-		return C.clCreatePipe(context, flags, pipe_packet_size, pipe_max_packets, properties, errcode_ret)
+		return C.clCreatePipe(context, flags, pipe_packet_size, pipe_max_packets, properties,
+			errcode_ret)
 	}
 }
 
@@ -2513,7 +2937,8 @@ pub fn get_pipe_info(pipe Mem, param_name PipeInfo, param_value_size usize, para
 		}
 		return command(pipe, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetPipeInfo(pipe, param_name, param_value_size, param_value, param_value_size_ret)
+		return C.clGetPipeInfo(pipe, param_name, param_value_size, param_value,
+			param_value_size_ret)
 	}
 }
 
@@ -2549,7 +2974,9 @@ pub fn create_sampler_with_properties(context Context, sampler_properties &Sampl
 		command := unsafe { PFN_clCreateSamplerWithProperties(C.vcl_symbol(c'clCreateSamplerWithProperties')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Sampler(unsafe { nil })
 		}
@@ -2592,9 +3019,13 @@ pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_po
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) }, pfn_free_func, user_data, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) },
+			pfn_free_func, user_data, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMFree(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) }, pfn_free_func, user_data, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMFree(command_queue, num_svm_pointers,
+			unsafe { &voidptr(svm_pointers) }, pfn_free_func, user_data, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2605,9 +3036,11 @@ pub fn enqueue_svm_memcpy(command_queue CommandQueue, blocking_copy Bool, dst_pt
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, blocking_copy, dst_ptr, src_ptr, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, blocking_copy, dst_ptr, src_ptr, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMemcpy(command_queue, blocking_copy, dst_ptr, src_ptr, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMMemcpy(command_queue, blocking_copy, dst_ptr, src_ptr, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2618,9 +3051,11 @@ pub fn enqueue_svm_mem_fill(command_queue CommandQueue, svm_ptr voidptr, pattern
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, svm_ptr, pattern, pattern_size, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, svm_ptr, pattern, pattern_size, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMemFill(command_queue, svm_ptr, pattern, pattern_size, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMMemFill(command_queue, svm_ptr, pattern, pattern_size, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2631,9 +3066,11 @@ pub fn enqueue_svm_map(command_queue CommandQueue, blocking_map Bool, flags MapF
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, blocking_map, flags, svm_ptr, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, blocking_map, flags, svm_ptr, size, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMap(command_queue, blocking_map, flags, svm_ptr, size, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMMap(command_queue, blocking_map, flags, svm_ptr, size,
+			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2644,9 +3081,11 @@ pub fn enqueue_svm_unmap(command_queue CommandQueue, svm_ptr voidptr, num_events
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, svm_ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, svm_ptr, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2695,7 +3134,9 @@ pub fn create_program_with_il(context Context, il voidptr, length usize, errcode
 		command := unsafe { PFN_clCreateProgramWithIL(C.vcl_symbol(c'clCreateProgramWithIL')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Program(unsafe { nil })
 		}
@@ -2711,7 +3152,9 @@ pub fn clone_kernel(source_kernel Kernel, errcode_ret &ErrorCode) Kernel {
 		command := unsafe { PFN_clCloneKernel(C.vcl_symbol(c'clCloneKernel')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Kernel(unsafe { nil })
 		}
@@ -2728,9 +3171,11 @@ pub fn get_kernel_sub_group_info(kernel Kernel, device DeviceId, param_name Kern
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(kernel, device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+		return command(kernel, device, param_name, input_value_size, input_value, param_value_size,
+			param_value, param_value_size_ret)
 	} $else {
-		return C.clGetKernelSubGroupInfo(kernel, device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+		return C.clGetKernelSubGroupInfo(kernel, device, param_name, input_value_size, input_value,
+			param_value_size, param_value, param_value_size_ret)
 	}
 }
 
@@ -2741,9 +3186,13 @@ pub fn enqueue_svm_migrate_mem(command_queue CommandQueue, num_svm_pointers u32,
 		if isnil(command) {
 			return invalid_operation
 		}
-		return command(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) }, sizes, flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return command(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) }, sizes,
+			flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers, unsafe { &voidptr(svm_pointers) }, sizes, flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers,
+			unsafe { &voidptr(svm_pointers) }, sizes, flags, num_events_in_wait_list,
+			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	}
 }
 
@@ -2792,13 +3241,16 @@ pub fn create_buffer_with_properties(context Context, properties &MemProperties,
 		command := unsafe { PFN_clCreateBufferWithProperties(C.vcl_symbol(c'clCreateBufferWithProperties')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
 		return command(context, properties, flags, size, host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateBufferWithProperties(context, properties, flags, size, host_ptr, errcode_ret)
+		return C.clCreateBufferWithProperties(context, properties, flags, size, host_ptr,
+			errcode_ret)
 	}
 }
 
@@ -2808,13 +3260,16 @@ pub fn create_image_with_properties(context Context, properties &MemProperties, 
 		command := unsafe { PFN_clCreateImageWithProperties(C.vcl_symbol(c'clCreateImageWithProperties')) }
 		if isnil(command) {
 			if !isnil(errcode_ret) {
-				unsafe { *errcode_ret = invalid_operation }
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
 			}
 			return Mem(unsafe { nil })
 		}
 		return command(context, properties, flags, image_format, image_desc, host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateImageWithProperties(context, properties, flags, image_format, image_desc, host_ptr, errcode_ret)
+		return C.clCreateImageWithProperties(context, properties, flags, image_format, image_desc,
+			host_ptr, errcode_ret)
 	}
 }
 
@@ -2823,7 +3278,9 @@ pub fn create_program_with_il_khr(context Context, il voidptr, length usize, err
 	extension_fn := unsafe { PFN_clCreateProgramWithILKHR(get_extension_function_address(c'clCreateProgramWithILKHR')) }
 	if isnil(extension_fn) {
 		if !isnil(errcode_ret) {
-			unsafe { *errcode_ret = invalid_operation }
+			unsafe {
+				*errcode_ret = invalid_operation
+			}
 		}
 		return Program(unsafe { nil })
 	}
@@ -2835,7 +3292,9 @@ pub fn create_command_queue_with_properties_khr(context Context, device DeviceId
 	extension_fn := unsafe { PFN_clCreateCommandQueueWithPropertiesKHR(get_extension_function_address(c'clCreateCommandQueueWithPropertiesKHR')) }
 	if isnil(extension_fn) {
 		if !isnil(errcode_ret) {
-			unsafe { *errcode_ret = invalid_operation }
+			unsafe {
+				*errcode_ret = invalid_operation
+			}
 		}
 		return CommandQueue(unsafe { nil })
 	}
@@ -2848,7 +3307,8 @@ pub fn get_kernel_sub_group_info_khr(in_kernel Kernel, in_device DeviceId, param
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(in_kernel, in_device, param_name, input_value_size, input_value, param_value_size, param_value, param_value_size_ret)
+	return extension_fn(in_kernel, in_device, param_name, input_value_size, input_value,
+		param_value_size, param_value, param_value_size_ret)
 }
 
 @[inline]
@@ -2857,7 +3317,8 @@ pub fn get_kernel_suggested_local_work_size_khr(command_queue CommandQueue, kern
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(command_queue, kernel, work_dim, global_work_offset, global_work_size, suggested_local_work_size)
+	return extension_fn(command_queue, kernel, work_dim, global_work_offset, global_work_size,
+		suggested_local_work_size)
 }
 
 @[inline]
@@ -2865,7 +3326,9 @@ pub fn create_semaphore_with_properties_khr(context Context, sema_props &Semapho
 	extension_fn := unsafe { PFN_clCreateSemaphoreWithPropertiesKHR(get_extension_function_address(c'clCreateSemaphoreWithPropertiesKHR')) }
 	if isnil(extension_fn) {
 		if !isnil(errcode_ret) {
-			unsafe { *errcode_ret = invalid_operation }
+			unsafe {
+				*errcode_ret = invalid_operation
+			}
 		}
 		return SemaphoreKhr(unsafe { nil })
 	}
@@ -2878,7 +3341,9 @@ pub fn enqueue_wait_semaphores_khr(command_queue CommandQueue, num_sema_objects 
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(command_queue, num_sema_objects, unsafe { &SemaphoreKhr(sema_objects) }, sema_payload_list, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+	return extension_fn(command_queue, num_sema_objects, unsafe { &SemaphoreKhr(sema_objects) },
+		sema_payload_list, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+		unsafe { &Event(event) })
 }
 
 @[inline]
@@ -2887,7 +3352,9 @@ pub fn enqueue_signal_semaphores_khr(command_queue CommandQueue, num_sema_object
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(command_queue, num_sema_objects, unsafe { &SemaphoreKhr(sema_objects) }, sema_payload_list, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+	return extension_fn(command_queue, num_sema_objects, unsafe { &SemaphoreKhr(sema_objects) },
+		sema_payload_list, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+		unsafe { &Event(event) })
 }
 
 @[inline]
@@ -2896,7 +3363,8 @@ pub fn get_semaphore_info_khr(sema_object SemaphoreKhr, param_name SemaphoreInfo
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(sema_object, param_name, param_value_size, param_value, param_value_size_ret)
+	return extension_fn(sema_object, param_name, param_value_size, param_value,
+		param_value_size_ret)
 }
 
 @[inline]
@@ -2941,7 +3409,8 @@ pub fn enqueue_acquire_external_mem_objects_khr(command_queue CommandQueue, num_
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) }, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+	return extension_fn(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) },
+		num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 }
 
 @[inline]
@@ -2950,5 +3419,6 @@ pub fn enqueue_release_external_mem_objects_khr(command_queue CommandQueue, num_
 	if isnil(extension_fn) {
 		return invalid_operation
 	}
-	return extension_fn(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) }, num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+	return extension_fn(command_queue, num_mem_objects, unsafe { &Mem(mem_objects) },
+		num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 }
