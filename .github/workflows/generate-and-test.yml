@@ -288,6 +288,10 @@ jobs:
             -cc tcc run test
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
             -cc tcc run examples/vector_add
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/getting_started
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/algorithms
 
   windows-abi-compile:
     runs-on: windows-2022

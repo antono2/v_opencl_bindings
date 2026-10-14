@@ -6,7 +6,7 @@ pub struct ScratchBuffer[T] {
 mut:
 	context &OwnedContext
 	flags   MemFlags
-	storage &Buffer[T] = unsafe { nil }
+	storage &Buffer[T] = unsafe { &Buffer[T](nil) }
 }
 
 pub fn new_scratch_buffer[T](context &OwnedContext, flags MemFlags) !&ScratchBuffer[T] {
