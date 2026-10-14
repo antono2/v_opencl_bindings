@@ -4,6 +4,7 @@ module main
 
 import antono2.opencl as cl
 
+// Matches particles.cl: two float4 fields (position and velocity), eight floats total.
 const particle_stride = usize(8 * sizeof(f32))
 
 @[nocopy]
@@ -88,6 +89,7 @@ fn new_compute(count usize) !&Compute {
 		buffer:   buffer
 		count:    count
 	}
+	// A fixed seed makes smoke-test initialization reproducible.
 	compute.reset_particles(1)!
 	return compute
 }
