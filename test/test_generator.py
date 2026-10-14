@@ -78,7 +78,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_core_callback_types_are_emitted_and_used(self) -> None:
         generated = self.generate()
         self.assertIn("$if windows {", generated)
-        self.assertEqual(generated.count("@[callconv: stdcall]"), 21)
+        self.assertEqual(generated.count("@[callconv: stdcall]"), 135)
         self.assertIn("pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)", generated)
         self.assertIn("pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)", generated)
         self.assertIn("pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)", generated)
@@ -197,7 +197,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_extension_commands_are_resolved_at_runtime(self) -> None:
         generated = self.generate()
         self.assertIn("pub type PFN_clGetKernelSubGroupInfoKHR = fn (", generated)
-        self.assertIn("PFN_clGetKernelSubGroupInfoKHR(C.clGetExtensionFunctionAddress(c'clGetKernelSubGroupInfoKHR'))", generated)
+        self.assertIn("PFN_clGetKernelSubGroupInfoKHR(get_extension_function_address(c'clGetKernelSubGroupInfoKHR'))", generated)
         self.assertNotIn("fn C.clGetKernelSubGroupInfoKHR(", generated)
         self.assertIn("if isnil(extension_fn) {\n\t\treturn invalid_operation", generated)
         self.assertIn("unsafe { *errcode_ret = invalid_operation }", generated)

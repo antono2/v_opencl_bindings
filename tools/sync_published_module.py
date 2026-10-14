@@ -26,7 +26,15 @@ SOURCE_FILES = {
     "src/external_interop.v": "external_interop.v",
     "src/image.v": "image.v",
     "src/svm.v": "svm.v",
+    "src/session.v": "session.v",
+    "src/runtime.v": "runtime.v",
+    "src/scratch.v": "scratch.v",
+    "src/transfer.v": "transfer.v",
+    "src/program_cache.v": "program_cache.v",
     "test/convenience_test.v": "convenience_test.v",
+    "test/helpers_test.v": "test/helpers_test.v",
+    "test/test_dynamic_runtime.py": "test/test_dynamic_runtime.py",
+    "tools/check_docs.py": "tools/check_docs.py",
     "test/pointer_abi_test.v": "test/pointer_abi_test.v",
     "test/pointer_abi_shim.c": "test/pointer_abi_shim.c",
     "API_DESIGN.md": "API_DESIGN.md",
@@ -41,7 +49,7 @@ SOURCE_FILES = {
 
 def tracked_distribution_files() -> dict[str, str]:
     output = subprocess.check_output(
-        ["git", "-C", str(ROOT), "ls-files", "-z", "abi", "examples", "include"]
+        ["git", "-C", str(ROOT), "ls-files", "-z", "abi", "examples", "include", "algorithms", "docs"]
     )
     paths = output.decode().rstrip("\0").split("\0") if output else []
     return {path: path for path in paths}

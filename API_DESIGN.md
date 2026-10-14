@@ -33,12 +33,18 @@ model rather than pretending to be reference-counted like OpenCL.
 7. Platform-specific external-memory and external-semaphore loaders, opaque-FD imports, ownership handoffs and owned imported semaphores. (Implemented.)
 8. Typed two-dimensional images, owned samplers and typed shared virtual memory with explicit host/device synchronization. (Implemented.)
 
-## Ecosystem boundary
+## Ecosystem scope
 
-This package provides Khronos-registry bindings and thin, explicit resource-management
-helpers. Higher-level numerical operations, tensor APIs and cross-backend compute dispatch
-belong in the V Scientific Library's established [`vsl.vcl`](https://github.com/vlang/vsl/tree/main/vcl)
-and [`vsl.compute`](https://github.com/vlang/vsl/tree/main/compute) layers. New work in those
-areas should integrate with and be coordinated through VSL rather than creating a competing
-compute framework here. The native handles exposed by this package remain available for
-adapters and interoperability work.
+The package includes optional, reusable device-resident algorithms alongside
+thin Khronos bindings. `algorithms` begins with unsigned scan and stable index
+compaction, accepting native-backed buffers, reusable scratch and event dependencies.
+Empty inputs, capacity, ordering and arithmetic behavior are explicit contracts.
+
+VSL integration and reuse are encouraged where APIs and ownership match. They
+are not prerequisites for delivering useful OpenCL algorithms here. Tensor APIs,
+cross-backend dispatch and application-specific simulation rules remain separate
+concerns; additions are evaluated by concrete consumers and maintenance cost.
+
+See [helper reference](docs/helpers.md), [algorithms](docs/algorithms.md), and
+[runtime and caching](docs/runtime.md) for the added session, transfer, binary
+cache and optional dynamic-loader APIs.
