@@ -37,7 +37,8 @@ C-layout values without strings, slices, maps or other managed references.
 | `download_owned(queue, offset, count, waits)` | No | Transfer owner holds destination storage |
 
 Scratch `reserve(0)` is harmless and leaves an unallocated scratch buffer empty.
-Access storage through its optional `buffer` field. Rebind kernel arguments after
+Access borrowed storage through `buffer()!`, which reports an error before the
+first allocation or after close. Rebind kernel arguments after
 growth; cloned references continue referring to the old allocation. A preserving
 growth event must precede device use of the new contents. Scratch owners are not
 thread-safe; callers order old/new buffer access with events.

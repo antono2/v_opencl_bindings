@@ -114,8 +114,8 @@ pub fn (mut workspace Workspace) inclusive_scan(input &cl.Buffer[u32], output &c
 	}
 	workspace.a.reserve(count)!
 	workspace.b.reserve(count)!
-	mut a := workspace.a.buffer or { return error('missing scan scratch') }
-	mut b := workspace.b.buffer or { return error('missing scan scratch') }
+	mut a := workspace.a.buffer() or { return error('missing scan scratch') }
+	mut b := workspace.b.buffer() or { return error('missing scan scratch') }
 	mut event := input.copy_to(workspace.queue, a, 0, 0, count, dependencies)!
 	// Remember every enqueue so an intermediate failure cannot permit scratch
 	// reuse before already-submitted work finishes.
@@ -172,8 +172,8 @@ pub fn (mut workspace Workspace) compact_indices(flags &cl.Buffer[u32], indices 
 	}
 	workspace.a.reserve(count)!
 	workspace.b.reserve(count)!
-	mut a := workspace.a.buffer or { return error('missing compaction scratch') }
-	mut b := workspace.b.buffer or { return error('missing compaction scratch') }
+	mut a := workspace.a.buffer() or { return error('missing compaction scratch') }
+	mut b := workspace.b.buffer() or { return error('missing compaction scratch') }
 	workspace.normalize.set_buffer_arg(0, flags.handle)!
 	workspace.normalize.set_buffer_arg(1, a.handle)!
 	mut event := workspace.normalize.enqueue_1d_after(workspace.queue, usize(count), 0,

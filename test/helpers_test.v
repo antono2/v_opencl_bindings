@@ -20,12 +20,14 @@ fn test_session_buffers_transfers_and_binary_cache() ! {
 	mut scratch := cl.new_scratch_buffer[u32](session.context, cl.mem_read_write)!
 	defer { scratch.close() or {} }
 	scratch.reserve(0)!
-	assert scratch.buffer == none
+	mut empty_rejected := false
+	scratch.buffer() or { empty_rejected = true }
+	assert empty_rejected
 	scratch.reserve(4)!
-	first := scratch.buffer or { return error('expected buffer') }
+	first := scratch.buffer() or { return error('expected buffer') }
 	first.write(session.queue, 0, [u32(2), 4, 6, 8])!
 	scratch.reserve(2)!
-	reused := scratch.buffer or { return error('expected buffer') }
+	reused := scratch.buffer() or { return error('expected buffer') }
 	assert first.handle == reused.handle
 	mut rejected_growth := false
 	scratch.reserve(-1) or {
@@ -36,7 +38,7 @@ fn test_session_buffers_transfers_and_binary_cache() ! {
 	mut grown := scratch.reserve_preserving(session.queue, 8, [])!
 	defer { grown.close() or {} }
 	grown.wait()!
-	buffer := scratch.buffer or { return error('expected replacement') }
+	buffer := scratch.buffer() or { return error('expected replacement') }
 	mut result := []u32{len: 4}
 	buffer.read(session.queue, 0, mut result)!
 	assert result == [u32(2), 4, 6, 8]

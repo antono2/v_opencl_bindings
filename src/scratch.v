@@ -6,8 +6,7 @@ pub struct ScratchBuffer[T] {
 mut:
 	context &OwnedContext
 	flags   MemFlags
-pub mut:
-	buffer ?&Buffer[T]
+	storage &Buffer[T] = unsafe { nil }
 }
 
 pub fn new_scratch_buffer[T](context &OwnedContext, flags MemFlags) !&ScratchBuffer[T] {
@@ -19,7 +18,7 @@ pub fn new_scratch_buffer[T](context &OwnedContext, flags MemFlags) !&ScratchBuf
 
 // reserve discards old contents only after replacement allocation succeeds.
 // Existing cloned references remain valid. Rebind kernel arguments after growth.
-// Zero requests do nothing; obtain storage through the optional buffer field.
+// Zero requests do nothing; obtain borrowed storage through buffer().
 pub fn (mut scratch ScratchBuffer[T]) reserve(count int) ! {
 	if count < 0 {
 		return error('scratch capacity must not be negative')
@@ -27,24 +26,26 @@ pub fn (mut scratch ScratchBuffer[T]) reserve(count int) ! {
 	if count == 0 {
 		return
 	}
-	if current := scratch.buffer {
+	if !isnil(scratch.storage) {
+		current := scratch.storage
 		if current.count >= count {
 			return
 		}
 	}
 	mut replacement := new_buffer[T](scratch.context, scratch.flags, count)!
-	if mut previous := scratch.buffer {
+	if !isnil(scratch.storage) {
+		mut previous := scratch.storage
 		previous.close() or {
 			replacement.close() or {}
 			return err
 		}
 	}
-	scratch.buffer = replacement
+	scratch.storage = replacement
 }
 
 pub fn (mut scratch ScratchBuffer[T]) close() ! {
-	if mut buffer := scratch.buffer { buffer.close()! }
-	scratch.buffer = none
+	if !isnil(scratch.storage) { scratch.storage.close()! }
+	scratch.storage = unsafe { nil }
 	scratch.context.close()!
 }
 
@@ -133,7 +134,8 @@ pub fn (kernel &OwnedKernel) set_local_arg(index u32, bytes usize) ! {
 // The returned event must complete before the replacement contents are used.
 pub fn (mut scratch ScratchBuffer[T]) reserve_preserving(queue &OwnedCommandQueue, count int, waits []Event) !&OwnedEvent {
 	if count < 0 { return error('scratch capacity must not be negative') }
-	if mut previous := scratch.buffer {
+	if !isnil(scratch.storage) {
+		mut previous := scratch.storage
 		if previous.count >= count { return queue.marker(waits) }
 		mut replacement := new_buffer[T](scratch.context, scratch.flags, count)!
 		mut event := previous.copy_to(queue, replacement, 0, 0, previous.count, waits) or {
@@ -145,9 +147,15 @@ pub fn (mut scratch ScratchBuffer[T]) reserve_preserving(queue &OwnedCommandQueu
 			replacement.close() or {}
 			return err
 		}
-		scratch.buffer = replacement
+		scratch.storage = replacement
 		return event
 	}
 	scratch.reserve(count)!
 	return queue.marker(waits)
+}
+
+// buffer returns borrowed storage; reserve positive capacity before accessing it.
+pub fn (scratch &ScratchBuffer[T]) buffer() !&Buffer[T] {
+	if isnil(scratch.storage) { return error('scratch buffer has no allocation') }
+	return scratch.storage
 }
