@@ -326,3 +326,9 @@ Handwritten discovery, ownership, event, image and interoperability files have
 purpose comments describing their role. Make shared source and example changes
 in that repository, then run its publisher; direct edits here can be overwritten.
 Keep vendored OpenCL headers and their upstream license notices intact.
+
+
+## Compatibility and diagnostics
+
+See [tested profiles and read-only diagnostics](docs/compatibility.md) for
+compiler/dependency versions, setup recovery actions and upgrade checks.
