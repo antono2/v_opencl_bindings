@@ -41,3 +41,8 @@ version. The driver also validates the binary. If the source includes external
 headers, callers must include their contents/version in the cache policy or
 invalidate the cache when they change. Filesystem location, eviction, locking and
 atomic writes are application choices; these helpers never write files.
+
+On macOS, the linked Apple framework provides OpenCL through 1.2. Later core
+wrappers return `invalid_operation` (or a null handle with that error) instead
+of referencing unavailable framework symbols. Dynamic builds resolve symbols
+from the selected runtime and report the same failure when a symbol is absent.

@@ -4,14 +4,14 @@ module algorithms
 import antono2.opencl as cl
 
 const source = '
-__kernel void normalize(__global const uint *input, __global uint *output) {
+__kernel void vcl_normalize(__global const uint *input, __global uint *output) {
   size_t i = get_global_id(0); output[i] = input[i] != 0;
 }
-__kernel void scan_step(__global const uint *input, __global uint *output, uint offset) {
+__kernel void vcl_scan_step(__global const uint *input, __global uint *output, uint offset) {
   size_t i = get_global_id(0); uint v = input[i];
   if (i >= offset) v += input[i-offset]; output[i] = v;
 }
-__kernel void scatter(__global const uint *flags, __global const uint *scan,
+__kernel void vcl_scatter(__global const uint *flags, __global const uint *scan,
                       __global uint *indices, __global uint *count, uint n) {
   size_t i = get_global_id(0);
   if (flags[i]) indices[scan[i]-1] = (uint)i;
@@ -40,15 +40,15 @@ pub fn new_workspace(context &cl.OwnedContext, queue &cl.OwnedCommandQueue, devi
 	defer {
 		if !success { program.close() or {} }
 	}
-	mut normalize := program.kernel('normalize')!
+	mut normalize := program.kernel('vcl_normalize')!
 	defer {
 		if !success { normalize.close() or {} }
 	}
-	mut step := program.kernel('scan_step')!
+	mut step := program.kernel('vcl_scan_step')!
 	defer {
 		if !success { step.close() or {} }
 	}
-	mut scatter := program.kernel('scatter')!
+	mut scatter := program.kernel('vcl_scatter')!
 	defer {
 		if !success { scatter.close() or {} }
 	}

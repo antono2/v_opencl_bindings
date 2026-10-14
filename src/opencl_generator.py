@@ -505,6 +505,14 @@ class OpenCLGenerator:
             for feature in self.core_features()
             for node in feature.findall(".//command")
         }
+        # Apple's framework exports OpenCL through 1.2 only. Keep later core
+        # wrappers callable with typed failure rather than emitting unavailable C symbols.
+        post_apple_commands = {
+            node.attrib["name"]
+            for feature in self.core_features()
+            if tuple(map(int, feature.attrib["number"].split("."))) > (1, 2)
+            for node in feature.findall(".//command")
+        }
         command_names = list(dict.fromkeys(
             node.attrib["name"]
             for section in self.registry_sections()
@@ -578,7 +586,11 @@ class OpenCLGenerator:
                     "\t\tif isnil(command) {", *missing, "\t\t}",
                     f"\t\treturn {dynamic_call}" if return_type else f"\t\t{dynamic_call}",
                 ])
-                body = "\t$if opencl_dynamic ? {\n" + dynamic_body + "\n\t} $else {\n\t" + body + "\n\t}"
+                linked_body = "\t" + body
+                if c_name in post_apple_commands:
+                    unavailable = "\n".join(missing)
+                    linked_body = "\t\t$if macos {\n" + unavailable + "\n\t\t} $else {\n\t" + linked_body + "\n\t\t}"
+                body = "\t$if opencl_dynamic ? {\n" + dynamic_body + "\n\t} $else {\n" + linked_body + "\n\t}"
             wrappers.append(
                 f"@[inline]\npub fn {self.command_name(c_name)}({v_params})"
                 + (f" {return_type}" if return_type else "")

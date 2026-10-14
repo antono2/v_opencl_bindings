@@ -2905,7 +2905,16 @@ pub fn create_command_queue_with_properties(context Context, device DeviceId, pr
 		}
 		return command(context, device, properties, errcode_ret)
 	} $else {
-		return C.clCreateCommandQueueWithProperties(context, device, properties, errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return CommandQueue(unsafe { nil })
+		} $else {
+			return C.clCreateCommandQueueWithProperties(context, device, properties, errcode_ret)
+		}
 	}
 }
 
@@ -2923,8 +2932,17 @@ pub fn create_pipe(context Context, flags MemFlags, pipe_packet_size u32, pipe_m
 		}
 		return command(context, flags, pipe_packet_size, pipe_max_packets, properties, errcode_ret)
 	} $else {
-		return C.clCreatePipe(context, flags, pipe_packet_size, pipe_max_packets, properties,
-			errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Mem(unsafe { nil })
+		} $else {
+			return C.clCreatePipe(context, flags, pipe_packet_size, pipe_max_packets, properties,
+				errcode_ret)
+		}
 	}
 }
 
@@ -2937,8 +2955,12 @@ pub fn get_pipe_info(pipe Mem, param_name PipeInfo, param_value_size usize, para
 		}
 		return command(pipe, param_name, param_value_size, param_value, param_value_size_ret)
 	} $else {
-		return C.clGetPipeInfo(pipe, param_name, param_value_size, param_value,
-			param_value_size_ret)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clGetPipeInfo(pipe, param_name, param_value_size, param_value,
+				param_value_size_ret)
+		}
 	}
 }
 
@@ -2951,7 +2973,11 @@ pub fn svm_alloc(context Context, flags SvmMemFlags, size usize, alignment u32) 
 		}
 		return command(context, flags, size, alignment)
 	} $else {
-		return C.clSVMAlloc(context, flags, size, alignment)
+		$if macos {
+			return voidptr(unsafe { nil })
+		} $else {
+			return C.clSVMAlloc(context, flags, size, alignment)
+		}
 	}
 }
 
@@ -2964,7 +2990,11 @@ pub fn svm_free(context Context, svm_pointer voidptr) {
 		}
 		command(context, svm_pointer)
 	} $else {
-		C.clSVMFree(context, svm_pointer)
+		$if macos {
+			return
+		} $else {
+			C.clSVMFree(context, svm_pointer)
+		}
 	}
 }
 
@@ -2982,7 +3012,16 @@ pub fn create_sampler_with_properties(context Context, sampler_properties &Sampl
 		}
 		return command(context, sampler_properties, errcode_ret)
 	} $else {
-		return C.clCreateSamplerWithProperties(context, sampler_properties, errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Sampler(unsafe { nil })
+		} $else {
+			return C.clCreateSamplerWithProperties(context, sampler_properties, errcode_ret)
+		}
 	}
 }
 
@@ -2995,7 +3034,11 @@ pub fn set_kernel_arg_svm_pointer(kernel Kernel, arg_index u32, arg_value voidpt
 		}
 		return command(kernel, arg_index, arg_value)
 	} $else {
-		return C.clSetKernelArgSVMPointer(kernel, arg_index, arg_value)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetKernelArgSVMPointer(kernel, arg_index, arg_value)
+		}
 	}
 }
 
@@ -3008,7 +3051,11 @@ pub fn set_kernel_exec_info(kernel Kernel, param_name KernelExecInfo, param_valu
 		}
 		return command(kernel, param_name, param_value_size, param_value)
 	} $else {
-		return C.clSetKernelExecInfo(kernel, param_name, param_value_size, param_value)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetKernelExecInfo(kernel, param_name, param_value_size, param_value)
+		}
 	}
 }
 
@@ -3023,9 +3070,14 @@ pub fn enqueue_svm_free(command_queue CommandQueue, num_svm_pointers u32, svm_po
 			pfn_free_func, user_data, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
 			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMFree(command_queue, num_svm_pointers,
-			unsafe { &voidptr(svm_pointers) }, pfn_free_func, user_data, num_events_in_wait_list,
-			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMFree(command_queue, num_svm_pointers,
+				unsafe { &voidptr(svm_pointers) }, pfn_free_func, user_data,
+				num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+				unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3039,8 +3091,13 @@ pub fn enqueue_svm_memcpy(command_queue CommandQueue, blocking_copy Bool, dst_pt
 		return command(command_queue, blocking_copy, dst_ptr, src_ptr, size,
 			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMemcpy(command_queue, blocking_copy, dst_ptr, src_ptr, size,
-			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMMemcpy(command_queue, blocking_copy, dst_ptr, src_ptr, size,
+				num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+				unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3054,8 +3111,13 @@ pub fn enqueue_svm_mem_fill(command_queue CommandQueue, svm_ptr voidptr, pattern
 		return command(command_queue, svm_ptr, pattern, pattern_size, size,
 			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMemFill(command_queue, svm_ptr, pattern, pattern_size, size,
-			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMMemFill(command_queue, svm_ptr, pattern, pattern_size, size,
+				num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+				unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3069,8 +3131,13 @@ pub fn enqueue_svm_map(command_queue CommandQueue, blocking_map Bool, flags MapF
 		return command(command_queue, blocking_map, flags, svm_ptr, size, num_events_in_wait_list,
 			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMap(command_queue, blocking_map, flags, svm_ptr, size,
-			num_events_in_wait_list, unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMMap(command_queue, blocking_map, flags, svm_ptr, size,
+				num_events_in_wait_list, unsafe { &Event(event_wait_list) },
+				unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3084,8 +3151,12 @@ pub fn enqueue_svm_unmap(command_queue CommandQueue, svm_ptr voidptr, num_events
 		return command(command_queue, svm_ptr, num_events_in_wait_list,
 			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list,
-			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMUnmap(command_queue, svm_ptr, num_events_in_wait_list,
+				unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3098,7 +3169,11 @@ pub fn set_default_device_command_queue(context Context, device DeviceId, comman
 		}
 		return command(context, device, command_queue)
 	} $else {
-		return C.clSetDefaultDeviceCommandQueue(context, device, command_queue)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetDefaultDeviceCommandQueue(context, device, command_queue)
+		}
 	}
 }
 
@@ -3111,7 +3186,11 @@ pub fn get_device_and_host_timer(device DeviceId, device_timestamp &u64, host_ti
 		}
 		return command(device, device_timestamp, host_timestamp)
 	} $else {
-		return C.clGetDeviceAndHostTimer(device, device_timestamp, host_timestamp)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clGetDeviceAndHostTimer(device, device_timestamp, host_timestamp)
+		}
 	}
 }
 
@@ -3124,7 +3203,11 @@ pub fn get_host_timer(device DeviceId, host_timestamp &u64) ErrorCode {
 		}
 		return command(device, host_timestamp)
 	} $else {
-		return C.clGetHostTimer(device, host_timestamp)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clGetHostTimer(device, host_timestamp)
+		}
 	}
 }
 
@@ -3142,7 +3225,16 @@ pub fn create_program_with_il(context Context, il voidptr, length usize, errcode
 		}
 		return command(context, il, length, errcode_ret)
 	} $else {
-		return C.clCreateProgramWithIL(context, il, length, errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Program(unsafe { nil })
+		} $else {
+			return C.clCreateProgramWithIL(context, il, length, errcode_ret)
+		}
 	}
 }
 
@@ -3160,7 +3252,16 @@ pub fn clone_kernel(source_kernel Kernel, errcode_ret &ErrorCode) Kernel {
 		}
 		return command(source_kernel, errcode_ret)
 	} $else {
-		return C.clCloneKernel(source_kernel, errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Kernel(unsafe { nil })
+		} $else {
+			return C.clCloneKernel(source_kernel, errcode_ret)
+		}
 	}
 }
 
@@ -3174,8 +3275,12 @@ pub fn get_kernel_sub_group_info(kernel Kernel, device DeviceId, param_name Kern
 		return command(kernel, device, param_name, input_value_size, input_value, param_value_size,
 			param_value, param_value_size_ret)
 	} $else {
-		return C.clGetKernelSubGroupInfo(kernel, device, param_name, input_value_size, input_value,
-			param_value_size, param_value, param_value_size_ret)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clGetKernelSubGroupInfo(kernel, device, param_name, input_value_size,
+				input_value, param_value_size, param_value, param_value_size_ret)
+		}
 	}
 }
 
@@ -3190,9 +3295,13 @@ pub fn enqueue_svm_migrate_mem(command_queue CommandQueue, num_svm_pointers u32,
 			flags, num_events_in_wait_list, unsafe { &Event(event_wait_list) },
 			unsafe { &Event(event) })
 	} $else {
-		return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers,
-			unsafe { &voidptr(svm_pointers) }, sizes, flags, num_events_in_wait_list,
-			unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clEnqueueSVMMigrateMem(command_queue, num_svm_pointers,
+				unsafe { &voidptr(svm_pointers) }, sizes, flags, num_events_in_wait_list,
+				unsafe { &Event(event_wait_list) }, unsafe { &Event(event) })
+		}
 	}
 }
 
@@ -3205,7 +3314,11 @@ pub fn set_program_specialization_constant(program Program, spec_id u32, spec_si
 		}
 		return command(program, spec_id, spec_size, spec_value)
 	} $else {
-		return C.clSetProgramSpecializationConstant(program, spec_id, spec_size, spec_value)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetProgramSpecializationConstant(program, spec_id, spec_size, spec_value)
+		}
 	}
 }
 
@@ -3218,7 +3331,11 @@ pub fn set_program_release_callback(program Program, pfn_notify ProgramCallback,
 		}
 		return command(program, pfn_notify, user_data)
 	} $else {
-		return C.clSetProgramReleaseCallback(program, pfn_notify, user_data)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetProgramReleaseCallback(program, pfn_notify, user_data)
+		}
 	}
 }
 
@@ -3231,7 +3348,11 @@ pub fn set_context_destructor_callback(context Context, pfn_notify ContextDestru
 		}
 		return command(context, pfn_notify, user_data)
 	} $else {
-		return C.clSetContextDestructorCallback(context, pfn_notify, user_data)
+		$if macos {
+			return invalid_operation
+		} $else {
+			return C.clSetContextDestructorCallback(context, pfn_notify, user_data)
+		}
 	}
 }
 
@@ -3249,8 +3370,17 @@ pub fn create_buffer_with_properties(context Context, properties &MemProperties,
 		}
 		return command(context, properties, flags, size, host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateBufferWithProperties(context, properties, flags, size, host_ptr,
-			errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Mem(unsafe { nil })
+		} $else {
+			return C.clCreateBufferWithProperties(context, properties, flags, size, host_ptr,
+				errcode_ret)
+		}
 	}
 }
 
@@ -3268,8 +3398,17 @@ pub fn create_image_with_properties(context Context, properties &MemProperties, 
 		}
 		return command(context, properties, flags, image_format, image_desc, host_ptr, errcode_ret)
 	} $else {
-		return C.clCreateImageWithProperties(context, properties, flags, image_format, image_desc,
-			host_ptr, errcode_ret)
+		$if macos {
+			if !isnil(errcode_ret) {
+				unsafe {
+					*errcode_ret = invalid_operation
+				}
+			}
+			return Mem(unsafe { nil })
+		} $else {
+			return C.clCreateImageWithProperties(context, properties, flags, image_format,
+				image_desc, host_ptr, errcode_ret)
+		}
 	}
 }
 

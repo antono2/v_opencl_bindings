@@ -42,6 +42,15 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("#flag darwin -I@VMODROOT/include", generated)
         self.assertIn("#include <CL/opencl.h>", generated)
 
+    def test_linked_apple_framework_rejects_post_1_2_commands(self) -> None:
+        generated = self.generate()
+        for name in ["create_buffer_with_properties", "svm_alloc", "enqueue_svm_map"]:
+            wrapper = generated.split(f"pub fn {name}(", 1)[1].split("\n@[inline]", 1)[0]
+            self.assertIn("$if opencl_dynamic ?", wrapper)
+            self.assertIn("$if macos {", wrapper)
+        legacy = generated.split("pub fn create_buffer(", 1)[1].split("\n@[inline]", 1)[0]
+        self.assertNotIn("$if macos {", legacy)
+
     def test_complete_core_error_range_is_emitted(self) -> None:
         generated = self.generate()
         self.assertIn("pub const success = ErrorCode(0)", generated)
