@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.0 - 2026-10-14
+
 - Add capability-based sessions, reusable scratch storage, owned asynchronous
   transfers, work-group queries and binary program caches with source fallback.
 - Add optional device-resident inclusive scan and stable index compaction with
