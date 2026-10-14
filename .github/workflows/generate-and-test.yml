@@ -76,19 +76,15 @@ jobs:
       - name: Assemble module and run smoke test
         run: |
           install -d "$HOME/.vmodules/antono2/opencl"
-          install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
-          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
-          install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
-          install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
-          install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
-          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
-          install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
-          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
-          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
-          install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
+          python3 tools/assemble_module.py "$HOME/.vmodules/antono2/opencl"
           v -cc gcc run test
           v test test/convenience_test.v
           v test test/pointer_abi_test.v
+          python3 tools/check_docs.py
+          v -cc gcc run examples/getting_started
+          v -cc gcc test test/helpers_test.v
+          v -cc gcc -d opencl_dynamic test test/helpers_test.v
+          python3 test/test_dynamic_runtime.py
           v -cc gcc run examples/vector_add
           v -cc gcc run examples/image_svm
       - name: Install advanced-example dependencies
@@ -100,16 +96,7 @@ jobs:
           cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
           cp -a .ci-modules/glfw/. "$HOME/.vmodules/antono2/glfw/"
           install -d "$HOME/.vmodules/antono2/opencl"
-          install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
-          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
-          install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
-          install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
-          install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
-          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
-          install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
-          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
-          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
-          install -m 0644 v.mod VERSION LICENSE "$HOME/.vmodules/antono2/opencl/"
+          python3 tools/assemble_module.py "$HOME/.vmodules/antono2/opencl"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
       - name: Build and test Vulkan particles example
@@ -159,19 +146,11 @@ jobs:
         run: |
           v run packaging/published_setup.vsh --check
           install -d "$HOME/.vmodules/antono2/opencl"
-          install -m 0644 src/opencl.v "$HOME/.vmodules/antono2/opencl/opencl.v"
-          install -m 0644 src/convenience.v "$HOME/.vmodules/antono2/opencl/convenience.v"
-          install -m 0644 src/ownership.v "$HOME/.vmodules/antono2/opencl/ownership.v"
-          install -m 0644 src/program.v "$HOME/.vmodules/antono2/opencl/program.v"
-          install -m 0644 src/event.v "$HOME/.vmodules/antono2/opencl/event.v"
-          install -m 0644 src/capabilities.v "$HOME/.vmodules/antono2/opencl/capabilities.v"
-          install -m 0644 src/external_interop.v "$HOME/.vmodules/antono2/opencl/external_interop.v"
-          install -m 0644 src/image.v "$HOME/.vmodules/antono2/opencl/image.v"
-          install -m 0644 src/svm.v "$HOME/.vmodules/antono2/opencl/svm.v"
-          install -m 0644 v.mod "$HOME/.vmodules/antono2/opencl/v.mod"
+          python3 tools/assemble_module.py "$HOME/.vmodules/antono2/opencl"
           install -d "$HOME/.vmodules/antono2/opencl/include/CL"
           install -m 0644 include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/opencl.h"
           v -cc clang -o /tmp/opencl-abi-probe abi/main.c.v
+          v -cc clang -d opencl_dynamic -o /tmp/opencl-dynamic-probe examples/getting_started
 
   linux-v-master:
     runs-on: ubuntu-24.04
@@ -219,7 +198,7 @@ jobs:
           # Here, compile the fresh generator output directly so V-master
           # formatter changes cannot masquerade as source incompatibilities.
           install -d "$HOME/.vmodules/antono2/opencl"
-          install -m 0644 src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/capabilities.v src/external_interop.v src/image.v src/svm.v v.mod "$HOME/.vmodules/antono2/opencl/"
+          python3 tools/assemble_module.py "$HOME/.vmodules/antono2/opencl"
       - name: Run correctness smoke tests on V master
         id: test_v_master
         if: steps.setup_v_master.outcome == 'success' && steps.generate_v_master.outcome == 'success'
@@ -293,13 +272,13 @@ jobs:
           python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
           module_root="$RUNNER_TEMP/vmodules/antono2/opencl"
           install -d "$module_root"
-          install -m 0644 src/opencl.v src/convenience.v src/ownership.v \
-            src/program.v src/event.v src/image.v src/svm.v src/capabilities.v \
-            src/external_interop.v v.mod "$module_root/"
+          python3 tools/assemble_module.py "$module_root"
           cp -a .ci-modules/vulkan "$RUNNER_TEMP/vmodules/antono2/vulkan"
           cp -a .ci-modules/glfw "$RUNNER_TEMP/vmodules/antono2/glfw"
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check test/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vector_add/main.v
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/getting_started/main.v
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/algorithms/main.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check abi/main.c.v
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -check examples/vulkan_particles
       - name: Run V3 backend smoke tests with TinyCC
@@ -309,6 +288,10 @@ jobs:
             -cc tcc run test
           VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
             -cc tcc run examples/vector_add
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/getting_started
+          VMODULES="$RUNNER_TEMP/vmodules" .ci-v3/v -new-compiler -n \
+            -cc tcc run examples/algorithms
 
   windows-abi-compile:
     runs-on: windows-2022
@@ -324,11 +307,12 @@ jobs:
         run: |
           $module = Join-Path $HOME '.vmodules/antono2/opencl'
           New-Item -ItemType Directory -Force $module | Out-Null
-          Copy-Item src/opencl.v, src/convenience.v, src/ownership.v, src/program.v, src/event.v, src/capabilities.v, src/external_interop.v, src/image.v, src/svm.v, v.mod -Destination $module
+          python tools/assemble_module.py $module
           Copy-Item packaging/published_setup.vsh (Join-Path $module 'setup.vsh')
           $env:OPENCL_SDK = Join-Path $env:VCPKG_INSTALLATION_ROOT 'installed/x64-windows'
           v run (Join-Path $module 'setup.vsh') --install
           v -cc msvc -o "$env:TEMP/opencl-abi-probe.exe" abi/main.c.v
+          v -cc msvc -d opencl_dynamic -o "$env:TEMP/opencl-dynamic-probe.exe" examples/getting_started
 
   linux-dependency-master:
     name: Advisory Vulkan and GLFW master
@@ -360,7 +344,7 @@ jobs:
           mkdir -p "$HOME/.vmodules/antono2/opencl" "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
           cp -a .ci-modules/vulkan/. "$HOME/.vmodules/antono2/vulkan/"
           cp -a .ci-modules/glfw/. "$HOME/.vmodules/antono2/glfw/"
-          cp src/opencl.v src/convenience.v src/ownership.v src/program.v src/event.v src/image.v src/svm.v src/capabilities.v src/external_interop.v v.mod "$HOME/.vmodules/antono2/opencl/"
+          python3 tools/assemble_module.py "$HOME/.vmodules/antono2/opencl"
           mkdir -p "$HOME/.vmodules/antono2/opencl/include/CL"
           cp include/CL/opencl.h "$HOME/.vmodules/antono2/opencl/include/CL/"
           v -cc gcc -o "$RUNNER_TEMP/vulkan-particles" examples/vulkan_particles

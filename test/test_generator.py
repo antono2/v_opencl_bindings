@@ -42,6 +42,15 @@ class OpenCLGeneratorTests(unittest.TestCase):
         self.assertIn("#flag darwin -I@VMODROOT/include", generated)
         self.assertIn("#include <CL/opencl.h>", generated)
 
+    def test_linked_apple_framework_rejects_post_1_2_commands(self) -> None:
+        generated = self.generate()
+        for name in ["create_buffer_with_properties", "svm_alloc", "enqueue_svm_map"]:
+            wrapper = generated.split(f"pub fn {name}(", 1)[1].split("\n@[inline]", 1)[0]
+            self.assertIn("$if opencl_dynamic ?", wrapper)
+            self.assertIn("$if macos {", wrapper)
+        legacy = generated.split("pub fn create_buffer(", 1)[1].split("\n@[inline]", 1)[0]
+        self.assertNotIn("$if macos {", legacy)
+
     def test_complete_core_error_range_is_emitted(self) -> None:
         generated = self.generate()
         self.assertIn("pub const success = ErrorCode(0)", generated)
@@ -78,7 +87,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_core_callback_types_are_emitted_and_used(self) -> None:
         generated = self.generate()
         self.assertIn("$if windows {", generated)
-        self.assertEqual(generated.count("@[callconv: stdcall]"), 21)
+        self.assertEqual(generated.count("@[callconv: stdcall]"), 135)
         self.assertIn("pub type ContextNotifyCallback = fn (errinfo &char, private_info voidptr, cb usize, user_data voidptr)", generated)
         self.assertIn("pub type EventCallback = fn (event Event, event_command_status i32, user_data voidptr)", generated)
         self.assertIn("pub type SvmFreeCallback = fn (queue CommandQueue, num_svm_pointers u32, svm_pointers &voidptr, user_data voidptr)", generated)
@@ -197,7 +206,7 @@ class OpenCLGeneratorTests(unittest.TestCase):
     def test_extension_commands_are_resolved_at_runtime(self) -> None:
         generated = self.generate()
         self.assertIn("pub type PFN_clGetKernelSubGroupInfoKHR = fn (", generated)
-        self.assertIn("PFN_clGetKernelSubGroupInfoKHR(C.clGetExtensionFunctionAddress(c'clGetKernelSubGroupInfoKHR'))", generated)
+        self.assertIn("PFN_clGetKernelSubGroupInfoKHR(get_extension_function_address(c'clGetKernelSubGroupInfoKHR'))", generated)
         self.assertNotIn("fn C.clGetKernelSubGroupInfoKHR(", generated)
         self.assertIn("if isnil(extension_fn) {\n\t\treturn invalid_operation", generated)
         self.assertIn("unsafe { *errcode_ret = invalid_operation }", generated)

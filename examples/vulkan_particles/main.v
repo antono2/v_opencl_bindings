@@ -41,8 +41,11 @@ fn main() {
 
 	// After the renderer closes, or immediately in headless mode, exercise the exact simulation
 	// buffer contract for a few frames. This also provides a display-independent CI smoke mode.
+	// Each particle is two float4 fields, matching the shared OpenCL/Vulkan layout.
 	mut particles := []f32{len: int(count * 8)}
 	started := time.now()
+	// Eight fixed 1/60-second steps make this headless check deterministic.
+	// The pointer stays at the origin with attraction strength 0.11.
 	for frame in 0 .. 8 {
 		compute.update(1.0 / 60.0, f32(frame) / 60.0, 0.0, 0.0, 0.11) or { panic(err) }
 	}

@@ -139,11 +139,16 @@ HEADER = """// Code generated from the Khronos OpenCL XML API Registry. DO NOT E
 // Regenerate in antono2/v_opencl_bindings with python3 src/main.py.
 module opencl
 
-#flag linux -lOpenCL
-#flag windows -lOpenCL
+$if opencl_dynamic ? {
+	#flag linux -ldl -pthread
+	#include "@VMODROOT/include/opencl_runtime.h"
+} $else {
+	#flag linux -lOpenCL
+	#flag windows -lOpenCL
+	#flag darwin -framework OpenCL
+}
 #flag windows -I@VMODROOT/include
 #flag windows -L@VMODROOT/lib
-#flag darwin -framework OpenCL
 #flag darwin -I@VMODROOT/include
 #include <CL/opencl.h>
 
@@ -500,6 +505,14 @@ class OpenCLGenerator:
             for feature in self.core_features()
             for node in feature.findall(".//command")
         }
+        # Apple's framework exports OpenCL through 1.2 only. Keep later core
+        # wrappers callable with typed failure rather than emitting unavailable C symbols.
+        post_apple_commands = {
+            node.attrib["name"]
+            for feature in self.core_features()
+            if tuple(map(int, feature.attrib["number"].split("."))) > (1, 2)
+            for node in feature.findall(".//command")
+        }
         command_names = list(dict.fromkeys(
             node.attrib["name"]
             for section in self.registry_sections()
@@ -521,9 +534,8 @@ class OpenCLGenerator:
             c_signature = ", ".join(abi_type for _, abi_type, _ in params)
             signature = f"fn ({c_signature})" + (f" {return_type}" if return_type else "")
             is_extension = c_name not in core_command_names
-            if is_extension:
-                extension_types.append((f"PFN_{c_name}", signature))
-            else:
+            extension_types.append((f"PFN_{c_name}", signature))
+            if not is_extension:
                 declarations.append(
                     f"fn C.{c_name}({c_signature})" + (f" {return_type}" if return_type else "")
                 )
@@ -537,7 +549,7 @@ class OpenCLGenerator:
             if is_extension:
                 pointer_type = f"PFN_{c_name}"
                 lines = [
-                    f"\textension_fn := unsafe {{ {pointer_type}(C.clGetExtensionFunctionAddress(c'{c_name}')) }}",
+                    f"\textension_fn := unsafe {{ {pointer_type}(get_extension_function_address(c'{c_name}')) }}",
                     "\tif isnil(extension_fn) {",
                 ]
                 if return_type == "ErrorCode":
@@ -559,6 +571,26 @@ class OpenCLGenerator:
             else:
                 call = f"C.{c_name}({', '.join(call_arguments)})"
                 body = f"\treturn {call}" if return_type else f"\t{call}"
+                missing = []
+                if "errcode_ret" in param_names:
+                    missing.extend(["\t\t\tif !isnil(errcode_ret) {", "\t\t\t\tunsafe { *errcode_ret = invalid_operation }", "\t\t\t}"])
+                if return_type == "ErrorCode":
+                    missing.append("\t\t\treturn invalid_operation")
+                elif return_type:
+                    missing.append(f"\t\t\treturn {return_type}(unsafe {{ nil }})")
+                else:
+                    missing.append("\t\t\treturn")
+                dynamic_call = f"command({', '.join(call_arguments)})"
+                dynamic_body = "\n".join([
+                    f"\t\tcommand := unsafe {{ PFN_{c_name}(C.vcl_symbol(c'{c_name}')) }}",
+                    "\t\tif isnil(command) {", *missing, "\t\t}",
+                    f"\t\treturn {dynamic_call}" if return_type else f"\t\t{dynamic_call}",
+                ])
+                linked_body = "\t" + body
+                if c_name in post_apple_commands:
+                    unavailable = "\n".join(missing)
+                    linked_body = "\t\t$if macos {\n" + unavailable + "\n\t\t} $else {\n\t" + linked_body + "\n\t\t}"
+                body = "\t$if opencl_dynamic ? {\n" + dynamic_body + "\n\t} $else {\n" + linked_body + "\n\t}"
             wrappers.append(
                 f"@[inline]\npub fn {self.command_name(c_name)}({v_params})"
                 + (f" {return_type}" if return_type else "")

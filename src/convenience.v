@@ -24,13 +24,16 @@ pub fn check(status ErrorCode, operation string) ! {
 	if status != success {
 		return OpenCLError{
 			operation: operation
-			status: status
+			status:    status
 		}
 	}
 }
 
 // platforms enumerates every platform exposed by the installed ICD loader.
 pub fn platforms() ![]PlatformId {
+	if !runtime_available() {
+		return error('OpenCL runtime unavailable; install an ICD loader or check OPENCL_LIBRARY')
+	}
 	mut count := u32(0)
 	status := get_platform_ids(0, unsafe { nil }, &count)
 	if status == platform_not_found_khr {
@@ -57,19 +60,22 @@ pub fn devices(platform PlatformId, device_kind DeviceType) ![]DeviceId {
 		return []
 	}
 	mut result := unsafe { []DeviceId{len: int(count)} }
-	check(get_device_ids(platform, device_kind, count, result.data, &count), 'enumerate OpenCL devices')!
+	check(get_device_ids(platform, device_kind, count, result.data, &count),
+		'enumerate OpenCL devices')!
 	return result[..int(count)].clone()
 }
 
 // platform_info_string reads a NUL-terminated platform string safely.
 pub fn platform_info_string(platform PlatformId, parameter PlatformInfo) !string {
 	mut size := usize(0)
-	check(get_platform_info(platform, parameter, 0, unsafe { nil }, &size), 'query OpenCL platform string size')!
+	check(get_platform_info(platform, parameter, 0, unsafe { nil }, &size),
+		'query OpenCL platform string size')!
 	if size == 0 {
 		return ''
 	}
 	mut bytes := []u8{len: int(size)}
-	check(get_platform_info(platform, parameter, size, bytes.data, unsafe { nil }), 'read OpenCL platform string')!
+	check(get_platform_info(platform, parameter, size, bytes.data, unsafe { nil }),
+		'read OpenCL platform string')!
 	length := if bytes.last() == 0 { bytes.len - 1 } else { bytes.len }
 	return bytes[..length].bytestr()
 }
@@ -77,12 +83,14 @@ pub fn platform_info_string(platform PlatformId, parameter PlatformInfo) !string
 // device_info_string reads a NUL-terminated device string safely.
 pub fn device_info_string(device DeviceId, parameter DeviceInfo) !string {
 	mut size := usize(0)
-	check(get_device_info(device, parameter, 0, unsafe { nil }, &size), 'query OpenCL device string size')!
+	check(get_device_info(device, parameter, 0, unsafe { nil }, &size),
+		'query OpenCL device string size')!
 	if size == 0 {
 		return ''
 	}
 	mut bytes := []u8{len: int(size)}
-	check(get_device_info(device, parameter, size, bytes.data, unsafe { nil }), 'read OpenCL device string')!
+	check(get_device_info(device, parameter, size, bytes.data, unsafe { nil }),
+		'read OpenCL device string')!
 	length := if bytes.last() == 0 { bytes.len - 1 } else { bytes.len }
 	return bytes[..length].bytestr()
 }

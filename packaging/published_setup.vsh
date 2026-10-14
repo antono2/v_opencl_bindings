@@ -3,10 +3,10 @@
 // Installs and verifies the native prerequisites used by antono2.opencl.
 // Running without arguments performs the installation. Use --check for a
 // read-only diagnostic pass suitable for support requests and CI.
-
 import os
 
-const usage = 'Usage: v run setup.vsh [--install|--check]\n\n' + '  --install  Install the OpenCL loader, headers, a development runtime and this V module (default).\n' + '  --check    Only report whether the compiler, headers, loader and an OpenCL platform work.\n'
+const usage = 'Usage: v run setup.vsh [--install|--check|--probe]\n\n' +
+	'  --install  Install the OpenCL loader, headers, a development runtime and this V module (default).\n' + '  --check    Only report whether the compiler, headers, loader and an OpenCL platform work.\n'
 
 fn command_exists(name string) bool {
 	os.find_abs_path_of_executable(name) or { return false }
@@ -105,7 +105,8 @@ fn install_windows() ! {
 	if !command_exists('cmake') {
 		run('winget install --id Kitware.CMake --exact --accept-package-agreements --accept-source-agreements')!
 	}
-	path_result := os.execute('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\'Path\',\'Machine\') + \';\' + [Environment]::GetEnvironmentVariable(\'Path\',\'User\')"')
+	path_result :=
+		os.execute('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\'Path\',\'Machine\') + \';\' + [Environment]::GetEnvironmentVariable(\'Path\',\'User\')"')
 	if path_result.exit_code == 0 && path_result.output.trim_space() != '' {
 		os.setenv('PATH', path_result.output.trim_space(), true)
 	}
@@ -226,13 +227,34 @@ fn check() bool {
 	return ok
 }
 
+fn probe() ! {
+	root := os.dir(os.real_path(@FILE))
+	mut example := os.join_path(root, 'examples', 'getting_started')
+	if !os.is_dir(example) && os.base(root) == 'packaging' {
+		example = os.join_path(os.dir(root), 'examples', 'getting_started')
+	}
+	if !os.is_dir(example) { return error('first-use example is missing from this installation') }
+	run('v run ${os.quoted_path(example)}')!
+	println('[ok]       Binding runtime probe completed successfully.')
+}
+
 fn main() {
-	if os.args.len > 2 || (os.args.len == 2 && os.args[1] !in ['--install', '--check', '-h', '--help']) {
-		eprintln(usage)
+	if os.args.len > 2
+		|| (os.args.len == 2 && os.args[1] !in ['--install', '--check', '--probe', '-h', '--help']) {
+		eprintln(usage +
+			'\n  --probe    Compile and execute the first-use example; does not install packages.')
 		exit(2)
 	}
 	if os.args.len == 2 && os.args[1] in ['-h', '--help'] {
-		println(usage)
+		println(usage +
+			'\n  --probe    Compile and execute the first-use example; does not install packages.')
+		return
+	}
+	if os.args.len == 2 && os.args[1] == '--probe' {
+		probe() or {
+			eprintln(err)
+			exit(1)
+		}
 		return
 	}
 	install := os.args.len == 1 || os.args[1] == '--install'
@@ -263,5 +285,5 @@ fn main() {
 		eprintln('\nSetup is incomplete. Resolve the missing items above and rerun with --check.')
 		exit(1)
 	}
-	println('\nOpenCL development prerequisites are ready.')
+	println('\nOpenCL build prerequisites are ready. Runtime warnings are separate; use --probe to verify a kernel result.')
 }

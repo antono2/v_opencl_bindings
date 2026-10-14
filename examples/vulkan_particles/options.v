@@ -6,11 +6,12 @@ import os
 
 struct AppOptions {
 mut:
+	// Demonstration workload, configurable with --particles or PARTICLE_COUNT.
 	particle_count    usize = 32768
 	window            bool
 	force_staged      bool
 	require_zero_copy bool
-	frame_limit       int
+	frame_limit       int // Zero keeps the interactive window running until closed.
 	help              bool
 }
 

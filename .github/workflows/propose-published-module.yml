@@ -6,6 +6,11 @@ on:
     paths:
       - 'src/**'
       - 'test/convenience_test.v'
+      - 'test/helpers_test.v'
+      - 'test/test_dynamic_runtime.py'
+      - 'tools/check_docs.py'
+      - 'algorithms/**'
+      - 'docs/**'
       - 'test/pointer_abi_*'
       - 'abi/**'
       - 'examples/**'
