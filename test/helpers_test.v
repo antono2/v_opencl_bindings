@@ -1,3 +1,5 @@
+// Exercises sessions, transfers, binary-cache fallback and scan/compaction against CPU results.
+// Requires an OpenCL device; out-of-order queue checks run only when supported.
 module main
 
 import antono2.opencl as cl

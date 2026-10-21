@@ -1,3 +1,5 @@
+// Demonstrates stable device-side index compaction with explicit event waits and cleanup.
+// Requires an OpenCL device with a source compiler and checks the selected indices.
 module main
 
 import antono2.opencl as cl
