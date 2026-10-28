@@ -70,8 +70,12 @@ omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
 The published module's `GENERATOR_COMMIT` records the canonical commit used
-for the last publication that changed distributed content. Generator-only maintenance retains the
-existing valid marker and does not open a publication PR. Missing or invalid
+for the last publication that changed distributed content. Generator-only or
+input-revision-only maintenance retains all three valid revision markers and
+does not open a publication PR. The input updater also skips upstream
+documentation-only revisions when both generated bindings and the C-header
+tree are unchanged; generation failures and real C-header changes still receive
+reviewable proposals. Missing or invalid
 provenance is repaired automatically.
 `VERSION`, the published module's `v.mod` version and `LICENSE` are synchronized
 as well. The end-user README is rendered from

@@ -28,10 +28,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          python3 tools/test_check_input_payload.py
           registry=$(gh api repos/KhronosGroup/OpenCL-Docs/commits/main --jq .sha)
           headers=$(gh api repos/KhronosGroup/OpenCL-Headers/commits/main --jq .sha)
           echo "registry=$registry" >> "$GITHUB_OUTPUT"
           echo "headers=$headers" >> "$GITHUB_OUTPUT"
+          echo "previous_headers=$(cat HEADERS_COMMIT)" >> "$GITHUB_OUTPUT"
           if test "$registry" = "$(cat REGISTRY_COMMIT)" && test "$headers" = "$(cat HEADERS_COMMIT)"; then
             echo 'changed=false' >> "$GITHUB_OUTPUT"
             echo 'Pinned Khronos inputs are current.'
@@ -43,6 +45,7 @@ jobs:
         env:
           REGISTRY_SHA: ${{ steps.inputs.outputs.registry }}
           HEADERS_SHA: ${{ steps.inputs.outputs.headers }}
+          PREVIOUS_HEADERS: ${{ steps.inputs.outputs.previous_headers }}
         run: |
           set -euo pipefail
           git checkout -B automation/update-khronos-inputs origin/master
@@ -56,6 +59,7 @@ jobs:
           git -C openclheaders remote add origin https://github.com/KhronosGroup/OpenCL-Headers.git
           git -C openclheaders fetch -q --depth 1 origin "$HEADERS_SHA"
           git -C openclheaders checkout -q --detach FETCH_HEAD
+          git -C openclheaders fetch -q --depth 1 origin "$PREVIOUS_HEADERS"
       - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
         if: steps.inputs.outputs.changed == 'true'
         with:
@@ -71,14 +75,19 @@ jobs:
           v fmt -w src/opencl.v
           git diff --check
       - name: Publish update proposal
-        if: always() && steps.inputs.outputs.changed == 'true'
+        if: always() && steps.inputs.outputs.changed == 'true' && (steps.generate.outcome == 'success' || steps.generate.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
           REGISTRY_SHA: ${{ steps.inputs.outputs.registry }}
           HEADERS_SHA: ${{ steps.inputs.outputs.headers }}
           GENERATE_OUTCOME: ${{ steps.generate.outcome }}
+          PREVIOUS_HEADERS: ${{ steps.inputs.outputs.previous_headers }}
         run: |
           set -euo pipefail
+          if [[ $(python3 tools/check_input_payload.py --previous-headers "$PREVIOUS_HEADERS" --generation-outcome "$GENERATE_OUTCOME") == false ]]; then
+            echo 'No binding or C-header payload changed; upstream documentation revisions need no proposal.'
+            exit 0
+          fi
           branch=automation/update-khronos-inputs
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
