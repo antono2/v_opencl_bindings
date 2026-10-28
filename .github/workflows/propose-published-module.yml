@@ -65,6 +65,8 @@ jobs:
             args+=(--refresh-provenance)
           fi
           python3 tools/sync_published_module.py published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
+      - name: Verify quiet proposal publishing
+        run: python3 tools/test_publish_generated_branch.py
       - name: Create or update the publication pull request
         env:
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
@@ -86,19 +88,13 @@ jobs:
             fi
             exit 0
           fi
-          git -C published config user.name github-actions[bot]
-          git -C published config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git -C published commit -m "Synchronize published OpenCL module"
-          remote_ref="refs/heads/$branch"
-          remote_sha=$(git -C published ls-remote origin "$remote_ref" | awk '{print $1}')
-          git -C published push --force-with-lease="$remote_ref:$remote_sha" origin "HEAD:$remote_ref"
+          (cd published && python3 ../tools/publish_generated_branch.py "$branch" 'Synchronize published OpenCL module')
           cd published
           body="Automated synchronization from antono2/v_opencl_bindings at $GENERATOR_COMMIT. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
           pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
             --json number --jq '.[0].number // empty')
           if test -n "$pr_number"; then
-            gh pr edit "$pr_number" --repo antono2/opencl \
-              --body "$body"
+            echo "Existing PR #$pr_number is left unchanged."
           else
             gh pr create --repo antono2/opencl --base master --head "$branch" \
               --title "Synchronize published OpenCL module" \

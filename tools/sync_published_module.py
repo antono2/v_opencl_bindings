@@ -11,6 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_FILE = "DISTRIBUTION_FILES"
+PROVENANCE_FILES = {"GENERATOR_COMMIT", "REGISTRY_COMMIT", "HEADERS_COMMIT"}
 MANIFEST_HEADER = (
     "# Managed by antono2/v_opencl_bindings. Edit the canonical generator, not this file.\n"
 )
@@ -157,16 +158,18 @@ def sync(
     contents[MANIFEST_FILE] = distribution_manifest(managed_paths)
     # Provenance records content-changing synchronizations.
     # Generator-only maintenance should not create a publication PR of its own.
-    provenance = target / "GENERATOR_COMMIT"
     payload_changed = bool(stale_paths) or any(
         not (target / name).is_file() or (target / name).read_bytes() != data
         for name, data in contents.items()
-        if name != "GENERATOR_COMMIT"
+        if name not in PROVENANCE_FILES
     )
-    if not refresh_provenance and not payload_changed and provenance.is_file():
-        previous = provenance.read_bytes()
-        if re.fullmatch(rb"[0-9a-f]{40}\n", previous):
-            contents["GENERATOR_COMMIT"] = previous
+    if not refresh_provenance and not payload_changed:
+        for name in PROVENANCE_FILES:
+            provenance = target / name
+            if provenance.is_file():
+                previous = provenance.read_bytes()
+                if re.fullmatch(rb"[0-9a-f]{40}\n", previous):
+                    contents[name] = previous
     changed = []
     for target_name in sorted(stale_paths):
         changed.append(f"{target_name} (remove)")

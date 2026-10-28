@@ -17,6 +17,32 @@ import sync_published_module  # noqa: E402
 
 
 class SyncPublishedModuleTests(unittest.TestCase):
+    def test_input_marker_only_changes_do_not_publish(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = self.make_target(directory)
+            sync_published_module.sync(target, check=False, generator_commit='a' * 40)
+            for name in ['REGISTRY_COMMIT', 'HEADERS_COMMIT']:
+                (target / name).write_text('b' * 40 + '\n')
+            before = {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()}
+            self.assertEqual(sync_published_module.sync(target, check=True, generator_commit='c' * 40), 0)
+            sync_published_module.sync(target, check=False, generator_commit='c' * 40)
+            self.assertEqual(before, {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()})
+
+    def test_real_payload_and_explicit_refresh_update_all_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = self.make_target(directory)
+            sync_published_module.sync(target, check=False, generator_commit='a' * 40)
+            for force in [False, True]:
+                for name in ['REGISTRY_COMMIT', 'HEADERS_COMMIT']:
+                    (target / name).write_text('b' * 40 + '\n')
+                if not force:
+                    (target / 'README.md').write_text('old payload\n')
+                sync_published_module.sync(target, check=False, generator_commit='c' * 40,
+                                           refresh_provenance=force)
+                for name in ['REGISTRY_COMMIT', 'HEADERS_COMMIT']:
+                    self.assertEqual((target / name).read_bytes(), (ROOT / name).read_bytes())
+                self.assertEqual((target / 'GENERATOR_COMMIT').read_text(), 'c' * 40 + '\n')
+
     def make_target(self, directory: str) -> Path:
         target = Path(directory)
         (target / "v.mod").write_text(
