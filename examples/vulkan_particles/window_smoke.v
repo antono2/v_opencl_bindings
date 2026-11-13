@@ -6,6 +6,7 @@ import antono2.glfw
 import antono2.opencl as cl
 import time
 import antono2.vulkan as vk
+import examples.vulkan_particles.windowing
 
 fn C.glfwGetCursorPos(window &glfw.Window, x &f64, y &f64)
 
@@ -35,7 +36,7 @@ fn window_device_loop(compute &Compute, particle_count usize, use_zero_copy bool
 		return error('GLFW cannot find a Vulkan loader')
 	}
 	glfw.window_hint(glfw.client_api, glfw.no_api)
-	window := glfw.create_windowed(960, 640, 'Vulkan + OpenCL particles')!
+	window := windowing.create_windowed(960, 640, 'Vulkan + OpenCL particles')!
 	defer { glfw.destroy_window(window) }
 
 	if vk.initialize_loader() != vk.Result.success {
