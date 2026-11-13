@@ -12,6 +12,7 @@ permissions:
   contents: read
 
 env:
+  V_C_ERROR_BUG_REPORT_DISABLED: 1
   # Pin the required compiler and formatter so generated-source checks do not
   # change when a new V release artifact is published.
   V_VERSION: 0.5.2
@@ -91,7 +92,7 @@ jobs:
           v -cc gcc run examples/image_svm
       - name: Install advanced-example dependencies
         run: |
-          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers xauth xvfb
+          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers libx11-dev openbox xauth xvfb
           test "$(git -C .ci-modules/vulkan describe --tags --exact-match)" = "$VULKAN_REF"
           test "$(git -C .ci-modules/glfw describe --tags --exact-match)" = "$GLFW_REF"
           install -d "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
@@ -111,6 +112,8 @@ jobs:
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
           v -cc tcc -o /tmp/vulkan-particles-tcc examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles-tcc
+          v -cc tcc -o /tmp/window-startup-check examples/vulkan_particles/tests/window_startup.v
+          /tmp/window-startup-check /tmp/vulkan-particles /tmp/window-startup-logs --staged --frames=3 --particles=128
           VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation \
             xvfb-run -a /tmp/vulkan-particles --staged --frames=16 --particles=1024 \
             2>&1 | tee /tmp/vulkan-particles-window.log
