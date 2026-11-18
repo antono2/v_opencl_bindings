@@ -69,8 +69,8 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          python3 test/test_generator.py
-          python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+          v run src/generate.vsh --self-test
+          v run src/generate.vsh --registry opencldocs/xml/cl.xml
           v fmt -w src/opencl.v
           git diff --check
       - name: Publish update proposal
@@ -93,23 +93,13 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add REGISTRY_COMMIT HEADERS_COMMIT src/opencl.v
           before=$(git rev-parse HEAD)
-          python3 tools/test_publish_generated_branch.py
-          python3 tools/publish_generated_branch.py "$branch" 'Update pinned Khronos OpenCL inputs'
+          v run tools/publish_generated_branch.vsh --self-test
+          v run tools/publish_generated_branch.vsh "$branch" 'Update pinned Khronos OpenCL inputs'
           pushed=false
           if [[ $(git rev-parse HEAD) != "$before" ]]; then pushed=true; fi
-          later_core=$(python3 - <<'PY'
-          import sys
-          from pathlib import Path
-          sys.path.insert(0, 'src')
-          from opencl_generator import OpenCLGenerator
-          generator = OpenCLGenerator(Path('opencldocs/xml/cl.xml'))
-          try:
-              generator.validate_registry()
-              print(', '.join(generator.later_core_features()) or 'none')
-          except Exception as error:
-              print(f'unavailable: {error}')
-          PY
-          )
+          if ! later_core=$(v run src/generate.vsh --later-core 2>&1); then
+            later_core="unavailable: $later_core"
+          fi
           cat > /tmp/opencl-input-update.md <<EOF
           Weekly proposal to refresh immutable Khronos inputs.
 
