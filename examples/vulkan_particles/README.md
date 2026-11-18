@@ -23,7 +23,7 @@ OpenCL and a two-way opaque-FD binary semaphore handshake.
 
 The Vulkan shaders consume each `Particle` directly as two `vec4` vertex attributes. They render
 soft circular point sprites with additive blending and color derived from velocity. Rebuild the
-checked-in SPIR-V after editing GLSL with `./compile_shaders.sh`.
+checked-in SPIR-V after editing GLSL with `v run compile_shaders.vsh`.
 
 Install the dependency releases recorded in this example's [`v.mod`](v.mod).
 From the repository root:

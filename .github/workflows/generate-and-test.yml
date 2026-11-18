@@ -83,11 +83,11 @@ jobs:
           v -cc gcc run test
           v test test/convenience_test.v
           v test test/pointer_abi_test.v
-          python3 tools/check_docs.py
+          v run tools/check_docs.vsh
           v -cc gcc run examples/getting_started
           v -cc gcc test test/helpers_test.v
           v -cc gcc -d opencl_dynamic test test/helpers_test.v
-          python3 test/test_dynamic_runtime.py
+          v run test/test_dynamic_runtime.vsh
           v -cc gcc run examples/vector_add
           v -cc gcc run examples/image_svm
       - name: Install advanced-example dependencies
@@ -108,6 +108,7 @@ jobs:
           GLFW_INCLUDE: /usr/include
           GLFW_LIB: /usr/lib/x86_64-linux-gnu
         run: |
+          v run examples/vulkan_particles/compile_shaders.vsh
           v -cc gcc -o /tmp/vulkan-particles examples/vulkan_particles
           PARTICLE_COUNT=1024 /tmp/vulkan-particles
           v -cc tcc -o /tmp/vulkan-particles-tcc examples/vulkan_particles
