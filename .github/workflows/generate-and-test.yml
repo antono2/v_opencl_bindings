@@ -92,7 +92,7 @@ jobs:
           v -cc gcc run examples/image_svm
       - name: Install advanced-example dependencies
         run: |
-          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers libx11-dev openbox xauth xvfb
+          sudo apt-get install --yes libvulkan-dev libvulkan-volk-dev libglfw3-dev mesa-vulkan-drivers vulkan-validationlayers libx11-dev openbox xauth xvfb glslc
           test "$(git -C .ci-modules/vulkan describe --tags --exact-match)" = "$VULKAN_REF"
           test "$(git -C .ci-modules/glfw describe --tags --exact-match)" = "$GLFW_REF"
           install -d "$HOME/.vmodules/antono2/vulkan" "$HOME/.vmodules/antono2/glfw"
