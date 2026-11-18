@@ -1,5 +1,9 @@
 # Typed images and SVM
 
+![Terminal output confirming the typed RGBA image and SVM kernel round trips](output.png)
+
+Example output from a device that supports both the typed RGBA image and SVM round trips.
+
 This example exercises the typed image and shared virtual memory helpers on
 the first available OpenCL device. It copies a 2×2 RGBA image through an OpenCL
 image kernel and owned sampler. When the device advertises buffer shared virtual

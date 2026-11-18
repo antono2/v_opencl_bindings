@@ -1,5 +1,9 @@
 # Vulkan particles
 
+![A rotating galaxy of colorful particles rendered by the Vulkan example](preview.gif)
+
+A short capture of the interactive renderer using staged OpenCL-to-Vulkan transfers.
+
 > **Source of truth:** This example is maintained in
 > [`antono2/v_opencl_bindings`](https://github.com/antono2/v_opencl_bindings/tree/master/examples/vulkan_particles)
 > and copied unchanged into
