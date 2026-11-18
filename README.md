@@ -65,7 +65,7 @@ Use your platform's Python command (`python` or `py -3` on Windows if
 
 `v_opencl_bindings` is the canonical source for generated bindings,
 hand-written convenience code, ABI probes and examples. Run
-`python3 tools/sync_published_module.py ../opencl --check` to detect drift or
+`v run tools/sync_published_module.vsh ../opencl --check` to detect drift or
 omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
@@ -92,8 +92,8 @@ distributed content is unchanged, dispatch the publication workflow with
 `refresh_provenance` enabled, or run:
 
 ```sh
-python3 tools/sync_published_module.py ../opencl --refresh-provenance
-python3 tools/sync_published_module.py ../opencl --check --refresh-provenance
+v run tools/sync_published_module.vsh ../opencl --refresh-provenance
+v run tools/sync_published_module.vsh ../opencl --check --refresh-provenance
 ```
 
 Merge the publication pull request before tagging this repository. A

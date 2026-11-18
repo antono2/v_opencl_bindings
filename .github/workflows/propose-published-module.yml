@@ -24,7 +24,7 @@ on:
       - 'LICENSE'
       - 'VERSION'
       - 'v.mod'
-      - 'tools/sync_published_module.py'
+      - 'tools/sync_published_module.vsh'
       - '.github/workflows/propose-published-module.yml'
   workflow_dispatch:
     inputs:
@@ -54,6 +54,10 @@ jobs:
           repository: antono2/opencl
           path: published
           token: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        with:
+          version: 0.5.2
+          install-dependencies: false
       - name: Synchronize canonical distribution files
         env:
           REFRESH_PROVENANCE: ${{ inputs.refresh_provenance || false }}
@@ -64,7 +68,7 @@ jobs:
           if [[ "$REFRESH_PROVENANCE" == true ]]; then
             args+=(--refresh-provenance)
           fi
-          python3 tools/sync_published_module.py published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
+          v run tools/sync_published_module.vsh published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
       - name: Verify quiet proposal publishing
         run: python3 tools/test_publish_generated_branch.py
       - name: Create or update the publication pull request
