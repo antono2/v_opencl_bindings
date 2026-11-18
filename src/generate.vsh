@@ -333,12 +333,12 @@ fn v_name(c_name string) string {
 	return if name in v_keywords { '_' + name } else { name }
 }
 
-fn is_lower(byte u8) bool {
-	return byte >= `a` && byte <= `z`
+fn is_lower(value u8) bool {
+	return value >= `a` && value <= `z`
 }
 
-fn is_word(byte u8) bool {
-	return byte.is_letter() || byte.is_digit() || byte == `_`
+fn is_word(value u8) bool {
+	return value.is_letter() || value.is_digit() || value == `_`
 }
 
 fn v_value(input string) string {
