@@ -22,13 +22,16 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ github.token }}
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        with:
+          version: 0.5.2
       - name: Check upstream revisions
         id: inputs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          python3 tools/test_check_input_payload.py
+          v run tools/check_input_payload.vsh --self-test
           registry=$(gh api repos/KhronosGroup/OpenCL-Docs/commits/main --jq .sha)
           headers=$(gh api repos/KhronosGroup/OpenCL-Headers/commits/main --jq .sha)
           echo "registry=$registry" >> "$GITHUB_OUTPUT"
@@ -60,10 +63,6 @@ jobs:
           git -C openclheaders fetch -q --depth 1 origin "$HEADERS_SHA"
           git -C openclheaders checkout -q --detach FETCH_HEAD
           git -C openclheaders fetch -q --depth 1 origin "$PREVIOUS_HEADERS"
-      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
-        if: steps.inputs.outputs.changed == 'true'
-        with:
-          version: 0.5.2
       - name: Generate and review new registry surface
         id: generate
         if: steps.inputs.outputs.changed == 'true'
@@ -84,7 +83,8 @@ jobs:
           PREVIOUS_HEADERS: ${{ steps.inputs.outputs.previous_headers }}
         run: |
           set -euo pipefail
-          if [[ $(python3 tools/check_input_payload.py --previous-headers "$PREVIOUS_HEADERS" --generation-outcome "$GENERATE_OUTCOME") == false ]]; then
+          should_propose=$(v run tools/check_input_payload.vsh --previous-headers "$PREVIOUS_HEADERS" --generation-outcome "$GENERATE_OUTCOME")
+          if [[ "$should_propose" == false ]]; then
             echo 'No binding or C-header payload changed; upstream documentation revisions need no proposal.'
             exit 0
           fi
