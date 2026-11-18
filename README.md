@@ -185,7 +185,7 @@ hardware, OpenCL updates the same exported allocation that Vulkan consumes as a 
 
 ## Source navigation
 
-[`src/opencl_generator.py`](src/opencl_generator.py) owns the generated file's
+[`src/generate.vsh`](src/generate.vsh) owns the generated file's
 introduction as well as its declarations. The other V files under `src/` are
 handwritten layers for resource ownership, discovery and optional features;
 read their file introductions before extending an API. [`test/`](test/) checks
