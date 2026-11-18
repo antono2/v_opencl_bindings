@@ -87,7 +87,7 @@ const callback_types = {
 }
 const header = '// Code generated from the Khronos OpenCL XML API Registry. DO NOT EDIT.
 // Raw OpenCL constants, types and entry points; resource lifetimes follow the C API.
-// Regenerate in antono2/v_opencl_bindings with python3 src/main.py.
+// Regenerate in antono2/v_opencl_bindings with v run src/generate.vsh.
 module opencl
 
 $if opencl_dynamic ? {

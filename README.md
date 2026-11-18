@@ -37,7 +37,7 @@ The OpenCL 1.2 `cl_image_desc` anonymous union is emitted as its ABI-equivalent
 
 ## Generate
 
-Requirements: Git, Python 3 and V on `PATH`. Clone this repository, enter its
+Requirements: Git and V on `PATH`. Clone this repository, enter its
 root and prepare the pinned Khronos inputs:
 
 ```sh
@@ -54,12 +54,11 @@ and revisions without changing them.
 Generate and format the bindings from those prepared inputs:
 
 ```sh
-python3 src/main.py -registry opencldocs/xml/cl.xml opencl.v
+v run src/generate.vsh --registry opencldocs/xml/cl.xml
 v fmt -w src/opencl.v
 ```
 
-Use your platform's Python command (`python` or `py -3` on Windows if
-`python3` is unavailable). Generated output is written to `src/opencl.v`.
+The generator writes `src/opencl.v` by default. Use `--output PATH` to write elsewhere.
 
 ## Publishing and documentation
 

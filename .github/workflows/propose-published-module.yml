@@ -70,7 +70,7 @@ jobs:
           fi
           v run tools/sync_published_module.vsh published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
       - name: Verify quiet proposal publishing
-        run: python3 tools/test_publish_generated_branch.py
+        run: v run tools/publish_generated_branch.vsh --self-test
       - name: Create or update the publication pull request
         env:
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
@@ -92,7 +92,7 @@ jobs:
             fi
             exit 0
           fi
-          (cd published && python3 ../tools/publish_generated_branch.py "$branch" 'Synchronize published OpenCL module')
+          (cd published && v run ../tools/publish_generated_branch.vsh "$branch" 'Synchronize published OpenCL module')
           cd published
           body="Automated synchronization from antono2/v_opencl_bindings at $GENERATOR_COMMIT. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
           pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
