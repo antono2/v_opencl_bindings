@@ -183,6 +183,13 @@ runner exercises the particle kernel on CPU or GPU OpenCL devices; the Vulkan re
 prefers UUID-matched external-memory interop and falls back to host staging. On qualifying
 hardware, OpenCL updates the same exported allocation that Vulkan consumes as a vertex buffer.
 
+[Torus Trooper](https://github.com/antono2/torus_trooper) uses these bindings
+in its [optional OpenCL simulation backend](https://github.com/antono2/torus_trooper/blob/main/sim/opencl_compute.v).
+Its [build and run instructions](https://github.com/antono2/torus_trooper/blob/main/docs/technical-reference.md#optional-opencl-backend)
+show how to enable the backend.
+
+![OpenCL particle simulation rendered by Vulkan in staged mode](examples/vulkan_particles/preview.gif)
+
 ## Source navigation
 
 [`src/generate.vsh`](src/generate.vsh) owns the generated file's
