@@ -131,6 +131,13 @@ trails, interactive controls and display-independent interoperability smoke test
 The example is a separate nested V module, so its `vulkan` and `glfw` dependencies are not
 dependencies of applications that only import `opencl`.
 
+[Torus Trooper](https://github.com/antono2/torus_trooper) uses these bindings
+in its [optional OpenCL simulation backend](https://github.com/antono2/torus_trooper/blob/main/sim/opencl_compute.v).
+Its [build and run instructions](https://github.com/antono2/torus_trooper/blob/main/docs/technical-reference.md#optional-opencl-backend)
+show how to enable the backend.
+
+![OpenCL particle simulation rendered by Vulkan in staged mode](examples/vulkan_particles/preview.gif)
+
 ## API coverage
 
 The module exposes the complete OpenCL 1.0 through 3.0 core API and selected
