@@ -29,6 +29,16 @@ fn compiler(executable string, args []string) ! {
 	checked(command)!
 }
 
+fn build_compiler(directory string, local bool) ! {
+	// V run exports VEXE. The Makefile uses it as its output path.
+	mut command := ['make', '-C', directory, 'VEXE=./v']
+	if local {
+		command << 'local=1'
+	}
+	checked(command)!
+	compiler(os.abs_path(os.join_path(directory, 'v')), ['version'])!
+}
+
 fn pin(file string) !string {
 	value := os.read_file(file)!.trim_space()
 	if value.len != 40 || !value.bytes().all((it >= `0` && it <= `9`) || (it >= `a` && it <= `f`)) {
@@ -200,6 +210,8 @@ fn self_test() ! {
 }
 
 fn run(args []string) ! {
+	// Child compiler commands select their own executable explicitly.
+	os.unsetenv('VEXE')
 	match args {
 		['pins'] {
 			report_pins(false)!
@@ -218,13 +230,11 @@ fn run(args []string) ! {
 			return
 		}
 		['build-master'] {
-			checked(['make', '-C', '.ci-v-master'])!
-			compiler(os.abs_path('.ci-v-master/v'), ['version'])!
+			build_compiler('.ci-v-master', false)!
 			return
 		}
 		['build-strict'] {
-			checked(['make', '-C', '.ci-v3', 'local=1'])!
-			compiler(os.abs_path('.ci-v3/v'), ['version'])!
+			build_compiler('.ci-v3', true)!
 			return
 		}
 		['--self-test'] {
