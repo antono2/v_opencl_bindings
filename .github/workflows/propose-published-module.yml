@@ -9,6 +9,7 @@ on:
       - 'test/helpers_test.v'
       - 'test/test_dynamic_runtime.vsh'
       - 'tools/check_docs.vsh'
+      - 'tools/opencltest/**'
       - 'algorithms/**'
       - 'docs/**'
       - 'test/pointer_abi_*'
