@@ -101,9 +101,10 @@ tag; rerunning the release is safe when that tag already targets the same commit
 The published `DISTRIBUTION_FILES` manifest records every synchronized path so
 the publisher can detect and remove files retired from the canonical source.
 
-Every Monday, `propose-khronos-input-update.yml` checks the current upstream
-OpenCL-Docs and OpenCL-Headers commits. If either changed, it opens or updates
-a pull request with new immutable pins and regenerated source. The proposal
+Every Monday, the [V input updater](tools/propose_khronos_inputs.vsh) checks
+the current upstream OpenCL-Docs and OpenCL-Headers commits. It opens or updates
+a proposal when generated bindings or C headers change, or when generation
+fails and needs review. Documentation-only changes skip the proposal. The proposal
 reports core versions beyond the link compatibility ceiling and runs the full
 generator CI; it is not merged automatically. The proposal workflow uses the
 repository-scoped `GITHUB_TOKEN`. Because GitHub does not trigger pull-request

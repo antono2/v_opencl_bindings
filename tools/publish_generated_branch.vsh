@@ -13,8 +13,9 @@ struct Proposal {
 }
 
 fn git(repo string, args []string) !string {
-	command := 'git -C ${os.quoted_path(repo)} ' + args.map(os.quoted_path(it)).join(' ')
-	result := os.execute(command)
+	mut command := ['git', '-C', repo]
+	command << args
+	result := os.exec(command)
 	if result.exit_code != 0 {
 		return error('git ${args[0]} failed: ${result.output.trim_space()}')
 	}

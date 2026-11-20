@@ -73,6 +73,7 @@ jobs:
           v run tools/sync_published_module.vsh --self-test
           v run tools/publish_generated_branch.vsh --self-test
           v run tools/check_input_payload.vsh --self-test
+          v run tools/propose_khronos_inputs.vsh --self-test
           v run src/generate.vsh --registry opencldocs/xml/cl.xml
           v fmt -w src/opencl.v
           git diff --exit-code -- src/opencl.v
