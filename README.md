@@ -164,8 +164,10 @@ sudo apt install ocl-icd-opencl-dev pocl-opencl-icd
 
 CI requires generated sources, public helpers and ABI probes to pass the
 pinned release compiler and strict V3 frontend. The pinned V3 backend also runs
-module and vector-add smoke tests with TinyCC. Exact compiler, dependency and
-runner pins are recorded in
+module and vector-add smoke tests with TinyCC. The [V CI driver](tools/ci_opencl.vsh)
+assembles modules in the runner's scratch directory and checks that the staged
+particle window finishes successfully and renders its expected frames.
+Exact compiler, dependency and runner pins are recorded in
 [the CI workflow](.github/workflows/generate-and-test.yml). Current V-master
 and Vulkan/GLFW-master lanes remain advisory so an unrelated upstream change
 cannot block a release.
