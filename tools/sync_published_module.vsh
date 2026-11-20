@@ -25,6 +25,7 @@ const source_files = {
 	'test/convenience_test.v':       'convenience_test.v'
 	'test/helpers_test.v':           'test/helpers_test.v'
 	'test/test_dynamic_runtime.vsh': 'test/test_dynamic_runtime.vsh'
+	'tools/opencltest/checks.v':     'tools/opencltest/checks.v'
 	'tools/check_docs.vsh':          'tools/check_docs.vsh'
 	'test/pointer_abi_test.v':       'test/pointer_abi_test.v'
 	'test/pointer_abi_shim.c':       'test/pointer_abi_shim.c'
