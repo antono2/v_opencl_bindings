@@ -25,6 +25,7 @@ on:
       - 'VERSION'
       - 'v.mod'
       - 'tools/sync_published_module.vsh'
+      - 'tools/propose_published_module.vsh'
       - '.github/workflows/propose-published-module.yml'
   workflow_dispatch:
     inputs:
@@ -58,49 +59,10 @@ jobs:
         with:
           version: 0.5.2
           install-dependencies: false
-      - name: Synchronize canonical distribution files
-        env:
-          REFRESH_PROVENANCE: ${{ inputs.refresh_provenance || false }}
-        run: |
-          GENERATOR_COMMIT=$(git rev-parse HEAD)
-          echo "GENERATOR_COMMIT=$GENERATOR_COMMIT" >> "$GITHUB_ENV"
-          args=()
-          if [[ "$REFRESH_PROVENANCE" == true ]]; then
-            args+=(--refresh-provenance)
-          fi
-          v run tools/sync_published_module.vsh published --generator-commit "$GENERATOR_COMMIT" "${args[@]}"
       - name: Verify quiet proposal publishing
         run: v run tools/publish_generated_branch.vsh --self-test
-      - name: Create or update the publication pull request
+      - name: Synchronize the distribution and update the publication pull request
         env:
+          REFRESH_PROVENANCE: ${{ inputs.refresh_provenance || false }}
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
-        run: |
-          set -euo pipefail
-          branch=automation/v-opencl-bindings
-          git -C published checkout -B "$branch"
-          git -C published add --all
-          if git -C published diff --cached --quiet; then
-            echo "The published module is already synchronized"
-            pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
-              --json number --jq '.[0].number // empty')
-            if test -n "$pr_number"; then
-              files=$(gh pr view "$pr_number" --repo antono2/opencl \
-                --json files --jq '.files[].path')
-              if [[ "$files" == GENERATOR_COMMIT ]]; then
-                gh pr close "$pr_number" --repo antono2/opencl --delete-branch
-              fi
-            fi
-            exit 0
-          fi
-          (cd published && v run ../tools/publish_generated_branch.vsh "$branch" 'Synchronize published OpenCL module')
-          cd published
-          body="Automated synchronization from antono2/v_opencl_bindings at $GENERATOR_COMMIT. Version metadata is synchronized automatically. Merge this PR before tagging the synchronized generator commit for release."
-          pr_number=$(gh pr list --repo antono2/opencl --state open --head "$branch" \
-            --json number --jq '.[0].number // empty')
-          if test -n "$pr_number"; then
-            echo "Existing PR #$pr_number is left unchanged."
-          else
-            gh pr create --repo antono2/opencl --base master --head "$branch" \
-              --title "Synchronize published OpenCL module" \
-              --body "$body"
-          fi
+        run: v run tools/propose_published_module.vsh
