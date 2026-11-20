@@ -68,6 +68,8 @@ hand-written convenience code, ABI probes and examples. Run
 omit `--check` to synchronize a checkout. The publication workflow opens an
 `antono2/opencl` pull request when the repository secret
 `OPENCL_PUBLISH_TOKEN` has cross-repository contents and pull-request access.
+The [V publication driver](tools/propose_published_module.vsh) synchronizes
+the distribution and opens a review proposal if one is needed.
 The published module's `GENERATOR_COMMIT` records the canonical commit used
 for the last publication that changed distributed content. Generator-only or
 input-revision-only maintenance retains all three valid revision markers and

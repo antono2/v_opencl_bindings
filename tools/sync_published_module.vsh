@@ -44,8 +44,10 @@ struct SyncOptions {
 	generator string
 }
 
-fn git(root string, args string) !string {
-	result := os.execute('git -C ${os.quoted_path(root)} ${args}')
+fn git(root string, args []string) !string {
+	mut command := ['git', '-C', root]
+	command << args
+	result := os.exec(command)
 	if result.exit_code != 0 {
 		return error(result.output.trim_space())
 	}
@@ -148,7 +150,8 @@ fn assemble_contents(root string, target string, options SyncOptions) !map[strin
 	version := source_version(root)!
 	mut contents := map[string][]u8{}
 	mut mappings := source_files.clone()
-	tracked := git(root, 'ls-files -z -- abi examples include algorithms docs')!
+	tracked := git(root,
+		['ls-files', '-z', '--', 'abi', 'examples', 'include', 'algorithms', 'docs'])!
 	for relative in tracked.split('\x00').filter(it != '') {
 		if !path_is_safe(relative) {
 			return error('unsafe tracked distribution path: ${relative}')
@@ -160,7 +163,7 @@ fn assemble_contents(root string, target string, options SyncOptions) !map[strin
 	}
 
 	commit := if options.generator == '' {
-		git(root, 'rev-parse HEAD')!.trim_space().to_lower_ascii()
+		git(root, ['rev-parse', 'HEAD'])!.trim_space().to_lower_ascii()
 	} else {
 		options.generator.trim_space().to_lower_ascii()
 	}
