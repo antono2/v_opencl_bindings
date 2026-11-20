@@ -100,6 +100,8 @@ v run tools/sync_published_module.vsh ../opencl --check --refresh-provenance
 Merge the publication pull request before tagging this repository. A
 successful generator release then creates the matching annotated `antono2/opencl`
 tag; rerunning the release is safe when that tag already targets the same commit.
+The [V release driver](tools/release_opencl.vsh) checks the version and immutable
+generator provenance before creating the companion tag.
 The published `DISTRIBUTION_FILES` manifest records every synchronized path so
 the publisher can detect and remove files retired from the canonical source.
 

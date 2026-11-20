@@ -75,6 +75,7 @@ jobs:
           v run tools/check_input_payload.vsh --self-test
           v run tools/propose_khronos_inputs.vsh --self-test
           v run tools/propose_published_module.vsh --self-test
+          v run tools/release_opencl.vsh --self-test
           v run src/generate.vsh --registry opencldocs/xml/cl.xml
           v fmt -w src/opencl.v
           git diff --exit-code -- src/opencl.v
@@ -396,57 +397,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - name: Validate release version
-        run: |
-          set -euo pipefail
-          version=$(cat VERSION)
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          grep -F "version: '$version'" v.mod
-          test "$GITHUB_REF_NAME" = "v$version"
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        with:
+          version: ${{ env.V_VERSION }}
+          install-dependencies: false
       - name: Publish tag and GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
-            gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "v_opencl_bindings $GITHUB_REF_NAME"
+        run: v run tools/release_opencl.vsh release
       - name: Tag matching published module
         env:
           GH_TOKEN: ${{ secrets.OPENCL_PUBLISH_TOKEN }}
-        run: |
-          set -euo pipefail
-          generator_commit=$(git rev-parse "$GITHUB_REF_NAME^{}")
-          version=$(cat VERSION)
-          opencl_commit=$(gh api repos/antono2/opencl/git/ref/heads/master --jq '.object.sha')
-          read_opencl_file() {
-            gh api "repos/antono2/opencl/contents/$1?ref=$opencl_commit" --jq '.content' | base64 --decode
-          }
-          test "$(read_opencl_file VERSION)" = "$version"
-          test "$(read_opencl_file GENERATOR_COMMIT)" = "$generator_commit"
-          grep -F "version: '$version'" < <(read_opencl_file v.mod)
-
-          if existing_refs=$(git ls-remote --exit-code \
-            https://github.com/antono2/opencl.git \
-            "refs/tags/$GITHUB_REF_NAME" "refs/tags/$GITHUB_REF_NAME^{}" 2>/dev/null); then
-            existing_commit=$(printf '%s\n' "$existing_refs" | awk '
-              /\^\{\}$/ { peeled = $1 }
-              !/\^\{\}$/ { direct = $1 }
-              END { print peeled != "" ? peeled : direct }
-            ')
-            if test "$existing_commit" != "$opencl_commit"; then
-              echo "::error::opencl $GITHUB_REF_NAME already resolves to $existing_commit, expected $opencl_commit"
-              exit 1
-            fi
-            echo "opencl $GITHUB_REF_NAME already points to $opencl_commit"
-            exit 0
-          fi
-
-          tag_object=$(gh api --method POST repos/antono2/opencl/git/tags \
-            -f tag="$GITHUB_REF_NAME" \
-            -f message="Release $GITHUB_REF_NAME synchronized from v_opencl_bindings" \
-            -f object="$opencl_commit" \
-            -f type=commit \
-            --jq '.sha')
-          gh api --method POST repos/antono2/opencl/git/refs \
-            -f ref="refs/tags/$GITHUB_REF_NAME" \
-            -f sha="$tag_object" >/dev/null
+        run: v run tools/release_opencl.vsh tag-module
