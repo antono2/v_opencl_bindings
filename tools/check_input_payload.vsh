@@ -4,10 +4,9 @@ import os
 import rand
 
 fn git(root string, arguments []string) os.Result {
-	mut args := ['-C', root]
+	mut args := ['git', '-C', root]
 	args << arguments
-	command := 'git ' + args.map(os.quoted_path(it)).join(' ')
-	return os.execute(command)
+	return os.exec(args)
 }
 
 fn checked_git(root string, arguments []string) !string {
